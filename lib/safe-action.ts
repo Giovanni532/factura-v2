@@ -1,5 +1,3 @@
-"use server";
-
 import { createSafeActionClient } from "next-safe-action";
 import { ZodError, ZodSchema } from "zod";
 import { auth } from "./auth";
