@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // Si l'utilisateur est connecté et essaie d'accéder à login/signup
-        if (isAuthenticated && (pathname === paths.login || pathname === paths.signup)) {
+        if (isAuthenticated && (pathname === paths.login || pathname === paths.signup || pathname === paths.home)) {
             return NextResponse.redirect(new URL(paths.dashboard, request.url));
         }
 
