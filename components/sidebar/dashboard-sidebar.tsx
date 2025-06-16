@@ -2,26 +2,16 @@
 
 import * as React from "react"
 import {
-    IconCamera,
-    IconChartBar,
     IconDashboard,
-    IconDatabase,
-    IconFileAi,
-    IconFileDescription,
-    IconFileWord,
-    IconFolder,
-    IconHelp,
-    IconInnerShadowTop,
-    IconListDetails,
-    IconReport,
-    IconSearch,
-    IconSettings,
     IconUsers,
+    IconTemplate,
+    IconReceipt,
+    IconInnerShadowTop,
+    Icon,
 } from "@tabler/icons-react"
 
-import { DashboardDocuments } from "@/components/sidebar/dashboard-documents"
+import { DashboardDocuments } from "@/components/sidebar/dashboard-recent"
 import { DashboardMain } from "@/components/sidebar/dashboard-main"
-import { DashboardSecondary } from "@/components/sidebar/dashboard-secondary"
 import { DashboardUser } from "@/components/sidebar/dashboard-user"
 import {
     Sidebar,
@@ -32,128 +22,84 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { paths } from "@/paths"
 
-const data = {
-    navMain: [
+interface NavItem {
+    title: string
+    url: string
+    icon: Icon
+    subItems?: {
+        title: string
+        url: string
+        icon?: Icon
+    }[]
+}
+
+
+const sidebarData = {
+    mainNavigation: [
         {
-            title: "Dashboard",
-            url: "#",
+            title: "Tableau de bord",
+            url: paths.dashboard,
             icon: IconDashboard,
         },
         {
-            title: "Lifecycle",
-            url: "#",
-            icon: IconListDetails,
+            title: "Factures",
+            url: paths.invoices.list,
+            icon: IconReceipt,
+            subItems: [
+                {
+                    title: "Toutes les factures",
+                    url: paths.invoices.list,
+                },
+                {
+                    title: "Créer une facture",
+                    url: paths.invoices.create,
+                },
+            ],
         },
         {
-            title: "Analytics",
-            url: "#",
-            icon: IconChartBar,
-        },
-        {
-            title: "Projects",
-            url: "#",
-            icon: IconFolder,
-        },
-        {
-            title: "Team",
-            url: "#",
+            title: "Clients",
+            url: paths.clients.list,
             icon: IconUsers,
-        },
-    ],
-    navClouds: [
-        {
-            title: "Capture",
-            icon: IconCamera,
-            isActive: true,
-            url: "#",
-            items: [
+            subItems: [
                 {
-                    title: "Active Proposals",
-                    url: "#",
+                    title: "Tous les clients",
+                    url: paths.clients.list,
                 },
                 {
-                    title: "Archived",
-                    url: "#",
+                    title: "Ajouter un client",
+                    url: paths.clients.create,
                 },
             ],
         },
         {
-            title: "Proposal",
-            icon: IconFileDescription,
-            url: "#",
-            items: [
+            title: "Templates",
+            url: paths.templates.list,
+            icon: IconTemplate,
+            subItems: [
                 {
-                    title: "Active Proposals",
-                    url: "#",
+                    title: "Mes templates",
+                    url: paths.templates.list,
                 },
                 {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            title: "Prompts",
-            icon: IconFileAi,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
+                    title: "Créer un template",
+                    url: paths.templates.create,
                 },
             ],
         },
-    ],
-    navSecondary: [
-        {
-            title: "Settings",
-            url: "#",
-            icon: IconSettings,
-        },
-        {
-            title: "Get Help",
-            url: "#",
-            icon: IconHelp,
-        },
-        {
-            title: "Search",
-            url: "#",
-            icon: IconSearch,
-        },
-    ],
-    documents: [
-        {
-            name: "Data Library",
-            url: "#",
-            icon: IconDatabase,
-        },
-        {
-            name: "Reports",
-            url: "#",
-            icon: IconReport,
-        },
-        {
-            name: "Word Assistant",
-            url: "#",
-            icon: IconFileWord,
-        },
-    ],
+    ] as NavItem[],
 }
 
 interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
-    user: {
+    currentUser: {
         name: string
         email: string
         avatar: string
     }
 }
 
-export function DashboardSidebar({ user, ...props }: DashboardSidebarProps) {
+export function DashboardSidebar({ currentUser, ...props }: DashboardSidebarProps) {
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -163,21 +109,20 @@ export function DashboardSidebar({ user, ...props }: DashboardSidebarProps) {
                             asChild
                             className="data-[slot=sidebar-menu-button]:!p-1.5"
                         >
-                            <a href="#">
+                            <a href={paths.dashboard}>
                                 <IconInnerShadowTop className="!size-5" />
-                                <span className="text-base font-semibold">Acme Inc.</span>
+                                <span className="text-base font-semibold">Factura</span>
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <DashboardMain items={data.navMain} />
-                <DashboardDocuments items={data.documents} />
-                <DashboardSecondary items={data.navSecondary} className="mt-auto" />
+                <DashboardMain navigationItems={sidebarData.mainNavigation} />
+                <DashboardDocuments />
             </SidebarContent>
             <SidebarFooter>
-                <DashboardUser user={user} />
+                <DashboardUser currentUser={currentUser} />
             </SidebarFooter>
         </Sidebar>
     )

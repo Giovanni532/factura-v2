@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         >
             <DashboardSidebar
                 variant="inset"
-                user={{
+                currentUser={{
                     name: user?.name || "User",
                     email: user?.email || "",
                     avatar: user?.image || "/avatars/default.jpg"

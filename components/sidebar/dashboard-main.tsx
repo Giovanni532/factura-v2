@@ -1,54 +1,93 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import {
+    IconCirclePlusFilled,
+    IconDots,
+    type Icon
+} from "@tabler/icons-react"
+import Link from "next/link"
+import { paths } from "@/paths"
 
-import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarMenu,
+    SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from "@/components/ui/sidebar"
 
 export function DashboardMain({
-    items,
+    navigationItems,
 }: {
-    items: {
+    navigationItems: {
         title: string
         url: string
         icon?: Icon
+        subItems?: {
+            title: string
+            url: string
+        }[]
     }[]
 }) {
+    const { isMobile } = useSidebar()
+
     return (
         <SidebarGroup>
             <SidebarGroupContent className="flex flex-col gap-2">
                 <SidebarMenu>
-                    <SidebarMenuItem className="flex items-center gap-2">
-                        <SidebarMenuButton
-                            tooltip="Quick Create"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-                        >
-                            <IconCirclePlusFilled />
-                            <span>Quick Create</span>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href={paths.invoices.create} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                                <IconCirclePlusFilled />
+                                <span>Nouvelle facture</span>
+                            </Link>
                         </SidebarMenuButton>
-                        <Button
-                            size="icon"
-                            className="size-8 group-data-[collapsible=icon]:opacity-0"
-                            variant="outline"
-                        >
-                            <IconMail />
-                            <span className="sr-only">Inbox</span>
-                        </Button>
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <SidebarMenu>
-                    {items.map((item) => (
+                    {navigationItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton tooltip={item.title}>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
+                            <SidebarMenuButton asChild>
+                                <Link href={item.url}>
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
+                                </Link>
                             </SidebarMenuButton>
+                            {item.subItems && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <SidebarMenuAction
+                                            showOnHover
+                                            className="data-[state=open]:bg-accent rounded-sm"
+                                        >
+                                            <IconDots />
+                                            <span className="sr-only">Plus d'options</span>
+                                        </SidebarMenuAction>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                        className="w-48 rounded-lg"
+                                        side={isMobile ? "bottom" : "right"}
+                                        align={isMobile ? "end" : "start"}
+                                    >
+                                        {item.subItems.map((subItem) => (
+                                            <DropdownMenuItem key={subItem.title} asChild>
+                                                <Link href={subItem.url} className="flex items-center">
+                                                    {item.icon && <item.icon className="mr-2" />}
+                                                    <span>{subItem.title}</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>
