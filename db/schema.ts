@@ -1,4 +1,22 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+
+// Définition de la table company d'abord
+export const company = sqliteTable("company", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    address: text('address'),
+    city: text('city'),
+    postalCode: text('postal_code'),
+    country: text('country'),
+    siret: text('siret'),
+    vatNumber: text('vat_number'),
+    logo: text('logo'),
+    ownerId: text('owner_id').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
 
 export const user = sqliteTable("user", {
     id: text('id').primaryKey(),
@@ -6,6 +24,8 @@ export const user = sqliteTable("user", {
     email: text('email').notNull().unique(),
     emailVerified: integer('email_verified', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
     image: text('image'),
+    companyId: text('company_id').references(() => company.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['owner', 'admin', 'user'] }).$defaultFn(() => 'user').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull()
 });
@@ -46,10 +66,104 @@ export const verification = sqliteTable("verification", {
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date())
 });
 
+// Tables pour l'application de facturation
+
+export const client = sqliteTable("client", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    address: text('address'),
+    city: text('city'),
+    postalCode: text('postal_code'),
+    country: text('country'),
+    siret: text('siret'),
+    vatNumber: text('vat_number'),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const template = sqliteTable("template", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    html: text('html').notNull(), // Template HTML de la facture
+    css: text('css'), // CSS personnalisé
+    isDefault: integer('is_default', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const invoice = sqliteTable("invoice", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    number: text('number').notNull(),
+    status: text('status', { enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled'] }).$defaultFn(() => 'draft').notNull(),
+    issueDate: integer('issue_date', { mode: 'timestamp' }).notNull(),
+    dueDate: integer('due_date', { mode: 'timestamp' }).notNull(),
+    subtotal: real('subtotal').notNull(),
+    taxRate: real('tax_rate').$defaultFn(() => 20).notNull(), // TVA par défaut 20%
+    taxAmount: real('tax_amount').notNull(),
+    total: real('total').notNull(),
+    notes: text('notes'),
+    clientId: text('client_id').notNull().references(() => client.id, { onDelete: 'cascade' }),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    templateId: text('template_id').references(() => template.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const invoiceItem = sqliteTable("invoice_item", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    description: text('description').notNull(),
+    quantity: real('quantity').notNull(),
+    unitPrice: real('unit_price').notNull(),
+    total: real('total').notNull(),
+    invoiceId: text('invoice_id').notNull().references(() => invoice.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const billingPlan = sqliteTable("billing_plan", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    description: text('description'),
+    price: real('price').notNull(),
+    currency: text('currency').$defaultFn(() => 'EUR').notNull(),
+    interval: text('interval', { enum: ['monthly', 'yearly'] }).notNull(),
+    maxUsers: integer('max_users').notNull(),
+    maxClients: integer('max_clients').notNull(),
+    maxInvoices: integer('max_invoices').notNull(),
+    features: text('features'), // JSON string des fonctionnalités
+    isActive: integer('is_active', { mode: 'boolean' }).$defaultFn(() => true).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const subscription = sqliteTable("subscription", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    status: text('status', { enum: ['active', 'cancelled', 'past_due', 'unpaid'] }).notNull(),
+    currentPeriodStart: integer('current_period_start', { mode: 'timestamp' }).notNull(),
+    currentPeriodEnd: integer('current_period_end', { mode: 'timestamp' }).notNull(),
+    cancelAtPeriodEnd: integer('cancel_at_period_end', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
+    stripeCustomerId: text('stripe_customer_id'),
+    stripeSubscriptionId: text('stripe_subscription_id'),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    billingPlanId: text('billing_plan_id').notNull().references(() => billingPlan.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
 // Export du schéma complet pour Better Auth et Drizzle
 export const schema = {
     user,
     session,
     account,
     verification,
+    company,
+    client,
+    invoice,
+    invoiceItem,
+    template,
+    billingPlan,
+    subscription,
 };

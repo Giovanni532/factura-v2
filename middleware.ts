@@ -7,6 +7,24 @@ const publicRoutes = [paths.login, paths.signup, '/api/auth', paths.home];
 // Routes d'API qui ne nécessitent pas d'authentification
 const publicApiRoutes = ['/api/auth'];
 
+// Routes protégées qui nécessitent une authentification
+const protectedRoutes = [
+    paths.dashboard,
+    paths.invoices.list,
+    paths.invoices.create,
+    '/invoices/', // Pour toutes les sous-routes dynamiques des factures
+    paths.clients.list,
+    paths.clients.create,
+    '/clients/', // Pour toutes les sous-routes dynamiques des clients
+    paths.templates.list,
+    paths.templates.create,
+    '/templates/', // Pour toutes les sous-routes dynamiques des templates
+    paths.settings.profile,
+    paths.settings.company,
+    paths.settings.billing,
+    '/settings/', // Pour toutes les autres sous-routes des paramètres
+];
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
@@ -30,10 +48,10 @@ export async function middleware(request: NextRequest) {
 
         const session = sessionResponse.ok ? await sessionResponse.json() : null;
         const isAuthenticated = !!session?.user;
-        const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
         // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
-        if (!isAuthenticated && !isPublicRoute) {
+        if (!isAuthenticated && isProtectedRoute) {
             const loginUrl = new URL(paths.login, request.url);
             loginUrl.searchParams.set('callbackUrl', pathname);
             return NextResponse.redirect(loginUrl);
@@ -48,9 +66,9 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
         console.error('Middleware error:', error);
 
-        // En cas d'erreur, rediriger vers login si ce n'est pas une route publique
-        const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-        if (!isPublicRoute) {
+        // En cas d'erreur, rediriger vers login si c'est une route protégée
+        const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+        if (isProtectedRoute) {
             return NextResponse.redirect(new URL(paths.login, request.url));
         }
 
