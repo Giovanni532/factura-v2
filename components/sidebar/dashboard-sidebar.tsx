@@ -34,11 +34,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
     navMain: [
         {
             title: "Dashboard",
@@ -150,7 +145,15 @@ const data = {
     ],
 }
 
-export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
+    user: {
+        name: string
+        email: string
+        avatar: string
+    }
+}
+
+export function DashboardSidebar({ user, ...props }: DashboardSidebarProps) {
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -174,7 +177,7 @@ export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sideb
                 <DashboardSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
-                <DashboardUser user={data.user} />
+                <DashboardUser user={user} />
             </SidebarFooter>
         </Sidebar>
     )

@@ -4,8 +4,17 @@ import {
     SidebarInset,
     SidebarProvider,
 } from "@/components/ui/sidebar"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers";
 
-export default function Page() {
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    })
+
+    const user = session?.user
+
     return (
         <SidebarProvider
             style={
@@ -15,14 +24,21 @@ export default function Page() {
                 } as React.CSSProperties
             }
         >
-            <DashboardSidebar variant="inset" />
+            <DashboardSidebar
+                variant="inset"
+                user={{
+                    name: user?.name || "User",
+                    email: user?.email || "",
+                    avatar: user?.image || "/avatars/default.jpg"
+                }}
+            />
             <SidebarInset>
                 <DashboardHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                             <div className="px-4 lg:px-6">
-                                <h1>Dashboard</h1>
+                                {children}
                             </div>
                         </div>
                     </div>
