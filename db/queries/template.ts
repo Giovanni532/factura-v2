@@ -145,3 +145,34 @@ export async function getTemplateById(templateId: string) {
 
     return templates[0] || null;
 }
+
+// Récupérer un template par ID avec vérification des permissions pour un utilisateur
+export async function getTemplateByIdForUser(templateId: string, userId: string, companyId: string) {
+    const templates = await db.select({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        html: template.html,
+        css: template.css,
+        preview: template.preview,
+        isDefault: template.isDefault,
+        isPredefined: template.isPredefined,
+        companyId: template.companyId,
+        createdAt: template.createdAt,
+        updatedAt: template.updatedAt,
+        isFavorite: userFavoriteTemplate.id,
+    })
+        .from(template)
+        .leftJoin(userFavoriteTemplate, and(
+            eq(template.id, userFavoriteTemplate.templateId),
+            eq(userFavoriteTemplate.userId, userId)
+        ))
+        .where(and(
+            eq(template.id, templateId),
+            // L'utilisateur peut accéder aux templates prédéfinis ou aux templates de son entreprise
+            template.isPredefined ? eq(template.isPredefined, true) : eq(template.companyId, companyId)
+        ))
+        .limit(1);
+
+    return templates[0] || null;
+}

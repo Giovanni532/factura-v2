@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { Heart, Star, Eye, Settings, Trash2, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { toggleFavoriteAction, setDefaultTemplateAction, deleteTemplateAction } from "@/action/template-actions";
 import { TemplateWithFavorite } from "@/validation/template-schema";
+import { TemplatePreviewModal } from "./template-preview-modal";
 
 interface TemplateCardProps {
     template: TemplateWithFavorite;
@@ -23,8 +25,10 @@ interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, type }: TemplateCardProps) {
+    const router = useRouter();
     const [isFavorite, setIsFavorite] = useState(!!template.isFavorite);
     const [isDefault, setIsDefault] = useState(template.isDefault);
+    const [showPreview, setShowPreview] = useState(false);
 
     // Actions
     const { execute: toggleFavorite, isPending: isFavoriteLoading } = useAction(toggleFavoriteAction, {
@@ -45,7 +49,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                 setIsDefault(true);
                 toast.success(result.data.message);
                 // Recharger la page pour mettre à jour les autres templates
-                window.location.reload();
+                router.refresh()
             }
         },
         onError: (error) => {
@@ -58,7 +62,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
             if (result?.data) {
                 toast.success(result.data.message);
                 // Recharger la page pour supprimer le template de la liste
-                window.location.reload();
+                router.refresh()
             }
         },
         onError: (error) => {
@@ -81,13 +85,12 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
     };
 
     const handlePreview = () => {
-        // TODO: Implémenter la prévisualisation
-        toast.info("Prévisualisation à venir");
+        setShowPreview(true);
     };
 
     const handleUse = () => {
-        // TODO: Rediriger vers la création de facture avec ce template
-        toast.info("Utilisation du template à implémenter");
+        // Rediriger vers la page de création de facture avec le template pré-sélectionné
+        router.push(`/dashboard/invoices/new?template=${template.id}`);
     };
 
     return (
@@ -199,6 +202,13 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                     Créé le {template.createdAt.toLocaleDateString('fr-FR')}
                 </div>
             </CardContent>
+
+            {/* Modal de prévisualisation */}
+            <TemplatePreviewModal
+                template={template}
+                isOpen={showPreview}
+                onClose={() => setShowPreview(false)}
+            />
         </Card>
     );
 } 

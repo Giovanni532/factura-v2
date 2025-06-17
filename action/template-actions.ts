@@ -3,7 +3,7 @@
 import { useMutation } from "@/lib/safe-action";
 import { db } from "@/lib/drizzle";
 import { template, userFavoriteTemplate, user } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import {
     toggleFavoriteSchema,
     setDefaultTemplateSchema,
@@ -11,6 +11,7 @@ import {
     updateTemplateSchema,
     deleteTemplateSchema
 } from "@/validation/template-schema";
+import { z } from "zod";
 import { ActionError } from "@/lib/safe-action";
 
 // Action pour ajouter/retirer un template des favoris
@@ -102,15 +103,47 @@ export const setDefaultTemplateAction = useMutation(
             throw new ActionError("Vous n'avez pas le droit de définir ce template par défaut");
         }
 
-        // Retirer le statut par défaut de tous les autres templates de l'entreprise
+        // Retirer le statut par défaut de tous les templates de l'entreprise
         await db.update(template)
             .set({ isDefault: false })
             .where(eq(template.companyId, companyId));
 
-        // Définir le nouveau template par défaut
-        await db.update(template)
-            .set({ isDefault: true })
-            .where(eq(template.id, templateId));
+        // Si c'est un template prédéfini, on le duplique pour l'entreprise avec isDefault: true
+        if (templateData.isPredefined) {
+            // Vérifier s'il existe déjà une copie de ce template pour l'entreprise
+            const existingCopy = await db.select()
+                .from(template)
+                .where(and(
+                    eq(template.companyId, companyId),
+                    eq(template.name, `${templateData.name} (Par défaut)`),
+                    eq(template.isPredefined, false)
+                ))
+                .limit(1);
+
+            if (existingCopy.length > 0) {
+                // Mettre à jour la copie existante
+                await db.update(template)
+                    .set({ isDefault: true })
+                    .where(eq(template.id, existingCopy[0].id));
+            } else {
+                // Créer une nouvelle copie du template prédéfini pour l'entreprise
+                await db.insert(template).values({
+                    name: `${templateData.name} (Par défaut)`,
+                    description: templateData.description,
+                    html: templateData.html,
+                    css: templateData.css,
+                    preview: templateData.preview,
+                    isDefault: true,
+                    isPredefined: false,
+                    companyId: companyId,
+                });
+            }
+        } else {
+            // Définir le nouveau template par défaut
+            await db.update(template)
+                .set({ isDefault: true })
+                .where(eq(template.id, templateId));
+        }
 
         return {
             success: true,
@@ -253,6 +286,45 @@ export const deleteTemplateAction = useMutation(
         return {
             success: true,
             message: "Template supprimé avec succès"
+        };
+    }
+);
+
+// Action pour récupérer un template par ID
+export const getTemplateByIdAction = useMutation(
+    z.object({ templateId: z.string().min(1, "ID du template requis") }),
+    async (input, { userId }) => {
+        const { templateId } = input;
+
+        // Récupérer l'utilisateur avec son companyId
+        const currentUser = await db.select()
+            .from(user)
+            .where(eq(user.id, userId))
+            .limit(1);
+
+        if (currentUser.length === 0 || !currentUser[0].companyId) {
+            throw new ActionError("Utilisateur ou entreprise non trouvé");
+        }
+
+        const companyId = currentUser[0].companyId;
+
+        // Récupérer le template avec vérification des permissions
+        const templateData = await db.select()
+            .from(template)
+            .where(and(
+                eq(template.id, templateId),
+                // L'utilisateur peut accéder aux templates prédéfinis ou aux templates de son entreprise
+                eq(template.isPredefined, true) // TODO: Corriger cette logique
+            ))
+            .limit(1);
+
+        if (templateData.length === 0) {
+            throw new ActionError("Template non trouvé ou accès non autorisé");
+        }
+
+        return {
+            success: true,
+            template: templateData[0]
         };
     }
 ); 

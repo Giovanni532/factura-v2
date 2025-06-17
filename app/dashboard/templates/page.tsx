@@ -9,6 +9,7 @@ import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreateTemplateButton } from "@/components/templates/create-template-button";
 
 export default async function TemplatesPage() {
     // Récupérer la session utilisateur
@@ -85,7 +86,7 @@ export default async function TemplatesPage() {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {/* Bouton pour créer un nouveau template - sera géré côté client */}
+                        <CreateTemplateButton />
                     </div>
                 </div>
 
@@ -105,7 +106,7 @@ export default async function TemplatesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {/* Bouton pour créer un template - sera géré côté client */}
+                            <CreateTemplateButton />
                         </CardContent>
                     </Card>
                 )}
