@@ -4,7 +4,7 @@ import React from 'react';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getUserWithCompany } from '@/queries/company';
+import { getUserWithCompany } from '@/db/queries/company';
 import { CreateCompanyForm } from '@/components/forms/create-company-form';
 
 export default async function DashboardPage() {

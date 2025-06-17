@@ -31,6 +31,9 @@ import {
 } from "@/components/ui/sidebar"
 import { paths } from "@/paths"
 import Link from "next/link"
+import { Button } from "../ui/button"
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
 
 export function DashboardUser({
     currentUser,
@@ -42,6 +45,12 @@ export function DashboardUser({
     }
 }) {
     const { isMobile } = useSidebar()
+    const router = useRouter()
+
+    const handleSignOut = () => {
+        authClient.signOut()
+        router.push(paths.login)
+    }
 
     return (
         <SidebarMenu>
@@ -50,7 +59,7 @@ export function DashboardUser({
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                            className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
                             <Avatar className="h-8 w-8 rounded-lg grayscale">
                                 <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
@@ -88,30 +97,30 @@ export function DashboardUser({
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <DropdownMenuItem asChild>
-                                <Link href={paths.settings.profile} className="flex items-center">
+                                <Link href={paths.settings.profile} className="cursor-pointer flex items-center">
                                     <IconUserCircle className="mr-2" />
                                     Mon profil
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href={paths.settings.company} className="flex items-center">
+                                <Link href={paths.settings.company} className="cursor-pointer flex items-center">
                                     <IconBuilding className="mr-2" />
                                     Mon entreprise
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href={paths.settings.billing} className="flex items-center">
+                                <Link href={paths.settings.billing} className="cursor-pointer flex items-center">
                                     <IconCreditCard className="mr-2" />
                                     Facturation
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="#" className="flex items-center text-destructive">
-                                <IconLogout className="mr-2" />
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                            <Button variant="destructive" className="flex items-center w-full" onClick={handleSignOut}>
+                                <IconLogout className="mr-2 text-white" />
                                 Déconnexion
-                            </Link>
+                            </Button>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
