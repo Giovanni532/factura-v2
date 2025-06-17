@@ -8,6 +8,13 @@ import { createCompanyAction } from "@/action/company-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Form,
     FormControl,
     FormField,
@@ -31,7 +38,7 @@ export function CreateCompanyForm() {
             address: "",
             city: "",
             postalCode: "",
-            country: "",
+            country: "Suisse",
             siret: "",
             vatNumber: "",
         },
@@ -208,11 +215,18 @@ export function CreateCompanyForm() {
                                             <FormItem>
                                                 <FormLabel className="text-foreground">Pays</FormLabel>
                                                 <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        placeholder="France"
-                                                        className="bg-background border-border"
-                                                    />
+                                                    <Select
+                                                        onValueChange={field.onChange}
+                                                        defaultValue={field.value || "Suisse"}
+                                                    >
+                                                        <SelectTrigger className="bg-background border-border w-full">
+                                                            <SelectValue placeholder="Sélectionner un pays" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="w-full">
+                                                            <SelectItem value="Suisse" className="w-full">Suisse</SelectItem>
+                                                            <SelectItem value="France" className="w-full">France</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
