@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "npx @better-auth/cli@latest generate"
+    "auth:generate": "npx @better-auth/cli@latest generate",
+    "templates:init": "tsx scripts/init-templates.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

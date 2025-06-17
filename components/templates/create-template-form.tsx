@@ -145,111 +145,181 @@ th {
     const watchedCss = watch("css");
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+        <div className="space-y-6">
+            {/* Section d'aide pour les variables */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Variables disponibles</h3>
+                <p className="text-sm text-blue-800 mb-3">
+                    Utilisez ces variables dans votre HTML pour rendre votre template dynamique :
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
-                        <Label htmlFor="name">Nom du template *</Label>
-                        <Input
-                            id="name"
-                            {...register("name")}
-                            placeholder="Ex: Template moderne"
-                            className={errors.name ? "border-red-500" : ""}
-                        />
-                        {errors.name && (
-                            <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
-                        )}
+                        <h4 className="font-semibold text-blue-900 mb-1">Entreprise</h4>
+                        <ul className="space-y-1 text-blue-700 font-mono">
+                            <li>{'{{company.name}}'}</li>
+                            <li>{'{{company.email}}'}</li>
+                            <li>{'{{company.phone}}'}</li>
+                            <li>{'{{company.address}}'}</li>
+                            <li>{'{{company.city}}'}</li>
+                            <li>{'{{company.postalCode}}'}</li>
+                            <li>{'{{company.country}}'}</li>
+                            <li>{'{{company.siret}}'}</li>
+                            <li>{'{{company.vatNumber}}'}</li>
+                            <li>{'{{company.logo}}'}</li>
+                        </ul>
                     </div>
 
                     <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            {...register("description")}
-                            placeholder="Description de votre template..."
-                            rows={3}
-                        />
-                        {errors.description && (
-                            <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
-                        )}
+                        <h4 className="font-semibold text-blue-900 mb-1">Client</h4>
+                        <ul className="space-y-1 text-blue-700 font-mono">
+                            <li>{'{{client.name}}'}</li>
+                            <li>{'{{client.email}}'}</li>
+                            <li>{'{{client.address}}'}</li>
+                            <li>{'{{client.city}}'}</li>
+                            <li>{'{{client.postalCode}}'}</li>
+                            <li>{'{{client.country}}'}</li>
+                            <li>{'{{client.siret}}'}</li>
+                            <li>{'{{client.vatNumber}}'}</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">Facture</h4>
+                        <ul className="space-y-1 text-blue-700 font-mono">
+                            <li>{'{{invoice.number}}'}</li>
+                            <li>{'{{invoice.issueDate}}'}</li>
+                            <li>{'{{invoice.dueDate}}'}</li>
+                            <li>{'{{invoice.subtotal}}'}</li>
+                            <li>{'{{invoice.taxRate}}'}</li>
+                            <li>{'{{invoice.taxAmount}}'}</li>
+                            <li>{'{{invoice.total}}'}</li>
+                            <li>{'{{invoice.notes}}'}</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <div className="flex gap-2">
-                        <Button
-                            type="button"
-                            variant={previewMode === "edit" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setPreviewMode("edit")}
-                        >
-                            Éditer
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={previewMode === "preview" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setPreviewMode("preview")}
-                        >
-                            Aperçu
-                        </Button>
+                <div className="mt-4 pt-3 border-t border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-1">Articles (boucle)</h4>
+                    <div className="text-xs text-blue-700 font-mono bg-blue-100 p-2 rounded">
+                        <div>{'{{#each items}}'}</div>
+                        <div className="ml-4">{'{{description}} - {{quantity}} - {{unitPrice}} - {{total}}'}</div>
+                        <div>{'{{/each}}'}</div>
                     </div>
+                </div>
 
-                    {previewMode === "preview" && (
-                        <div className="border rounded-lg h-64 overflow-auto bg-gray-50 p-4">
-                            <iframe
-                                srcDoc={watchedHtml?.replace("{{CSS}}", watchedCss || "")}
-                                className="w-full h-full border-0"
-                                title="Aperçu du template"
-                                sandbox="allow-same-origin"
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-1">Conditions</h4>
+                    <div className="text-xs text-blue-700 font-mono">
+                        <div>{'{{#if variable}}...{{/if}}'} - Affiche le contenu si la variable existe</div>
+                        <div className="mt-1">{'{{CSS}}'} - Remplacé par votre CSS</div>
+                    </div>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nom du template *</Label>
+                            <Input
+                                id="name"
+                                {...register("name")}
+                                placeholder="Ex: Template moderne"
+                                className={errors.name ? "border-red-500" : ""}
                             />
+                            {errors.name && (
+                                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                            )}
                         </div>
-                    )}
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <Label htmlFor="html">Code HTML *</Label>
-                    <Textarea
-                        id="html"
-                        {...register("html")}
-                        placeholder="Votre code HTML..."
-                        rows={12}
-                        className={`font-mono text-sm ${errors.html ? "border-red-500" : ""}`}
-                    />
-                    {errors.html && (
-                        <p className="text-sm text-red-500 mt-1">{errors.html.message}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Utilisez {`{{company.name}}, {{invoice.number}}`}, etc. pour les données dynamiques
-                    </p>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                {...register("description")}
+                                placeholder="Description de votre template..."
+                                rows={3}
+                            />
+                            {errors.description && (
+                                <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex gap-2 space-x-2">
+                            <Button
+                                type="button"
+                                variant={previewMode === "edit" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPreviewMode("edit")}
+                            >
+                                Éditer
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={previewMode === "preview" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPreviewMode("preview")}
+                            >
+                                Aperçu
+                            </Button>
+                        </div>
+
+                        {previewMode === "preview" && (
+                            <div className="border rounded-lg h-64 overflow-auto bg-gray-50 p-4">
+                                <iframe
+                                    srcDoc={watchedHtml?.replace("{{CSS}}", watchedCss || "")}
+                                    className="w-full h-full border-0"
+                                    title="Aperçu du template"
+                                    sandbox="allow-same-origin"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div>
-                    <Label htmlFor="css">Code CSS</Label>
-                    <Textarea
-                        id="css"
-                        {...register("css")}
-                        placeholder="Votre code CSS..."
-                        rows={12}
-                        className="font-mono text-sm"
-                    />
-                    {errors.css && (
-                        <p className="text-sm text-red-500 mt-1">{errors.css.message}</p>
-                    )}
-                </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="html">Code HTML *</Label>
+                        <Textarea
+                            id="html"
+                            {...register("html")}
+                            placeholder="Votre code HTML..."
+                            rows={12}
+                            className={`font-mono text-sm ${errors.html ? "border-red-500" : ""}`}
+                        />
+                        {errors.html && (
+                            <p className="text-sm text-red-500 mt-1">{errors.html.message}</p>
+                        )}
+                    </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={onClose}>
-                    Annuler
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                    {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Créer le template
-                </Button>
-            </div>
-        </form>
+                    <div className="space-y-2">
+                        <Label htmlFor="css">Code CSS</Label>
+                        <Textarea
+                            id="css"
+                            {...register("css")}
+                            placeholder="Votre code CSS..."
+                            rows={12}
+                            className="font-mono text-sm"
+                        />
+                        {errors.css && (
+                            <p className="text-sm text-red-500 mt-1">{errors.css.message}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={onClose}>
+                        Annuler
+                    </Button>
+                    <Button type="submit" disabled={isPending}>
+                        {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Créer le template
+                    </Button>
+                </div>
+            </form>
+        </div>
     );
 } 
