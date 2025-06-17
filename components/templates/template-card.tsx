@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { toggleFavoriteAction, setDefaultTemplateAction, deleteTemplateAction } from "@/action/template-actions";
 import { TemplateWithFavorite } from "@/validation/template-schema";
 import { TemplatePreviewModal } from "./template-preview-modal";
+import { useTemplatesContext } from "./templates-context";
 
 interface TemplateCardProps {
     template: TemplateWithFavorite;
@@ -26,10 +27,13 @@ interface TemplateCardProps {
 
 export function TemplateCard({ template, type }: TemplateCardProps) {
     const router = useRouter();
+    const { defaultTemplateId, setDefaultTemplateId } = useTemplatesContext();
     const [isFavorite, setIsFavorite] = useState(!!template.isFavorite);
-    const [isDefault, setIsDefault] = useState(template.isDefault);
     const [showPreview, setShowPreview] = useState(false);
     const [previewHtml, setPreviewHtml] = useState<string>("");
+
+    // Vérifier si ce template est par défaut en utilisant le contexte
+    const isDefault = defaultTemplateId === template.id;
 
     // Générer le HTML de prévisualisation au chargement
     useEffect(() => {
@@ -163,10 +167,8 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
     const { execute: setDefault, isPending: isDefaultLoading } = useAction(setDefaultTemplateAction, {
         onSuccess: (result) => {
             if (result?.data) {
-                setIsDefault(true);
+                setDefaultTemplateId(template.id);
                 toast.success(result.data.message);
-                // Recharger la page pour mettre à jour les autres templates
-                router.refresh()
             }
         },
         onError: (error) => {

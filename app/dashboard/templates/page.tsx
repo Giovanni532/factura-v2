@@ -40,6 +40,8 @@ export default async function TemplatesPage() {
         companyId
     );
 
+    const allTemplates = [...predefinedTemplates, ...companyTemplates];
+
     return (
         <div className="container mx-auto py-6 space-y-8">
             <div className="flex flex-col space-y-2">
@@ -65,6 +67,7 @@ export default async function TemplatesPage() {
                         <TemplatesPageClient
                             templates={predefinedTemplates}
                             type="predefined"
+                            allTemplates={allTemplates}
                         />
                     </div>
                 ) : (
@@ -95,6 +98,7 @@ export default async function TemplatesPage() {
                         <TemplatesPageClient
                             templates={companyTemplates}
                             type="company"
+                            allTemplates={allTemplates}
                         />
                     </div>
                 ) : (

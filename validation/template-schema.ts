@@ -48,4 +48,5 @@ export type TemplateWithFavorite = {
     createdAt: Date;
     updatedAt: Date;
     isFavorite: string | null; // ID du favori ou null
+    isCompanyDefault: string | null; // ID de la relation company_default_template ou null
 };

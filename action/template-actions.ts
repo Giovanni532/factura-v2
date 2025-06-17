@@ -2,7 +2,7 @@
 
 import { useMutation } from "@/lib/safe-action";
 import { db } from "@/lib/drizzle";
-import { template, userFavoriteTemplate, user } from "@/db/schema";
+import { template, userFavoriteTemplate, companyDefaultTemplate, user } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import {
     toggleFavoriteSchema,
@@ -103,43 +103,23 @@ export const setDefaultTemplateAction = useMutation(
             throw new ActionError("Vous n'avez pas le droit de définir ce template par défaut");
         }
 
-        // Retirer le statut par défaut de tous les templates de l'entreprise
+        // Supprimer l'ancien template par défaut de l'entreprise (s'il existe)
+        await db.delete(companyDefaultTemplate)
+            .where(eq(companyDefaultTemplate.companyId, companyId));
+
+        // Retirer le statut par défaut de tous les templates de l'entreprise (seulement pour les templates créés)
         await db.update(template)
             .set({ isDefault: false })
             .where(eq(template.companyId, companyId));
 
-        // Si c'est un template prédéfini, on le duplique pour l'entreprise avec isDefault: true
-        if (templateData.isPredefined) {
-            // Vérifier s'il existe déjà une copie de ce template pour l'entreprise
-            const existingCopy = await db.select()
-                .from(template)
-                .where(and(
-                    eq(template.companyId, companyId),
-                    eq(template.name, `${templateData.name} (Par défaut)`),
-                    eq(template.isPredefined, false)
-                ))
-                .limit(1);
+        // Ajouter le nouveau template par défaut dans la table de liaison
+        await db.insert(companyDefaultTemplate).values({
+            companyId: companyId,
+            templateId: templateId,
+        });
 
-            if (existingCopy.length > 0) {
-                // Mettre à jour la copie existante
-                await db.update(template)
-                    .set({ isDefault: true })
-                    .where(eq(template.id, existingCopy[0].id));
-            } else {
-                // Créer une nouvelle copie du template prédéfini pour l'entreprise
-                await db.insert(template).values({
-                    name: `${templateData.name} (Par défaut)`,
-                    description: templateData.description,
-                    html: templateData.html,
-                    css: templateData.css,
-                    preview: templateData.preview,
-                    isDefault: true,
-                    isPredefined: false,
-                    companyId: companyId,
-                });
-            }
-        } else {
-            // Définir le nouveau template par défaut
+        // Si c'est un template d'entreprise (pas prédéfini), le marquer comme par défaut aussi
+        if (!templateData.isPredefined) {
             await db.update(template)
                 .set({ isDefault: true })
                 .where(eq(template.id, templateId));

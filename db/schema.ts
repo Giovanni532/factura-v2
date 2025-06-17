@@ -105,6 +105,13 @@ export const userFavoriteTemplate = sqliteTable("user_favorite_template", {
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
+export const companyDefaultTemplate = sqliteTable("company_default_template", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    templateId: text('template_id').notNull().references(() => template.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
 export const invoice = sqliteTable("invoice", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     number: text('number').notNull(),
@@ -175,6 +182,7 @@ export const schema = {
     invoiceItem,
     template,
     userFavoriteTemplate,
+    companyDefaultTemplate,
     billingPlan,
     subscription,
 };
