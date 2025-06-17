@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { PhoneInput } from "../ui/phone-input";
 
 export function CreateCompanyForm() {
     const router = useRouter();
@@ -106,7 +107,7 @@ export function CreateCompanyForm() {
                                         <FormItem>
                                             <FormLabel className="text-foreground">Téléphone</FormLabel>
                                             <FormControl>
-                                                <Input
+                                                <PhoneInput
                                                     {...field}
                                                     placeholder="01 23 45 67 89"
                                                     className="bg-background border-border"
