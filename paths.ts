@@ -7,29 +7,29 @@ export const paths = {
 
     // Factures
     invoices: {
-        list: "/invoices",
-        create: "/invoices/create",
-        view: (id: string) => `/invoices/${id}`,
+        list: "/dashboard/invoices",
+        create: "/dashboard/invoices/create",
+        view: (id: string) => `/dashboard/invoices/${id}`,
     },
 
     // Clients
     clients: {
-        list: "/clients",
-        create: "/clients/create",
-        view: (id: string) => `/clients/${id}`,
+        list: "/dashboard/clients",
+        create: "/dashboard/clients/create",
+        view: (id: string) => `/dashboard/clients/${id}`,
     },
 
     // Templates de factures
     templates: {
-        list: "/templates",
-        create: "/templates/create",
-        edit: (id: string) => `/templates/${id}/edit`,
+        list: "/dashboard/templates",
+        create: "/dashboard/templates/create",
+        edit: (id: string) => `/dashboard/templates/${id}/edit`,
     },
 
     // Paramètres
     settings: {
-        profile: "/settings/profile",
-        company: "/settings/company",
-        billing: "/settings/billing",
+        profile: "/dashboard/settings/profile",
+        company: "/dashboard/settings/company",
+        billing: "/dashboard/settings/billing",
     },
 }

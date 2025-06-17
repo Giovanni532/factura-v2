@@ -1,4 +1,3 @@
-import { UserProfile } from "@/components/auth/user-profile";
 
 export default function Home() {
   return (
@@ -12,7 +11,6 @@ export default function Home() {
             Vous êtes maintenant connecté à votre compte
           </p>
         </div>
-        <UserProfile />
       </div>
     </div>
   );

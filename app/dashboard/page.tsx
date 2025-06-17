@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUserWithCompany } from '@/db/queries/company';
 import { CreateCompanyForm } from '@/components/forms/create-company-form';
+import { CompanyLogoUpload } from '@/components/forms/company-logo-upload';
 
 export default async function DashboardPage() {
     // Récupérer la session utilisateur côté serveur
@@ -96,7 +97,13 @@ export default async function DashboardPage() {
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Logo de l'entreprise */}
+                        <div className="md:col-span-2 lg:col-span-1">
+                            <CompanyLogoUpload
+                                currentLogo={userWithCompany.company.logo || undefined}
+                            />
+                        </div>
                         {/* Informations générales */}
                         <div className="space-y-4">
                             <h3 className="font-medium text-foreground border-b border-border pb-2">

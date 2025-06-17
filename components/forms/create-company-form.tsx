@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { PhoneInput } from "../ui/phone-input";
+import { CompanyLogoUpload } from "./company-logo-upload";
 
 export function CreateCompanyForm() {
     const router = useRouter();
@@ -87,7 +88,6 @@ export function CreateCompanyForm() {
                                         </FormItem>
                                     )}
                                 />
-
                                 <FormField
                                     control={form.control}
                                     name="email"

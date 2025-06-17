@@ -1,7 +1,7 @@
 "use server"
 
 import { useMutation } from "@/lib/safe-action";
-import { createCompanySchema } from "@/validation/company-schema";
+import { createCompanySchema, updateCompanyLogoSchema } from "@/validation/company-schema";
 import { db } from "@/lib/drizzle";
 import { company, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -50,6 +50,38 @@ export const createCompanyAction = useMutation(
         } catch (error) {
             console.error("Erreur lors de la création de la compagnie:", error);
             throw new Error(error instanceof Error ? error.message : "Erreur lors de la création de la compagnie");
+        }
+    }
+);
+
+export const updateCompanyLogoAction = useMutation(
+    updateCompanyLogoSchema,
+    async (input, { userId }) => {
+        try {
+            // Récupérer l'utilisateur et sa compagnie
+            const existingUser = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+
+            if (!existingUser[0]?.companyId) {
+                throw new Error("Aucune compagnie associée à votre compte");
+            }
+
+            // Mettre à jour le logo de la compagnie
+            const updatedCompany = await db.update(company)
+                .set({
+                    logo: input.logo,
+                    updatedAt: new Date()
+                })
+                .where(eq(company.id, existingUser[0].companyId))
+                .returning();
+
+            return {
+                success: true,
+                company: updatedCompany[0],
+                message: "Logo mis à jour avec succès"
+            };
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour du logo:", error);
+            throw new Error(error instanceof Error ? error.message : "Erreur lors de la mise à jour du logo");
         }
     }
 ); 

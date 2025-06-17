@@ -12,4 +12,9 @@ export const createCompanySchema = z.object({
     vatNumber: z.string().optional(),
 });
 
-export type CreateCompanyInput = z.infer<typeof createCompanySchema>; 
+export const updateCompanyLogoSchema = z.object({
+    logo: z.string().min(1, "Le logo est requis"),
+});
+
+export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
+export type UpdateCompanyLogoInput = z.infer<typeof updateCompanyLogoSchema>; 

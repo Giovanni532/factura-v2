@@ -87,12 +87,22 @@ export const client = sqliteTable("client", {
 export const template = sqliteTable("template", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: text('name').notNull(),
+    description: text('description'),
     html: text('html').notNull(), // Template HTML de la facture
     css: text('css'), // CSS personnalisé
+    preview: text('preview'), // URL ou base64 de l'aperçu
     isDefault: integer('is_default', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
-    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    isPredefined: integer('is_predefined', { mode: 'boolean' }).$defaultFn(() => false).notNull(), // Templates prédéfinis par Factura
+    companyId: text('company_id').references(() => company.id, { onDelete: 'cascade' }), // Null pour les templates prédéfinis
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+export const userFavoriteTemplate = sqliteTable("user_favorite_template", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    templateId: text('template_id').notNull().references(() => template.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 export const invoice = sqliteTable("invoice", {
@@ -164,6 +174,7 @@ export const schema = {
     invoice,
     invoiceItem,
     template,
+    userFavoriteTemplate,
     billingPlan,
     subscription,
 };
