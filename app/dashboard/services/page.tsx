@@ -6,6 +6,7 @@ import { ServicesPageClient } from "@/components/services/services-page-client";
 import { headers } from "next/headers";
 import { getUserWithCompany } from "@/db/queries/company";
 import { ServiceWithStats } from "@/validation/service-schema";
+import { paths } from "@/paths";
 
 export default async function ServicesPage() {
     const session = await auth.api.getSession({
@@ -13,7 +14,7 @@ export default async function ServicesPage() {
     });
 
     if (!session?.user) {
-        redirect("/login");
+        redirect(paths.login);
     }
 
     // Récupérer l'utilisateur avec son entreprise

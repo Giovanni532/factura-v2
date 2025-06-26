@@ -10,6 +10,7 @@ import { eq } from "drizzle-orm";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateTemplateButton } from "@/components/templates/create-template-button";
+import { paths } from "@/paths";
 
 export default async function TemplatesPage() {
     // Récupérer la session utilisateur
@@ -18,7 +19,7 @@ export default async function TemplatesPage() {
     });
 
     if (!session?.user) {
-        redirect("/login");
+        redirect(paths.login);
     }
 
     // Récupérer les informations de l'utilisateur avec companyId
@@ -28,7 +29,7 @@ export default async function TemplatesPage() {
         .limit(1);
 
     if (currentUser.length === 0 || !currentUser[0].companyId) {
-        redirect("/dashboard");
+        redirect(paths.dashboard);
     }
 
     const userId = session.user.id;

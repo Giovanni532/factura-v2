@@ -8,51 +8,49 @@ import { eq } from "drizzle-orm";
 import { getInvoicesByCompany, getInvoiceStats } from "@/db/queries/invoice";
 import { InvoicesPageClient } from "@/components/invoices/invoices-page-client";
 import { headers } from "next/headers";
+import { paths } from "@/paths";
 
 interface InvoicesPageProps {
-    searchParams: {
-        search?: string;
-        status?: string;
-        client?: string;
-    };
+    searchParams: Promise<{ [key: string]: string }>
 }
 
 export default async function InvoicesPage({ searchParams }: InvoicesPageProps) {
+    const searchParamsResult = await searchParams;
     const session = await auth.api.getSession({
         headers: await headers()
     });
 
     if (!session?.user?.id) {
-        redirect("/login");
+        redirect(paths.login);
     }
 
     // Récupérer les données de l'utilisateur et de son entreprise
     const userData = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
 
     if (!userData.length || !userData[0].companyId) {
-        redirect("/dashboard");
+        redirect(paths.dashboard);
     }
 
     const companyId = userData[0].companyId;
 
     // Récupérer les factures avec filtres
     const invoices = await getInvoicesByCompany(companyId, {
-        search: searchParams.search,
-        status: searchParams.status,
-        clientId: searchParams.client,
+        search: searchParamsResult.search,
+        status: searchParamsResult.status,
+        clientId: searchParamsResult.client,
     });
 
     // Récupérer les statistiques
-    const stats = await getInvoiceStats(companyId, searchParams.client);
+    const stats = await getInvoiceStats(companyId, searchParamsResult.client);
 
     return (
         <InvoicesPageClient
             invoices={invoices}
             stats={stats}
             filters={{
-                search: searchParams.search || "",
-                status: searchParams.status || "all",
-                clientId: searchParams.client || "",
+                search: searchParamsResult.search || "",
+                status: searchParamsResult.status || "all",
+                clientId: searchParamsResult.client || "",
             }}
         />
     );

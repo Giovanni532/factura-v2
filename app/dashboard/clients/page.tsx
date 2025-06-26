@@ -1,10 +1,12 @@
 'use server'
+
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getClientsWithStats } from "@/db/queries/client";
 import { ClientsPageClient } from "@/components/clients/clients-page-client";
 import { headers } from "next/headers";
 import { getUserWithCompany } from "@/db/queries/company";
+import { paths } from "@/paths";
 
 export default async function ClientsPage() {
     const session = await auth.api.getSession({
@@ -12,7 +14,7 @@ export default async function ClientsPage() {
     });
 
     if (!session?.user) {
-        redirect("/login");
+        redirect(paths.login);
     }
 
     // Récupérer les clients avec leurs statistiques
