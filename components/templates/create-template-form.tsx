@@ -18,42 +18,65 @@ type CreateTemplateFormData = z.infer<typeof createTemplateSchema>;
 
 interface CreateTemplateFormProps {
     onClose: () => void;
+    defaultType?: 'invoice' | 'quote';
 }
 
-export function CreateTemplateForm({ onClose }: CreateTemplateFormProps) {
+export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateTemplateFormProps) {
     const [previewMode, setPreviewMode] = useState<"edit" | "preview">("edit");
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        watch,
-        reset,
-    } = useForm<CreateTemplateFormData>({
-        resolver: zodResolver(createTemplateSchema),
-        defaultValues: {
-            name: "",
-            description: "",
-            html: `<!DOCTYPE html>
+    // Contenu par défaut selon le type
+    const getDefaultHtml = (type: 'invoice' | 'quote') => {
+        if (type === 'quote') {
+            return `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facture</title>
+    <title>Devis</title>
     <style>{{CSS}}</style>
 </head>
 <body>
-    <div class="invoice-container">
-        <h1>{{company.name}}</h1>
-        <p>{{company.address}}</p>
-        
-        <h2>FACTURE N° {{invoice.number}}</h2>
-        <p>Date: {{invoice.issueDate}}</p>
-        
-        <h3>Facturé à:</h3>
-        <p>{{client.name}}</p>
-        
-        <table>
+    <div class="quote-container">
+        <header class="quote-header">
+            <div class="company-info">
+                <h1>{{company.name}}</h1>
+                <p>{{company.address}}</p>
+                <p>{{company.city}}, {{company.postalCode}}</p>
+                <p>{{company.country}}</p>
+                <p>Email: {{company.email}}</p>
+                <p>Tél: {{company.phone}}</p>
+                {{#if company.siret}}
+                <p>SIRET: {{company.siret}}</p>
+                {{/if}}
+                {{#if company.vatNumber}}
+                <p>TVA: {{company.vatNumber}}</p>
+                {{/if}}
+            </div>
+            <div class="quote-meta">
+                <h2>DEVIS</h2>
+                <div class="quote-number">N° {{quote.number}}</div>
+                <div class="dates">
+                    <p><strong>Date d'émission:</strong> {{quote.issueDate}}</p>
+                    <p><strong>Valide jusqu'au:</strong> {{quote.validUntil}}</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="client-info">
+            <h3>Devisé pour:</h3>
+            <div class="client-details">
+                <p><strong>{{client.name}}</strong></p>
+                <p>{{client.address}}</p>
+                <p>{{client.city}}, {{client.postalCode}}</p>
+                <p>{{client.country}}</p>
+                <p>{{client.email}}</p>
+                {{#if client.siret}}
+                <p>SIRET: {{client.siret}}</p>
+                {{/if}}
+            </div>
+        </div>
+
+        <table class="items-table">
             <thead>
                 <tr>
                     <th>Description</th>
@@ -67,57 +90,306 @@ export function CreateTemplateForm({ onClose }: CreateTemplateFormProps) {
                 <tr>
                     <td>{{description}}</td>
                     <td>{{quantity}}</td>
-                    <td>{{unitPrice}}€</td>
-                    <td>{{total}}€</td>
+                    <td>{{unitPrice}} €</td>
+                    <td>{{total}} €</td>
                 </tr>
                 {{/each}}
             </tbody>
         </table>
-        
+
         <div class="totals">
-            <p>Sous-total: {{invoice.subtotal}}€</p>
-            <p>TVA: {{invoice.taxAmount}}€</p>
-            <p><strong>Total: {{invoice.total}}€</strong></p>
+            <div class="totals-row">
+                <span>Sous-total HT:</span>
+                <span>{{quote.subtotal}} €</span>
+            </div>
+            <div class="totals-row">
+                <span>TVA ({{quote.taxRate}}%):</span>
+                <span>{{quote.taxAmount}} €</span>
+            </div>
+            <div class="totals-row total">
+                <span><strong>Total TTC:</strong></span>
+                <span><strong>{{quote.total}} €</strong></span>
+            </div>
         </div>
+
+        {{#if quote.notes}}
+        <div class="notes">
+            <h4>Notes:</h4>
+            <p>{{quote.notes}}</p>
+        </div>
+        {{/if}}
+
+        {{#if quote.terms}}
+        <div class="terms">
+            <h4>Conditions générales:</h4>
+            <p>{{quote.terms}}</p>
+        </div>
+        {{/if}}
+
+        <footer class="quote-footer">
+            <p>Ce devis est valable 30 jours à compter de sa date d'émission.</p>
+        </footer>
     </div>
 </body>
-</html>`,
+</html>`;
+        }
+
+        return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture</title>
+    <style>{{CSS}}</style>
+</head>
+<body>
+    <div class="invoice-container">
+        <header class="invoice-header">
+            <div class="company-info">
+                <h1>{{company.name}}</h1>
+                <p>{{company.address}}</p>
+                <p>{{company.city}}, {{company.postalCode}}</p>
+                <p>{{company.country}}</p>
+                <p>Email: {{company.email}}</p>
+                <p>Tél: {{company.phone}}</p>
+                {{#if company.siret}}
+                <p>SIRET: {{company.siret}}</p>
+                {{/if}}
+                {{#if company.vatNumber}}
+                <p>TVA: {{company.vatNumber}}</p>
+                {{/if}}
+            </div>
+            <div class="invoice-meta">
+                <h2>FACTURE</h2>
+                <div class="invoice-number">N° {{invoice.number}}</div>
+                <div class="dates">
+                    <p><strong>Date d'émission:</strong> {{invoice.issueDate}}</p>
+                    <p><strong>Date d'échéance:</strong> {{invoice.dueDate}}</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="client-info">
+            <h3>Facturé à:</h3>
+            <div class="client-details">
+                <p><strong>{{client.name}}</strong></p>
+                <p>{{client.address}}</p>
+                <p>{{client.city}}, {{client.postalCode}}</p>
+                <p>{{client.country}}</p>
+                <p>{{client.email}}</p>
+                {{#if client.siret}}
+                <p>SIRET: {{client.siret}}</p>
+                {{/if}}
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Quantité</th>
+                    <th>Prix unitaire</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>{{description}}</td>
+                    <td>{{quantity}}</td>
+                    <td>{{unitPrice}} €</td>
+                    <td>{{total}} €</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="totals-row">
+                <span>Sous-total HT:</span>
+                <span>{{invoice.subtotal}} €</span>
+            </div>
+            <div class="totals-row">
+                <span>TVA ({{invoice.taxRate}}%):</span>
+                <span>{{invoice.taxAmount}} €</span>
+            </div>
+            <div class="totals-row total">
+                <span><strong>Total TTC:</strong></span>
+                <span><strong>{{invoice.total}} €</strong></span>
+            </div>
+        </div>
+
+        {{#if invoice.notes}}
+        <div class="notes">
+            <h4>Notes:</h4>
+            <p>{{invoice.notes}}</p>
+        </div>
+        {{/if}}
+
+        <footer class="invoice-footer">
+            <p>Merci pour votre confiance !</p>
+        </footer>
+    </div>
+</body>
+</html>`;
+    };
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        watch,
+        reset,
+    } = useForm<CreateTemplateFormData>({
+        resolver: zodResolver(createTemplateSchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            type: defaultType,
+            html: getDefaultHtml(defaultType),
             css: `body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f8f9fa;
+    padding: 20px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+}
+
+.company-info h1 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.company-info p {
+    margin: 2px 0;
+    font-size: 14px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-meta {
+    text-align: right;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-meta h2 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-number {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
     color: #333;
 }
 
-.invoice-container {
-    max-width: 800px;
-    margin: 0 auto;
+.dates p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.client-info {
+    margin-bottom: 30px;
     padding: 20px;
-    border: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
 }
 
-h1, h2, h3 {
-    color: #2c3e50;
+.client-info h3 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    margin-bottom: 15px;
+    font-size: 18px;
 }
 
-table {
+.client-details p {
+    margin: 2px 0;
+    font-size: 14px;
+}
+
+.items-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin-bottom: 30px;
 }
 
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
+.items-table th {
+    background: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    color: white;
+    padding: 12px;
     text-align: left;
+    font-weight: 600;
 }
 
-th {
-    background-color: #f2f2f2;
+.items-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.items-table tr:nth-child(even) {
+    background: #f8f9fa;
 }
 
 .totals {
-    text-align: right;
-    margin-top: 20px;
+    margin-left: auto;
+    width: 300px;
+}
+
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.totals-row.total {
+    border-top: 2px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    border-bottom: none;
+    font-size: 18px;
+    margin-top: 10px;
+    padding-top: 15px;
+}
+
+.notes, .terms {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.notes h4, .terms h4 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    margin-bottom: 10px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    ${defaultType === 'quote' ? `
+    padding: 20px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border: 1px solid #28a745;
+    ` : ''}
 }`,
         },
     });
@@ -185,16 +457,18 @@ th {
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Facture</h4>
+                        <h4 className="font-semibold text-blue-900 mb-1">{defaultType === 'quote' ? 'Devis' : 'Facture'}</h4>
                         <ul className="space-y-1 text-blue-700 font-mono">
-                            <li>{'{{invoice.number}}'}</li>
-                            <li>{'{{invoice.issueDate}}'}</li>
-                            <li>{'{{invoice.dueDate}}'}</li>
-                            <li>{'{{invoice.subtotal}}'}</li>
-                            <li>{'{{invoice.taxRate}}'}</li>
-                            <li>{'{{invoice.taxAmount}}'}</li>
-                            <li>{'{{invoice.total}}'}</li>
-                            <li>{'{{invoice.notes}}'}</li>
+                            <li>{'{{' + defaultType + '.number}}'}</li>
+                            <li>{'{{' + defaultType + '.issueDate}}'}</li>
+                            {defaultType === 'invoice' && <li>{'{{invoice.dueDate}}'}</li>}
+                            {defaultType === 'quote' && <li>{'{{quote.validUntil}}'}</li>}
+                            <li>{'{{' + defaultType + '.subtotal}}'}</li>
+                            <li>{'{{' + defaultType + '.taxRate}}'}</li>
+                            <li>{'{{' + defaultType + '.taxAmount}}'}</li>
+                            <li>{'{{' + defaultType + '.total}}'}</li>
+                            <li>{'{{' + defaultType + '.notes}}'}</li>
+                            {defaultType === 'quote' && <li>{'{{quote.terms}}'}</li>}
                         </ul>
                     </div>
                 </div>
@@ -225,7 +499,7 @@ th {
                             <Input
                                 id="name"
                                 {...register("name")}
-                                placeholder="Ex: Template moderne"
+                                placeholder={`Ex: Template moderne ${defaultType === 'quote' ? 'devis' : 'facture'}`}
                                 className={errors.name ? "border-red-500" : ""}
                             />
                             {errors.name && (

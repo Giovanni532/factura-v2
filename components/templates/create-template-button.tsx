@@ -49,7 +49,10 @@ export function CreateTemplateButton() {
                         Créer un nouveau template de {templateType === 'invoice' ? 'facture' : 'devis'}
                     </DialogTitle>
                 </DialogHeader>
-                <CreateTemplateForm onClose={() => setIsOpen(false)} />
+                <CreateTemplateForm
+                    onClose={() => setIsOpen(false)}
+                    defaultType={templateType}
+                />
             </DialogContent>
         </Dialog>
     );
