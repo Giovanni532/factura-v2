@@ -8,6 +8,14 @@ import {
     IconReceipt,
     IconInnerShadowTop,
     Icon,
+    IconFileInvoice,
+    IconCalculator,
+    IconChartBar,
+    IconCreditCard,
+    IconReportMoney,
+    IconCalendarTime,
+    IconBriefcase,
+    IconCategory,
 } from "@tabler/icons-react"
 
 import { DashboardDocuments } from "@/components/sidebar/dashboard-recent"
@@ -59,6 +67,21 @@ const sidebarData = {
             ],
         },
         {
+            title: "Devis",
+            url: paths.quotes.list,
+            icon: IconFileInvoice,
+            subItems: [
+                {
+                    title: "Tous les devis",
+                    url: paths.quotes.list,
+                },
+                {
+                    title: "Créer un devis",
+                    url: paths.quotes.create,
+                },
+            ],
+        },
+        {
             title: "Clients",
             url: paths.clients.list,
             icon: IconUsers,
@@ -74,6 +97,26 @@ const sidebarData = {
             ],
         },
         {
+            title: "Prestations",
+            url: paths.services.list,
+            icon: IconBriefcase,
+            subItems: [
+                {
+                    title: "Mes prestations",
+                    url: paths.services.list,
+                },
+                {
+                    title: "Ajouter une prestation",
+                    url: paths.services.create,
+                },
+                {
+                    title: "Catégories",
+                    url: paths.services.categories,
+                    icon: IconCategory,
+                },
+            ],
+        },
+        {
             title: "Templates",
             url: paths.templates.list,
             icon: IconTemplate,
@@ -85,6 +128,43 @@ const sidebarData = {
                 {
                     title: "Créer un template",
                     url: paths.templates.create,
+                },
+            ],
+        },
+        {
+            title: "Comptabilité",
+            url: paths.accounting.dashboard,
+            icon: IconCalculator,
+            subItems: [
+                {
+                    title: "Tableau de bord",
+                    url: paths.accounting.dashboard,
+                    icon: IconChartBar,
+                },
+                {
+                    title: "Plan comptable",
+                    url: paths.accounting.chartOfAccounts,
+                    icon: IconReportMoney,
+                },
+                {
+                    title: "Écritures",
+                    url: paths.accounting.journalEntries,
+                    icon: IconCreditCard,
+                },
+                {
+                    title: "Paiements",
+                    url: paths.accounting.payments,
+                    icon: IconCreditCard,
+                },
+                {
+                    title: "Rapports",
+                    url: paths.accounting.reports,
+                    icon: IconChartBar,
+                },
+                {
+                    title: "Exercices",
+                    url: paths.accounting.fiscalYears,
+                    icon: IconCalendarTime,
                 },
             ],
         },
