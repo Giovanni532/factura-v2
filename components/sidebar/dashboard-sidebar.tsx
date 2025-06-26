@@ -54,93 +54,33 @@ const sidebarData = {
         {
             title: "Factures",
             url: paths.invoices.list,
-            icon: IconReceipt,
-            subItems: [
-                {
-                    title: "Toutes les factures",
-                    url: paths.invoices.list,
-                },
-                {
-                    title: "Créer une facture",
-                    url: paths.invoices.create,
-                },
-            ],
+            icon: IconReceipt
         },
         {
             title: "Devis",
             url: paths.quotes.list,
             icon: IconFileInvoice,
-            subItems: [
-                {
-                    title: "Tous les devis",
-                    url: paths.quotes.list,
-                },
-                {
-                    title: "Créer un devis",
-                    url: paths.quotes.create,
-                },
-            ],
         },
         {
             title: "Clients",
             url: paths.clients.list,
             icon: IconUsers,
-            subItems: [
-                {
-                    title: "Tous les clients",
-                    url: paths.clients.list,
-                },
-                {
-                    title: "Ajouter un client",
-                    url: paths.clients.create,
-                },
-            ],
         },
         {
             title: "Prestations",
             url: paths.services.list,
             icon: IconBriefcase,
-            subItems: [
-                {
-                    title: "Mes prestations",
-                    url: paths.services.list,
-                },
-                {
-                    title: "Ajouter une prestation",
-                    url: paths.services.create,
-                },
-                {
-                    title: "Catégories",
-                    url: paths.services.categories,
-                    icon: IconCategory,
-                },
-            ],
         },
         {
             title: "Templates",
             url: paths.templates.list,
             icon: IconTemplate,
-            subItems: [
-                {
-                    title: "Mes templates",
-                    url: paths.templates.list,
-                },
-                {
-                    title: "Créer un template",
-                    url: paths.templates.create,
-                },
-            ],
         },
         {
             title: "Comptabilité",
             url: paths.accounting.dashboard,
             icon: IconCalculator,
             subItems: [
-                {
-                    title: "Tableau de bord",
-                    url: paths.accounting.dashboard,
-                    icon: IconChartBar,
-                },
                 {
                     title: "Plan comptable",
                     url: paths.accounting.chartOfAccounts,
