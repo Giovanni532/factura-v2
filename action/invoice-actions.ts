@@ -6,6 +6,8 @@ import { db } from "@/lib/drizzle";
 import { invoice, invoiceItem, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getNextInvoiceNumber } from "@/db/queries/invoice";
+import { revalidatePath } from "next/cache";
+import { paths } from "@/paths";
 
 // Action pour créer une nouvelle facture
 export const createInvoiceAction = useMutation(
@@ -46,7 +48,6 @@ export const createInvoiceAction = useMutation(
         }));
 
         await db.insert(invoiceItem).values(invoiceItems);
-
         return {
             success: true,
             message: "Facture créée avec succès",

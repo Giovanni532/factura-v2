@@ -191,7 +191,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                     <CardContent>
                         {filteredInvoices.length === 0 ? (
                             <div className="text-center py-8">
-                                <p className="text-muted-foreground">
+                                <p className="text-muted-foreground pb-4">
                                     {search || statusFilter !== 'all'
                                         ? "Aucune facture ne correspond aux filtres"
                                         : "Aucune facture trouvée"}

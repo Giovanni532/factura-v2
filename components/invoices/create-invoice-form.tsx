@@ -10,9 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Trash2, Plus } from "lucide-react";
 import { createInvoiceAction } from "@/action/invoice-actions";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 
 interface Service {
     id: string;
@@ -28,8 +36,8 @@ interface CreateInvoiceFormData {
     clientId: string;
     templateId: string;
     invoiceNumber: string;
-    issueDate: string;
-    dueDate: string;
+    issueDate: Date;
+    dueDate: Date;
     status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
     items: Array<{
         description: string;
@@ -57,14 +65,14 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
     const [clients, setClients] = useState<any[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
     const [services, setServices] = useState<Service[]>([]);
-
+    const router = useRouter();
     const form = useForm<CreateInvoiceFormData>({
         defaultValues: {
             clientId: defaultClientId || "",
             templateId: formData?.defaultTemplateId || "",
             invoiceNumber: formData?.nextInvoiceNumber || "",
-            issueDate: new Date().toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
+            issueDate: new Date(),
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 jours
             status: 'draft',
             items: [
                 {
@@ -120,23 +128,35 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
         }
     }, [formData]);
 
-    // Calculer les totaux quand les articles changent
+    // Recalculer les totaux quand les articles changent
     useEffect(() => {
-        const subscription = form.watch((value, { name }) => {
-            if (name?.startsWith('items')) {
-                const items = form.getValues('items');
-                const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-                const vatAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.vatRate / 100), 0);
-                const total = subtotal + vatAmount;
+        const items = form.watch('items');
+        let subtotal = 0;
+        let vatAmount = 0;
 
-                form.setValue('subtotal', subtotal, { shouldDirty: false, shouldTouch: false });
-                form.setValue('vatAmount', vatAmount, { shouldDirty: false, shouldTouch: false });
-                form.setValue('total', total, { shouldDirty: false, shouldTouch: false });
-            }
+        items.forEach(item => {
+            const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+            subtotal += itemTotal;
+            vatAmount += itemTotal * ((item.vatRate || 0) / 100);
         });
 
-        return () => subscription.unsubscribe();
-    }, []);
+        form.setValue('subtotal', subtotal);
+        form.setValue('vatAmount', vatAmount);
+        form.setValue('total', subtotal + vatAmount);
+    }, [form.watch('items'), form]);
+
+    // Réinitialiser la date d'échéance si elle devient antérieure à la date d'émission
+    useEffect(() => {
+        const issueDate = form.watch('issueDate');
+        const dueDate = form.watch('dueDate');
+
+        if (issueDate && dueDate && dueDate < issueDate) {
+            // Définir la date d'échéance à 30 jours après la date d'émission
+            const newDueDate = new Date(issueDate);
+            newDueDate.setDate(newDueDate.getDate() + 30);
+            form.setValue('dueDate', newDueDate);
+        }
+    }, [form.watch('issueDate'), form]);
 
     const onSubmit = (data: CreateInvoiceFormData) => {
         // Validation manuelle
@@ -165,7 +185,14 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
             return;
         }
 
-        execute(data);
+        // Convertir les dates en string pour l'API (gestion des dates null/undefined)
+        const dataForApi = {
+            ...data,
+            issueDate: data.issueDate instanceof Date ? data.issueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            dueDate: data.dueDate instanceof Date ? data.dueDate.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        };
+
+        execute(dataForApi);
     };
 
     const addItem = () => {
@@ -188,12 +215,28 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
     const handleServiceSelect = (serviceId: string, index: number) => {
         const service = services.find(s => s.id === serviceId);
         if (service) {
-            // Utiliser setTimeout pour éviter les conflits de rendu
+            // Mettre à jour les champs
+            form.setValue(`items.${index}.description`, service.description || service.name);
+            form.setValue(`items.${index}.quantity`, 1);
+            form.setValue(`items.${index}.unitPrice`, service.unitPrice);
+            form.setValue(`items.${index}.unit`, service.unit);
+            form.setValue(`items.${index}.vatRate`, service.taxRate);
+
+            // Forcer le recalcul immédiat des totaux
             setTimeout(() => {
-                form.setValue(`items.${index}.description`, service.name, { shouldDirty: false, shouldTouch: false });
-                form.setValue(`items.${index}.unitPrice`, service.unitPrice, { shouldDirty: false, shouldTouch: false });
-                form.setValue(`items.${index}.unit`, service.unit, { shouldDirty: false, shouldTouch: false });
-                form.setValue(`items.${index}.vatRate`, service.taxRate, { shouldDirty: false, shouldTouch: false });
+                const items = form.getValues('items');
+                let subtotal = 0;
+                let vatAmount = 0;
+
+                items.forEach(item => {
+                    const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+                    subtotal += itemTotal;
+                    vatAmount += itemTotal * ((item.vatRate || 0) / 100);
+                });
+
+                form.setValue('subtotal', subtotal);
+                form.setValue('vatAmount', vatAmount);
+                form.setValue('total', subtotal + vatAmount);
             }, 0);
         }
     };
@@ -306,33 +349,64 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="issueDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Date d'émission *</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="dueDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Date d'échéance *</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="issueDate">Date d'émission</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !form.watch('issueDate') && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {form.watch('issueDate') ? format(form.watch('issueDate'), "PPP", { locale: fr }) : "Sélectionner une date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch('issueDate') || undefined}
+                                                onSelect={(date) => form.setValue('issueDate', date || new Date())}
+                                                locale={fr}
+                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="dueDate">Date d'échéance</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !form.watch('dueDate') && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {form.watch('dueDate') ? format(form.watch('dueDate'), "PPP", { locale: fr }) : "Sélectionner une date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch('dueDate') || undefined}
+                                                onSelect={(date) => form.setValue('dueDate', date || new Date())}
+                                                locale={fr}
+                                                disabled={(date) => {
+                                                    const issueDate = form.watch('issueDate');
+                                                    return date < new Date("1900-01-01") ||
+                                                        (issueDate && date < issueDate);
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -340,7 +414,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
                 {/* Articles */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Articles</CardTitle>
+                        <CardTitle>Prestations</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {fields.map((field, index) => (
@@ -474,7 +548,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
 
                         <Button type="button" variant="outline" onClick={addItem}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Ajouter un article
+                            Ajouter une prestation
                         </Button>
                     </CardContent>
                 </Card>
