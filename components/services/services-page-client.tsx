@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { ServiceWithStats, ServiceCategory } from "@/validation/service-schema";
 import { ServiceCard } from "@/components/services/service-card";
 import { CategoryCard } from "@/components/services/category-card";
 import { CreateServiceButton } from "@/components/services/create-service-button";
 import { CreateCategoryButton } from "@/components/services/create-category-button";
 import { ServicesContext } from "./services-context";
-import { Briefcase, Tag, TrendingUp, Package, Euro } from "lucide-react";
+import { Briefcase, Tag, TrendingUp, Package, Euro, Search, Filter, X } from "lucide-react";
 
 interface ServicesPageClientProps {
     initialServices: ServiceWithStats[];
@@ -22,11 +25,62 @@ export function ServicesPageClient({ initialServices, initialCategories }: Servi
     const [categories, setCategories] = useState<ServiceCategory[]>(initialCategories);
     const [activeTab, setActiveTab] = useState("services");
 
+    // Filtres pour les services
+    const [serviceSearch, setServiceSearch] = useState("");
+    const [serviceStatusFilter, setServiceStatusFilter] = useState<string>("all");
+    const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>("all");
+
+    // Filtres pour les catégories
+    const [categorySearch, setCategorySearch] = useState("");
+    const [categoryServiceCountFilter, setCategoryServiceCountFilter] = useState<string>("all");
+
     // Statistiques globales
     const totalServices = services.length;
     const activeServices = services.filter(s => s.isActive).length;
     const totalRevenue = services.reduce((sum, service) => sum + service.totalRevenue, 0);
     const totalUsage = services.reduce((sum, service) => sum + service.totalUsage, 0);
+
+    // Services filtrés
+    const filteredServices = useMemo(() => {
+        return services.filter(service => {
+            // Filtre par recherche
+            const matchesSearch = service.name.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+                (service.description && service.description.toLowerCase().includes(serviceSearch.toLowerCase()));
+
+            // Filtre par statut
+            const matchesStatus = serviceStatusFilter === "all" ||
+                (serviceStatusFilter === "active" && service.isActive) ||
+                (serviceStatusFilter === "inactive" && !service.isActive);
+
+            // Filtre par catégorie
+            const matchesCategory = serviceCategoryFilter === "all" ||
+                service.category === serviceCategoryFilter;
+
+            return matchesSearch && matchesStatus && matchesCategory;
+        });
+    }, [services, serviceSearch, serviceStatusFilter, serviceCategoryFilter]);
+
+    // Catégories filtrées
+    const filteredCategories = useMemo(() => {
+        return categories.filter(category => {
+            // Filtre par recherche
+            const matchesSearch = category.name.toLowerCase().includes(categorySearch.toLowerCase()) ||
+                (category.description && category.description.toLowerCase().includes(categorySearch.toLowerCase()));
+
+            // Filtre par nombre de services
+            const matchesServiceCount = categoryServiceCountFilter === "all" ||
+                (categoryServiceCountFilter === "empty" && category.serviceCount === 0) ||
+                (categoryServiceCountFilter === "with-services" && category.serviceCount > 0);
+
+            return matchesSearch && matchesServiceCount;
+        });
+    }, [categories, categorySearch, categoryServiceCountFilter]);
+
+    // Obtenir les catégories uniques pour le filtre
+    const uniqueCategories = useMemo(() => {
+        const categoryNames = [...new Set(services.map(s => s.category).filter((category): category is string => category !== null))];
+        return categoryNames.sort();
+    }, [services]);
 
     const handleServiceCreated = (newService: ServiceWithStats) => {
         setServices(prev => [newService, ...prev]);
@@ -54,6 +108,17 @@ export function ServicesPageClient({ initialServices, initialCategories }: Servi
 
     const handleCategoryDeleted = (categoryId: string) => {
         setCategories(prev => prev.filter(category => category.id !== categoryId));
+    };
+
+    const clearServiceFilters = () => {
+        setServiceSearch("");
+        setServiceStatusFilter("all");
+        setServiceCategoryFilter("all");
+    };
+
+    const clearCategoryFilters = () => {
+        setCategorySearch("");
+        setCategoryServiceCountFilter("all");
     };
 
     return (
@@ -146,20 +211,96 @@ export function ServicesPageClient({ initialServices, initialCategories }: Servi
                     </div>
 
                     <TabsContent value="services" className="space-y-4">
-                        {services.length === 0 ? (
+                        {/* Filtres pour les services */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Filter className="w-4 h-4" />
+                                    Filtres
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Recherche */}
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                        <Input
+                                            placeholder="Rechercher une prestation..."
+                                            value={serviceSearch}
+                                            onChange={(e) => setServiceSearch(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
+
+                                    {/* Filtre par statut */}
+                                    <Select value={serviceStatusFilter} onValueChange={setServiceStatusFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Statut" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Tous les statuts</SelectItem>
+                                            <SelectItem value="active">Actives</SelectItem>
+                                            <SelectItem value="inactive">Inactives</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Filtre par catégorie */}
+                                    <Select value={serviceCategoryFilter} onValueChange={setServiceCategoryFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Catégorie" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Toutes les catégories</SelectItem>
+                                            {uniqueCategories.map(category => (
+                                                <SelectItem key={category} value={category}>
+                                                    {category}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Bouton pour effacer les filtres */}
+                                {(serviceSearch || serviceStatusFilter !== "all" || serviceCategoryFilter !== "all") && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={clearServiceFilters}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <X className="w-4 h-4" />
+                                        Effacer les filtres
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Résultats */}
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                {filteredServices.length} prestation{filteredServices.length > 1 ? 's' : ''} trouvée{filteredServices.length > 1 ? 's' : ''}
+                            </p>
+                        </div>
+
+                        {filteredServices.length === 0 ? (
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <Briefcase className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">Aucune prestation</h3>
+                                    <h3 className="text-lg font-semibold mb-2">
+                                        {services.length === 0 ? "Aucune prestation" : "Aucun résultat"}
+                                    </h3>
                                     <p className="text-muted-foreground text-center mb-4">
-                                        Commencez par ajouter votre première prestation.
+                                        {services.length === 0
+                                            ? "Commencez par ajouter votre première prestation."
+                                            : "Aucune prestation ne correspond à vos critères de recherche."
+                                        }
                                     </p>
-                                    <CreateServiceButton />
+                                    {services.length === 0 && <CreateServiceButton />}
                                 </CardContent>
                             </Card>
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                {services.map((service) => (
+                                {filteredServices.map((service) => (
                                     <ServiceCard key={service.id} service={service} />
                                 ))}
                             </div>
@@ -167,20 +308,81 @@ export function ServicesPageClient({ initialServices, initialCategories }: Servi
                     </TabsContent>
 
                     <TabsContent value="categories" className="space-y-4">
-                        {categories.length === 0 ? (
+                        {/* Filtres pour les catégories */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Filter className="w-4 h-4" />
+                                    Filtres
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Recherche */}
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                        <Input
+                                            placeholder="Rechercher une catégorie..."
+                                            value={categorySearch}
+                                            onChange={(e) => setCategorySearch(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
+
+                                    {/* Filtre par nombre de services */}
+                                    <Select value={categoryServiceCountFilter} onValueChange={setCategoryServiceCountFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Services" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Toutes les catégories</SelectItem>
+                                            <SelectItem value="empty">Sans prestations</SelectItem>
+                                            <SelectItem value="with-services">Avec prestations</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Bouton pour effacer les filtres */}
+                                {(categorySearch || categoryServiceCountFilter !== "all") && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={clearCategoryFilters}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <X className="w-4 h-4" />
+                                        Effacer les filtres
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Résultats */}
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                {filteredCategories.length} catégorie{filteredCategories.length > 1 ? 's' : ''} trouvée{filteredCategories.length > 1 ? 's' : ''}
+                            </p>
+                        </div>
+
+                        {filteredCategories.length === 0 ? (
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <Tag className="h-12 w-12 text-muted-foreground mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">Aucune catégorie</h3>
+                                    <h3 className="text-lg font-semibold mb-2">
+                                        {categories.length === 0 ? "Aucune catégorie" : "Aucun résultat"}
+                                    </h3>
                                     <p className="text-muted-foreground text-center mb-4">
-                                        Créez des catégories pour organiser vos prestations.
+                                        {categories.length === 0
+                                            ? "Créez des catégories pour organiser vos prestations."
+                                            : "Aucune catégorie ne correspond à vos critères de recherche."
+                                        }
                                     </p>
-                                    <CreateCategoryButton />
+                                    {categories.length === 0 && <CreateCategoryButton />}
                                 </CardContent>
                             </Card>
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                {categories.map((category) => (
+                                {filteredCategories.map((category) => (
                                     <CategoryCard key={category.id} category={category} />
                                 ))}
                             </div>
