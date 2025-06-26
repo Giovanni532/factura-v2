@@ -22,13 +22,14 @@ async function seedTemplates() {
                     description: templateData.description,
                     html: templateData.html,
                     css: templateData.css,
+                    type: templateData.type,
                     preview: null, // Sera ajouté plus tard
                     isDefault: false,
                     isPredefined: true,
                     companyId: null, // Les templates prédéfinis n'appartiennent à aucune entreprise
                 });
 
-                console.log(`✅ Template "${templateData.name}" inséré`);
+                console.log(`✅ Template "${templateData.name}" (${templateData.type}) inséré`);
             } else {
                 // Mettre à jour le template existant
                 await db.update(template)
@@ -37,11 +38,12 @@ async function seedTemplates() {
                         description: templateData.description,
                         html: templateData.html,
                         css: templateData.css,
+                        type: templateData.type,
                         updatedAt: new Date(),
                     })
                     .where(eq(template.id, templateData.id));
 
-                console.log(`🔄 Template "${templateData.name}" mis à jour`);
+                console.log(`🔄 Template "${templateData.name}" (${templateData.type}) mis à jour`);
             }
         }
 

@@ -157,6 +157,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
             if (result?.data) {
                 setIsFavorite(result.data.action === "added");
                 toast.success(result.data.message);
+                router.refresh();
             }
         },
         onError: (error) => {
@@ -208,8 +209,12 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
     };
 
     const handleUse = () => {
-        // Rediriger vers la page de création de facture avec le template pré-sélectionné
-        router.push(`/dashboard/invoices/new?template=${template.id}`);
+        // Rediriger vers la page de création appropriée selon le type de template
+        if (template.type === 'invoice') {
+            router.push(`/dashboard/invoices/create?template=${template.id}`);
+        } else {
+            router.push(`/dashboard/quotes/create?template=${template.id}`);
+        }
     };
 
     return (
@@ -225,11 +230,9 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                                     Par défaut
                                 </Badge>
                             )}
-                            {type === "predefined" && (
-                                <Badge variant="secondary" className="text-xs">
-                                    Factura
-                                </Badge>
-                            )}
+                            <Badge variant="outline" className="text-xs">
+                                {template.type === 'invoice' ? 'Facture' : 'Devis'}
+                            </Badge>
                         </div>
                         {template.description && (
                             <CardDescription className="text-sm line-clamp-2">

@@ -91,6 +91,7 @@ export const template = sqliteTable("template", {
     html: text('html').notNull(), // Template HTML de la facture
     css: text('css'), // CSS personnalisé
     preview: text('preview'), // URL ou base64 de l'aperçu
+    type: text('type', { enum: ['invoice', 'quote'] }).$defaultFn(() => 'invoice').notNull(), // Type de template
     isDefault: integer('is_default', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
     isPredefined: integer('is_predefined', { mode: 'boolean' }).$defaultFn(() => false).notNull(), // Templates prédéfinis par Factura
     companyId: text('company_id').references(() => company.id, { onDelete: 'cascade' }), // Null pour les templates prédéfinis

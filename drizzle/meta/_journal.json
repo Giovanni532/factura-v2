@@ -22,6 +22,13 @@
       "when": 1750922165651,
       "tag": "0002_complete_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1750922910196,
+      "tag": "0003_wealthy_quicksilver",
+      "breakpoints": true
     }
   ]
 }
