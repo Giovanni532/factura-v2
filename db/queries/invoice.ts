@@ -78,6 +78,8 @@ export async function getInvoicesByCompany(companyId: string, filters?: {
             return {
                 ...inv,
                 items,
+                client: inv.client || { id: '', name: '', email: '' },
+                template: inv.template || { id: '', name: '', type: 'invoice' as const },
             };
         })
     );
@@ -139,6 +141,8 @@ export async function getInvoiceById(invoiceId: string, companyId: string): Prom
     return {
         ...invoiceData[0],
         items,
+        client: invoiceData[0].client || { id: '', name: '', email: '' },
+        template: invoiceData[0].template || { id: '', name: '', type: 'invoice' as const },
     };
 }
 
@@ -194,4 +198,33 @@ export async function getNextInvoiceNumber(companyId: string): Promise<string> {
     }
 
     return "FACT-001";
+}
+
+// Récupérer les clients pour le formulaire de facture
+export async function getClientsForInvoice(companyId: string) {
+    return await db
+        .select({
+            id: client.id,
+            name: client.name,
+            email: client.email,
+        })
+        .from(client)
+        .where(eq(client.companyId, companyId))
+        .orderBy(client.name);
+}
+
+// Récupérer les templates de facture
+export async function getInvoiceTemplates(companyId: string) {
+    return await db
+        .select({
+            id: template.id,
+            name: template.name,
+            type: template.type,
+        })
+        .from(template)
+        .where(and(
+            eq(template.companyId, companyId),
+            eq(template.type, 'invoice')
+        ))
+        .orderBy(template.name);
 } 

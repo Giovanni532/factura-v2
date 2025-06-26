@@ -14,6 +14,16 @@ import { Trash2, Plus } from "lucide-react";
 import { createInvoiceAction } from "@/action/invoice-actions";
 import { toast } from "sonner";
 
+interface Service {
+    id: string;
+    name: string;
+    description?: string;
+    unitPrice: number;
+    currency: string;
+    unit: string;
+    taxRate: number;
+}
+
 interface CreateInvoiceFormData {
     clientId: string;
     templateId: string;
@@ -27,6 +37,7 @@ interface CreateInvoiceFormData {
         unitPrice: number;
         unit: string;
         vatRate: number;
+        serviceId?: string;
     }>;
     notes?: string;
     terms?: string;
@@ -39,17 +50,19 @@ interface CreateInvoiceFormProps {
     onClose: () => void;
     onInvoiceCreated: () => void;
     defaultClientId?: string;
+    formData?: any;
 }
 
-export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }: CreateInvoiceFormProps) {
+export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, formData }: CreateInvoiceFormProps) {
     const [clients, setClients] = useState<any[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
 
     const form = useForm<CreateInvoiceFormData>({
         defaultValues: {
             clientId: defaultClientId || "",
-            templateId: "",
-            invoiceNumber: "",
+            templateId: formData?.defaultTemplateId || "",
+            invoiceNumber: formData?.nextInvoiceNumber || "",
             issueDate: new Date().toISOString().split('T')[0],
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
             status: 'draft',
@@ -60,6 +73,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
                     unitPrice: 0,
                     unit: "unité",
                     vatRate: 20,
+                    serviceId: "none",
                 }
             ],
             notes: "",
@@ -87,27 +101,24 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
         }
     });
 
-    // Charger les clients et templates
+    // Charger les données depuis formData
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                // TODO: Charger les clients et templates depuis l'API
-                // Pour l'instant, on utilise des données factices
-                setClients([
-                    { id: "1", name: "Client 1", email: "client1@example.com" },
-                    { id: "2", name: "Client 2", email: "client2@example.com" },
-                ]);
-                setTemplates([
-                    { id: "1", name: "Template Classique", type: "invoice" },
-                    { id: "2", name: "Template Moderne", type: "invoice" },
-                ]);
-            } catch (error) {
-                console.error("Erreur lors du chargement des données:", error);
-            }
-        };
+        if (formData) {
+            setClients(formData.clients || []);
+            setTemplates(formData.templates || []);
+            setServices(formData.services || []);
 
-        loadData();
-    }, []);
+            // Définir le numéro de facture par défaut
+            if (formData.nextInvoiceNumber) {
+                form.setValue('invoiceNumber', formData.nextInvoiceNumber);
+            }
+
+            // Définir le template par défaut
+            if (formData.defaultTemplateId) {
+                form.setValue('templateId', formData.defaultTemplateId);
+            }
+        }
+    }, [formData]);
 
     // Calculer les totaux quand les articles changent
     useEffect(() => {
@@ -118,14 +129,14 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
                 const vatAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * item.vatRate / 100), 0);
                 const total = subtotal + vatAmount;
 
-                form.setValue('subtotal', subtotal);
-                form.setValue('vatAmount', vatAmount);
-                form.setValue('total', total);
+                form.setValue('subtotal', subtotal, { shouldDirty: false, shouldTouch: false });
+                form.setValue('vatAmount', vatAmount, { shouldDirty: false, shouldTouch: false });
+                form.setValue('total', total, { shouldDirty: false, shouldTouch: false });
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [form]);
+    }, []);
 
     const onSubmit = (data: CreateInvoiceFormData) => {
         // Validation manuelle
@@ -164,12 +175,26 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
             unitPrice: 0,
             unit: "unité",
             vatRate: 20,
+            serviceId: "none",
         });
     };
 
     const removeItem = (index: number) => {
         if (fields.length > 1) {
             remove(index);
+        }
+    };
+
+    const handleServiceSelect = (serviceId: string, index: number) => {
+        const service = services.find(s => s.id === serviceId);
+        if (service) {
+            // Utiliser setTimeout pour éviter les conflits de rendu
+            setTimeout(() => {
+                form.setValue(`items.${index}.description`, service.name, { shouldDirty: false, shouldTouch: false });
+                form.setValue(`items.${index}.unitPrice`, service.unitPrice, { shouldDirty: false, shouldTouch: false });
+                form.setValue(`items.${index}.unit`, service.unit, { shouldDirty: false, shouldTouch: false });
+                form.setValue(`items.${index}.vatRate`, service.taxRate, { shouldDirty: false, shouldTouch: false });
+            }, 0);
         }
     };
 
@@ -230,7 +255,9 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
                                             <SelectContent>
                                                 {templates.map((template) => (
                                                     <SelectItem key={template.id} value={template.id}>
+                                                        {template.isFavorite && "⭐ "}
                                                         {template.name}
+                                                        {template.isPredefined && " (Prédéfini)"}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -318,6 +345,43 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId }
                     <CardContent className="space-y-4">
                         {fields.map((field, index) => (
                             <div key={field.id} className="space-y-4 p-4 border rounded-lg">
+                                {/* Sélecteur de prestation */}
+                                <div className="mb-4">
+                                    <FormField
+                                        control={form.control}
+                                        name={`items.${index}.serviceId`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Sélectionner une prestation</FormLabel>
+                                                <Select
+                                                    value={field.value || "none"}
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value === "none" ? "" : value);
+                                                        if (value && value !== "none") {
+                                                            handleServiceSelect(value, index);
+                                                        }
+                                                    }}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Choisir une prestation..." />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">Aucune prestation</SelectItem>
+                                                        {services.map((service) => (
+                                                            <SelectItem key={service.id} value={service.id}>
+                                                                {service.name} - {formatCurrency(service.unitPrice)}/{service.unit}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                                     <FormField
                                         control={form.control}

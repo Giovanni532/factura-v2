@@ -7,7 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus } from "lucide-react";
 import { CreateInvoiceForm } from "@/components/invoices/create-invoice-form";
 
-export function CreateInvoiceButton() {
+interface CreateInvoiceButtonProps {
+    formData?: any;
+}
+
+export function CreateInvoiceButton({ formData }: CreateInvoiceButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -39,6 +43,7 @@ export function CreateInvoiceButton() {
                         onClose={handleClose}
                         onInvoiceCreated={handleInvoiceCreated}
                         defaultClientId={clientId || undefined}
+                        formData={formData}
                     />
                 </DialogContent>
             </Dialog>

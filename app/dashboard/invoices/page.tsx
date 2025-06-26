@@ -43,10 +43,28 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
     // Récupérer les statistiques
     const stats = await getInvoiceStats(companyId, searchParamsResult.client);
 
+    // Récupérer les données du formulaire
+    let formData = null;
+    try {
+        const headersList = await headers();
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/invoices/form-data`, {
+            headers: {
+                'Cookie': headersList.get('cookie') || '',
+            },
+        });
+
+        if (response.ok) {
+            formData = await response.json();
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des données du formulaire:", error);
+    }
+
     return (
         <InvoicesPageClient
             invoices={invoices}
             stats={stats}
+            formData={formData}
             filters={{
                 search: searchParamsResult.search || "",
                 status: searchParamsResult.status || "all",

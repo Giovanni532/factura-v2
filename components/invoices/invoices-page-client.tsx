@@ -14,6 +14,7 @@ import { InvoicesContext } from "./invoices-context";
 interface InvoicesPageClientProps {
     invoices: InvoiceWithDetails[];
     stats: InvoiceStats;
+    formData?: any;
     filters: {
         search: string;
         status: string;
@@ -21,7 +22,7 @@ interface InvoicesPageClientProps {
     };
 }
 
-export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, filters: initialFilters }: InvoicesPageClientProps) {
+export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, formData, filters: initialFilters }: InvoicesPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -107,7 +108,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                             Gérez vos factures et suivez vos paiements
                         </p>
                     </div>
-                    <CreateInvoiceButton />
+                    <CreateInvoiceButton formData={formData} />
                 </div>
 
                 {/* Statistiques */}
@@ -200,7 +201,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                                         Effacer les filtres
                                     </Button>
                                 ) : (
-                                    <CreateInvoiceButton />
+                                    <CreateInvoiceButton formData={formData} />
                                 )}
                             </div>
                         ) : (
