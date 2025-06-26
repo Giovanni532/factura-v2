@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useClientsContext } from "./clients-context";
@@ -103,7 +105,11 @@ export function CreateClientForm({ onClose }: CreateClientFormProps) {
                             <FormItem>
                                 <FormLabel>Téléphone</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="01 23 45 67 89" {...field} />
+                                    <PhoneInput
+                                        placeholder="Numéro de téléphone"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -117,7 +123,18 @@ export function CreateClientForm({ onClose }: CreateClientFormProps) {
                             <FormItem>
                                 <FormLabel>Pays</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="France" {...field} />
+                                    <Select
+                                        value={field.value}
+                                        onValueChange={field.onChange}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Sélectionnez un pays" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="France">France</SelectItem>
+                                            <SelectItem value="Suisse">Suisse</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
