@@ -3,10 +3,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
-import { Heart, Star, Eye, Settings, Trash2, CheckCircle } from "lucide-react";
+import { Heart, Star, Eye, Settings, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -30,6 +38,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
     const { defaultTemplateId, setDefaultTemplateId } = useTemplatesContext();
     const [isFavorite, setIsFavorite] = useState(!!template.isFavorite);
     const [showPreview, setShowPreview] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [previewHtml, setPreviewHtml] = useState<string>("");
 
     // Vérifier si ce template est par défaut en utilisant le contexte
@@ -181,6 +190,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
         onSuccess: (result) => {
             if (result?.data) {
                 toast.success(result.data.message);
+                setShowDeleteDialog(false);
                 // Recharger la page pour supprimer le template de la liste
                 router.refresh()
             }
@@ -199,9 +209,11 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
     };
 
     const handleDelete = () => {
-        if (confirm("Êtes-vous sûr de vouloir supprimer ce template ?")) {
-            deleteTemplate({ templateId: template.id });
-        }
+        setShowDeleteDialog(true);
+    };
+
+    const handleConfirmDelete = () => {
+        deleteTemplate({ templateId: template.id });
     };
 
     const handlePreview = () => {
@@ -336,6 +348,66 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                 isOpen={showPreview}
                 onClose={() => setShowPreview(false)}
             />
+
+            {/* Dialog de confirmation de suppression */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex-shrink-0">
+                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                            </div>
+                            <div>
+                                <DialogTitle>Supprimer ce template</DialogTitle>
+                                <DialogDescription>
+                                    Cette action est irréversible. Le template sera définitivement supprimé.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <div className="bg-muted/50 rounded-lg p-4">
+                            <h4 className="font-medium text-sm mb-2">Template à supprimer :</h4>
+                            <div className="space-y-1 text-sm">
+                                <p><span className="font-medium">Nom :</span> {template.name}</p>
+                                <p><span className="font-medium">Type :</span> {template.type === 'invoice' ? 'Facture' : 'Devis'}</p>
+                                {template.description && (
+                                    <p><span className="font-medium">Description :</span> {template.description}</p>
+                                )}
+                                <p><span className="font-medium">Créé le :</span> {template.createdAt.toLocaleDateString('fr-FR')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleteDialog(false)}
+                            disabled={isDeleteLoading}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleteLoading}
+                        >
+                            {isDeleteLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                    Suppression...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Supprimer définitivement
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 } 

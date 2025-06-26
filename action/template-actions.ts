@@ -155,6 +155,7 @@ export const createTemplateAction = useMutation(
             html: input.html,
             css: input.css || null,
             preview: input.preview || null,
+            type: input.type,
             isDefault: false,
             isPredefined: false,
             companyId: companyId,

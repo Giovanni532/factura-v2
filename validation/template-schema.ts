@@ -17,7 +17,7 @@ export const createTemplateSchema = z.object({
     html: z.string().min(1, "Le contenu HTML est requis"),
     css: z.string().optional(),
     preview: z.string().optional(),
-    type: z.enum(['invoice', 'quote']).default('invoice'),
+    type: z.enum(['invoice', 'quote']),
 });
 
 // Schéma pour modifier un template existant
@@ -28,7 +28,7 @@ export const updateTemplateSchema = z.object({
     html: z.string().min(1, "Le contenu HTML est requis"),
     css: z.string().optional(),
     preview: z.string().optional(),
-    type: z.enum(['invoice', 'quote']).default('invoice'),
+    type: z.enum(['invoice', 'quote']),
 });
 
 // Schéma pour supprimer un template

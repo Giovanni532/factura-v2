@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -240,6 +240,7 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
         formState: { errors },
         watch,
         reset,
+        setValue,
     } = useForm<CreateTemplateFormData>({
         resolver: zodResolver(createTemplateSchema),
         defaultValues: {
@@ -393,6 +394,156 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
 }`,
         },
     });
+
+    // Réinitialiser le formulaire quand le defaultType change
+    useEffect(() => {
+        setValue('type', defaultType);
+        setValue('html', getDefaultHtml(defaultType));
+        setValue('css', `body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f8f9fa;
+    padding: 20px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+}
+
+.company-info h1 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.company-info p {
+    margin: 2px 0;
+    font-size: 14px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-meta {
+    text-align: right;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-meta h2 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-number {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.dates p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.client-info {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+}
+
+.client-info h3 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.client-details p {
+    margin: 2px 0;
+    font-size: 14px;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.items-table th {
+    background: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.items-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.items-table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.totals {
+    margin-left: auto;
+    width: 300px;
+}
+
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.totals-row.total {
+    border-top: 2px solid ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    border-bottom: none;
+    font-size: 18px;
+    margin-top: 10px;
+    padding-top: 15px;
+}
+
+.notes, .terms {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.notes h4, .terms h4 {
+    color: ${defaultType === 'quote' ? '#28a745' : '#007bff'};
+    margin-bottom: 10px;
+}
+
+.${defaultType === 'quote' ? 'quote' : 'invoice'}-footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    ${defaultType === 'quote' ? `
+    padding: 20px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border: 1px solid #28a745;
+    ` : ''}
+}`);
+    }, [defaultType, setValue]);
 
     const { execute: createTemplate, isPending } = useAction(createTemplateAction, {
         onSuccess: (result) => {
