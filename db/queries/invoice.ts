@@ -46,6 +46,12 @@ export async function getInvoicesByCompany(companyId: string, filters?: {
                 id: client.id,
                 name: client.name,
                 email: client.email,
+                address: client.address,
+                city: client.city,
+                postalCode: client.postalCode,
+                country: client.country,
+                siret: client.siret,
+                vatNumber: client.vatNumber,
             },
             template: {
                 id: template.id,
@@ -78,7 +84,7 @@ export async function getInvoicesByCompany(companyId: string, filters?: {
             return {
                 ...inv,
                 items,
-                client: inv.client || { id: '', name: '', email: '' },
+                client: inv.client || { id: '', name: '', email: '', address: null, city: null, postalCode: null, country: null, siret: null, vatNumber: null },
                 template: inv.template || { id: '', name: '', type: 'invoice' as const },
             };
         })
@@ -110,6 +116,12 @@ export async function getInvoiceById(invoiceId: string, companyId: string): Prom
                 id: client.id,
                 name: client.name,
                 email: client.email,
+                address: client.address,
+                city: client.city,
+                postalCode: client.postalCode,
+                country: client.country,
+                siret: client.siret,
+                vatNumber: client.vatNumber,
             },
             template: {
                 id: template.id,
@@ -141,7 +153,17 @@ export async function getInvoiceById(invoiceId: string, companyId: string): Prom
     return {
         ...invoiceData[0],
         items,
-        client: invoiceData[0].client || { id: '', name: '', email: '' },
+        client: invoiceData[0].client || {
+            id: '',
+            name: '',
+            email: '',
+            address: null,
+            city: null,
+            postalCode: null,
+            country: null,
+            siret: null,
+            vatNumber: null
+        },
         template: invoiceData[0].template || { id: '', name: '', type: 'invoice' as const },
     };
 }

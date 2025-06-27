@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
-import { deleteInvoiceAction, updateInvoiceStatusAction } from "@/action/invoice-actions";
+import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useInvoicesContext } from "./invoices-context";
@@ -99,6 +99,34 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
         }
     });
 
+    const { execute: executeDownload, isPending: isDownloading } = useAction(downloadInvoiceAction, {
+        onSuccess: (result) => {
+            if (result?.data) {
+                // Créer un blob avec le PDF et télécharger
+                const pdfData = atob(result.data.pdf);
+                const bytes = new Uint8Array(pdfData.length);
+                for (let i = 0; i < pdfData.length; i++) {
+                    bytes[i] = pdfData.charCodeAt(i);
+                }
+
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = result.data.filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                toast.success("Facture PDF téléchargée avec succès");
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors du téléchargement");
+        }
+    });
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'draft': return 'bg-gray-100 text-gray-800';
@@ -156,8 +184,7 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     };
 
     const handleDownload = () => {
-        // TODO: Implémenter le téléchargement PDF
-        toast.info("Fonctionnalité de téléchargement à venir");
+        executeDownload({ invoiceId: invoice.id });
     };
 
     const handleSend = () => {
@@ -191,9 +218,9 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
                                     <Edit className="mr-2 h-4 w-4" />
                                     Modifier
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleDownload}>
+                                <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
                                     <Download className="mr-2 h-4 w-4" />
-                                    Télécharger
+                                    {isDownloading ? "Téléchargement..." : "Télécharger"}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleSend}>
                                     <Send className="mr-2 h-4 w-4" />
@@ -226,7 +253,7 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
                             <p className="text-sm font-medium text-muted-foreground">Montant</p>
                             <p className="text-lg font-bold">{formatCurrency(invoice.total)}</p>
                             <p className="text-sm text-muted-foreground">
-                                {invoice.items.length} article{invoice.items.length > 1 ? 's' : ''}
+                                {invoice.items.length} prestation{invoice.items.length > 1 ? 's' : ''}
                             </p>
                         </div>
                     </div>

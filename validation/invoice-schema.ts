@@ -78,6 +78,12 @@ export type InvoiceWithDetails = {
         id: string;
         name: string;
         email: string;
+        address: string | null;
+        city: string | null;
+        postalCode: string | null;
+        country: string | null;
+        siret: string | null;
+        vatNumber: string | null;
     };
     template: {
         id: string;
