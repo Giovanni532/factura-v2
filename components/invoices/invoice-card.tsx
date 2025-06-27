@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
-import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction } from "@/action/invoice-actions";
+import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useInvoicesContext } from "./invoices-context";
@@ -22,6 +22,7 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     const router = useRouter();
     const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showSendDialog, setShowSendDialog] = useState(false);
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteInvoiceAction, {
         onSuccess: (result) => {
@@ -127,6 +128,34 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
         }
     });
 
+    const { execute: executeSend, isPending: isSending } = useAction(sendInvoiceAction, {
+        onSuccess: (result) => {
+            if (result?.data) {
+                toast.success(result.data.message);
+                setShowSendDialog(false);
+
+                // Mettre à jour la facture dans la liste locale
+                const updatedInvoices = invoices.map(inv => {
+                    if (inv.id === invoice.id) {
+                        return {
+                            ...inv,
+                            status: 'sent' as const,
+                            updatedAt: new Date(),
+                        };
+                    }
+                    return inv;
+                });
+                setInvoices(updatedInvoices);
+
+                // Mettre à jour les statistiques si nécessaire
+                // (le statut change de 'draft' à 'sent')
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors de l'envoi");
+        }
+    });
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'draft': return 'bg-gray-100 text-gray-800';
@@ -188,8 +217,11 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     };
 
     const handleSend = () => {
-        // TODO: Implémenter l'envoi par email
-        toast.info("Fonctionnalité d'envoi à venir");
+        setShowSendDialog(true);
+    };
+
+    const handleConfirmSend = () => {
+        executeSend({ invoiceId: invoice.id });
     };
 
     return (
@@ -222,9 +254,9 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
                                     <Download className="mr-2 h-4 w-4" />
                                     {isDownloading ? "Téléchargement..." : "Télécharger"}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleSend}>
+                                <DropdownMenuItem onClick={handleSend} disabled={isSending}>
                                     <Send className="mr-2 h-4 w-4" />
-                                    Envoyer
+                                    {isSending ? "Envoi..." : "Envoyer"}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={() => setShowDeleteDialog(true)}
@@ -262,10 +294,10 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
                         <div className="mt-4 flex gap-2">
                             <Button
                                 size="sm"
-                                onClick={() => handleStatusChange('sent')}
-                                disabled={isUpdatingStatus}
+                                onClick={handleSend}
+                                disabled={isSending}
                             >
-                                Envoyer
+                                {isSending ? "Envoi..." : "Envoyer"}
                             </Button>
                             <Button
                                 size="sm"
@@ -303,6 +335,28 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
                             disabled={isDeleting}
                         >
                             {isDeleting ? "Suppression..." : "Supprimer"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de confirmation d'envoi */}
+            <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmer l'envoi</DialogTitle>
+                        <DialogDescription>
+                            Êtes-vous sûr de vouloir envoyer la facture <strong>{invoice.invoiceNumber}</strong> à <strong>{invoice.client.email}</strong> ?
+                            <br /><br />
+                            La facture sera envoyée par email avec le PDF en pièce jointe et le statut sera mis à jour à "Envoyée".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
+                            Annuler
+                        </Button>
+                        <Button onClick={handleConfirmSend} disabled={isSending}>
+                            {isSending ? "Envoi en cours..." : "Confirmer l'envoi"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

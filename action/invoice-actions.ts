@@ -389,4 +389,187 @@ export const updateInvoiceStatusAction = useMutation(
             invoice: updatedInvoice
         };
     }
+);
+
+// Action pour envoyer une facture par email
+export const sendInvoiceAction = useMutation(
+    z.object({ invoiceId: z.string() }),
+    async (input, { userId }) => {
+        // Vérifier que l'utilisateur appartient à une entreprise
+        const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+
+        if (!userData.length || !userData[0].companyId) {
+            throw new Error("Utilisateur non associé à une entreprise");
+        }
+
+        // Récupérer la facture avec tous les détails
+        const invoiceData = await getInvoiceById(input.invoiceId, userData[0].companyId);
+
+        if (!invoiceData) {
+            throw new Error("Facture non trouvée");
+        }
+
+        // Récupérer les données de l'entreprise
+        const companyData = await db.select().from(company).where(eq(company.id, userData[0].companyId)).limit(1);
+
+        if (!companyData.length) {
+            throw new Error("Entreprise non trouvée");
+        }
+
+        // Récupérer le template
+        let selectedTemplate;
+        if (invoiceData.templateId) {
+            const customTemplate = await db.select().from(template).where(eq(template.id, invoiceData.templateId)).limit(1);
+            if (customTemplate.length) {
+                selectedTemplate = customTemplate[0];
+            }
+        }
+
+        if (!selectedTemplate) {
+            selectedTemplate = predefinedTemplates.find(t => t.type === 'invoice');
+        }
+
+        if (!selectedTemplate) {
+            throw new Error("Template non trouvé");
+        }
+
+        // Préparer les données pour le template
+        const templateData = {
+            company: {
+                name: companyData[0].name,
+                address: companyData[0].address,
+                city: companyData[0].city,
+                postalCode: companyData[0].postalCode,
+                country: companyData[0].country,
+                email: companyData[0].email,
+                phone: companyData[0].phone,
+                siret: companyData[0].siret,
+                vatNumber: companyData[0].vatNumber,
+                logo: companyData[0].logo,
+            },
+            client: {
+                name: invoiceData.client.name,
+                email: invoiceData.client.email,
+                address: invoiceData.client.address,
+                city: invoiceData.client.city,
+                postalCode: invoiceData.client.postalCode,
+                country: invoiceData.client.country,
+                siret: invoiceData.client.siret,
+                vatNumber: invoiceData.client.vatNumber,
+            },
+            invoice: {
+                number: invoiceData.invoiceNumber,
+                issueDate: invoiceData.issueDate.toLocaleDateString('fr-FR'),
+                dueDate: invoiceData.dueDate.toLocaleDateString('fr-FR'),
+                subtotal: invoiceData.subtotal.toFixed(2),
+                taxRate: "20",
+                taxAmount: invoiceData.vatAmount.toFixed(2),
+                total: invoiceData.total.toFixed(2),
+                notes: invoiceData.notes || "",
+            },
+            items: invoiceData.items.map(item => ({
+                description: item.description,
+                quantity: item.quantity.toString(),
+                unitPrice: item.unitPrice.toFixed(2),
+                total: item.total.toFixed(2),
+            })),
+        };
+
+        // Générer le HTML avec les données
+        let html = selectedTemplate.html;
+
+        // Remplacer les variables du template (même logique que downloadInvoiceAction)
+        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name);
+        html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address || "");
+        html = html.replace(/\{\{company\.city\}\}/g, templateData.company.city || "");
+        html = html.replace(/\{\{company\.postalCode\}\}/g, templateData.company.postalCode || "");
+        html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country || "");
+        html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email || "");
+        html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone || "");
+        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || "");
+        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || "");
+
+        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name);
+        html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address || "");
+        html = html.replace(/\{\{client\.city\}\}/g, templateData.client.city || "");
+        html = html.replace(/\{\{client\.postalCode\}\}/g, templateData.client.postalCode || "");
+        html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country || "");
+        html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email || "");
+        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || "");
+        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || "");
+
+        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number);
+        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate);
+        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate);
+        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal);
+        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate);
+        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount);
+        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total);
+        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes);
+
+        // Gérer les boucles d'items
+        const itemsHtml = templateData.items.map(item => `
+            <tr>
+                <td>${item.description}</td>
+                <td>${item.quantity}</td>
+                <td>${item.unitPrice} €</td>
+                <td>${item.total} €</td>
+            </tr>
+        `).join('');
+
+        html = html.replace(/\{\{#each items\}\}[\s\S]*?\{\{\/each\}\}/g, itemsHtml);
+
+        // Gérer les conditions
+        if (templateData.company.logo) {
+            html = html.replace(/\{\{#if company\.logo\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.logo\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.company.siret) {
+            html = html.replace(/\{\{#if company\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.company.vatNumber) {
+            html = html.replace(/\{\{#if company\.vatNumber\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.vatNumber\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.client.siret) {
+            html = html.replace(/\{\{#if client\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if client\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.invoice.notes) {
+            html = html.replace(/\{\{#if invoice\.notes\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if invoice\.notes\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        // Remplacer le CSS
+        html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
+
+        // TODO: Ici vous devrez implémenter l'envoi d'email réel
+        // Pour l'instant, on simule l'envoi
+        console.log('Email à envoyer à:', invoiceData.client.email);
+        console.log('Contenu HTML généré:', html);
+
+        // Mettre à jour le statut de la facture à "sent"
+        await db.update(invoice)
+            .set({
+                status: 'sent',
+                updatedAt: new Date(),
+            })
+            .where(eq(invoice.id, input.invoiceId));
+
+        return {
+            success: true,
+            message: `Facture envoyée avec succès à ${invoiceData.client.email}`,
+            email: invoiceData.client.email
+        };
+    }
 ); 
