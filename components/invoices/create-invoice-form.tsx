@@ -21,6 +21,8 @@ import { createInvoiceAction } from "@/action/invoice-actions";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { useInvoicesContext } from "./invoices-context";
+import { InvoiceWithDetails } from "@/validation/invoice-schema";
 
 interface Service {
     id: string;
@@ -66,6 +68,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
     const [templates, setTemplates] = useState<any[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const router = useRouter();
+    const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const form = useForm<CreateInvoiceFormData>({
         defaultValues: {
             clientId: defaultClientId || "",
@@ -99,8 +102,52 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
 
     const { execute, isPending } = useAction(createInvoiceAction, {
         onSuccess: (result) => {
-            if (result?.data) {
+            if (result?.data?.invoice) {
                 toast.success(result.data.message);
+
+                // Créer la nouvelle facture avec les détails complets
+                const invoiceData = result.data.invoice;
+                const newInvoice: InvoiceWithDetails = {
+                    id: invoiceData.id,
+                    invoiceNumber: invoiceData.number,
+                    issueDate: invoiceData.issueDate,
+                    dueDate: invoiceData.dueDate,
+                    status: invoiceData.status,
+                    subtotal: invoiceData.subtotal,
+                    vatAmount: invoiceData.taxAmount,
+                    total: invoiceData.total,
+                    notes: invoiceData.notes || "",
+                    terms: "",
+                    companyId: invoiceData.companyId,
+                    clientId: invoiceData.clientId,
+                    templateId: invoiceData.templateId,
+                    createdAt: invoiceData.createdAt,
+                    updatedAt: invoiceData.updatedAt,
+                    items: [], // Les items seront chargés lors du prochain refresh
+                    client: clients.find(c => c.id === invoiceData.clientId) || { id: '', name: '', email: '' },
+                    template: templates.find(t => t.id === invoiceData.templateId) || { id: '', name: '', type: 'invoice' as const },
+                };
+
+                // Ajouter la nouvelle facture au début de la liste
+                setInvoices([newInvoice, ...invoices]);
+
+                // Mettre à jour les statistiques
+                const newStats = {
+                    ...stats,
+                    totalInvoices: stats.totalInvoices + 1,
+                    totalRevenue: stats.totalRevenue + newInvoice.total,
+                };
+
+                // Ajuster les statistiques selon le statut
+                if (newInvoice.status === 'paid') {
+                    newStats.totalPaid = stats.totalPaid + 1;
+                } else if (newInvoice.status === 'overdue') {
+                    newStats.totalOverdue = stats.totalOverdue + 1;
+                }
+
+                setStats(newStats);
+
+                // Appeler le callback de succès
                 onInvoiceCreated();
             }
         },

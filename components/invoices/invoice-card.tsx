@@ -12,6 +12,7 @@ import { InvoiceWithDetails } from "@/validation/invoice-schema";
 import { deleteInvoiceAction, updateInvoiceStatusAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
+import { useInvoicesContext } from "./invoices-context";
 
 interface InvoiceCardProps {
     invoice: InvoiceWithDetails;
@@ -19,6 +20,7 @@ interface InvoiceCardProps {
 
 export function InvoiceCard({ invoice }: InvoiceCardProps) {
     const router = useRouter();
+    const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteInvoiceAction, {
@@ -26,8 +28,26 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
             if (result?.data) {
                 toast.success(result.data.message);
                 setShowDeleteDialog(false);
-                // Recharger la page pour mettre à jour la liste
-                router.refresh();
+
+                // Supprimer la facture de la liste locale
+                const updatedInvoices = invoices.filter(inv => inv.id !== invoice.id);
+                setInvoices(updatedInvoices);
+
+                // Mettre à jour les statistiques
+                const newStats = {
+                    ...stats,
+                    totalInvoices: stats.totalInvoices - 1,
+                    totalRevenue: stats.totalRevenue - invoice.total,
+                };
+
+                // Ajuster les statistiques selon le statut
+                if (invoice.status === 'paid') {
+                    newStats.totalPaid = Math.max(0, stats.totalPaid - 1);
+                } else if (invoice.status === 'overdue') {
+                    newStats.totalOverdue = Math.max(0, stats.totalOverdue - 1);
+                }
+
+                setStats(newStats);
             }
         },
         onError: (error) => {
@@ -37,10 +57,41 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
 
     const { execute: executeStatusUpdate, isPending: isUpdatingStatus } = useAction(updateInvoiceStatusAction, {
         onSuccess: (result) => {
-            if (result?.data) {
-                toast.success(result.data.message);
-                // Recharger la page pour mettre à jour la liste
-                router.refresh();
+            if (result?.data?.invoice) {
+                const data = result.data;
+                toast.success(data.message);
+
+                // Mettre à jour la facture dans la liste locale
+                const updatedInvoices = invoices.map(inv => {
+                    if (inv.id === invoice.id) {
+                        return {
+                            ...inv,
+                            status: data.invoice.status,
+                            updatedAt: data.invoice.updatedAt,
+                        };
+                    }
+                    return inv;
+                });
+                setInvoices(updatedInvoices);
+
+                // Mettre à jour les statistiques
+                const newStats = { ...stats };
+
+                // Retirer l'ancien statut
+                if (invoice.status === 'paid') {
+                    newStats.totalPaid = Math.max(0, stats.totalPaid - 1);
+                } else if (invoice.status === 'overdue') {
+                    newStats.totalOverdue = Math.max(0, stats.totalOverdue - 1);
+                }
+
+                // Ajouter le nouveau statut
+                if (data.invoice.status === 'paid') {
+                    newStats.totalPaid = stats.totalPaid + 1;
+                } else if (data.invoice.status === 'overdue') {
+                    newStats.totalOverdue = stats.totalOverdue + 1;
+                }
+
+                setStats(newStats);
             }
         },
         onError: (error) => {

@@ -23,8 +23,8 @@ export function CreateInvoiceButton({ formData }: CreateInvoiceButtonProps) {
 
     const handleInvoiceCreated = () => {
         setIsOpen(false);
-        // Recharger la page pour afficher la nouvelle facture
-        router.refresh();
+        // La liste des factures est maintenant mise à jour via le contexte
+        // Pas besoin de recharger la page
     };
 
     return (
