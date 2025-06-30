@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
 import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
@@ -28,6 +29,8 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [showStatusDialog, setShowStatusDialog] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState(invoice.status);
     const [emailSubject, setEmailSubject] = useState(`Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
     const [emailMessage, setEmailMessage] = useState(`Bonjour ${invoice.client.name},
 
@@ -96,16 +99,18 @@ Votre équipe`);
 
                 // Retirer l'ancien statut
                 if (invoice.status === 'paid') {
-                    newStats.totalPaid = Math.max(0, stats.totalPaid - 1);
+                    newStats.totalPaid = Math.max(0, newStats.totalPaid - 1);
+                    newStats.totalRevenue = Math.max(0, newStats.totalRevenue - invoice.total);
                 } else if (invoice.status === 'overdue') {
-                    newStats.totalOverdue = Math.max(0, stats.totalOverdue - 1);
+                    newStats.totalOverdue = Math.max(0, newStats.totalOverdue - 1);
                 }
 
                 // Ajouter le nouveau statut
                 if (data.invoice.status === 'paid') {
-                    newStats.totalPaid = stats.totalPaid + 1;
+                    newStats.totalPaid = newStats.totalPaid + 1;
+                    newStats.totalRevenue = newStats.totalRevenue + invoice.total;
                 } else if (data.invoice.status === 'overdue') {
-                    newStats.totalOverdue = stats.totalOverdue + 1;
+                    newStats.totalOverdue = newStats.totalOverdue + 1;
                 }
 
                 setStats(newStats);
@@ -214,18 +219,19 @@ Votre équipe`);
     };
 
     const handleEdit = () => {
-        router.push(`/dashboard/invoices/${invoice.id}/edit`);
+        setShowStatusDialog(true);
     };
 
     const handleDelete = () => {
         executeDelete({ invoiceId: invoice.id });
     };
 
-    const handleStatusChange = (newStatus: string) => {
+    const handleStatusChange = () => {
         executeStatusUpdate({
             invoiceId: invoice.id,
-            status: newStatus as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+            status: selectedStatus as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
         });
+        setShowStatusDialog(false);
     };
 
     const handleDownload = () => {
@@ -268,7 +274,7 @@ Votre équipe`);
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleEdit}>
                                     <Edit className="mr-2 h-4 w-4" />
-                                    Modifier
+                                    Modifier le statut
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
                                     <Download className="mr-2 h-4 w-4" />
@@ -324,7 +330,7 @@ Votre équipe`);
                                 variant="outline"
                                 onClick={handleEdit}
                             >
-                                Modifier
+                                Modifier le statut
                             </Button>
                         </div>
                     )}
@@ -337,6 +343,52 @@ Votre équipe`);
                 isOpen={showPreviewModal}
                 onClose={() => setShowPreviewModal(false)}
             />
+
+            {/* Dialog de modification du statut */}
+            <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Modifier le statut de la facture</DialogTitle>
+                        <DialogDescription>
+                            Modifiez le statut de la facture <strong>{invoice.invoiceNumber}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="status-select">Statut</Label>
+                            <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionner un statut" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft">Brouillon</SelectItem>
+                                    <SelectItem value="sent">Envoyée</SelectItem>
+                                    <SelectItem value="paid">Payée</SelectItem>
+                                    <SelectItem value="overdue">En retard</SelectItem>
+                                    <SelectItem value="cancelled">Annulée</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowStatusDialog(false)}
+                            disabled={isUpdatingStatus}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            onClick={handleStatusChange}
+                            disabled={isUpdatingStatus || selectedStatus === invoice.status}
+                        >
+                            {isUpdatingStatus ? "Mise à jour..." : "Mettre à jour"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Dialog de confirmation de suppression */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
