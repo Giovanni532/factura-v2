@@ -13,7 +13,6 @@ interface CreateInvoiceButtonProps {
 
 export function CreateInvoiceButton({ formData }: CreateInvoiceButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const router = useRouter();
     const searchParams = useSearchParams();
     const clientId = searchParams.get('client');
 
@@ -23,8 +22,6 @@ export function CreateInvoiceButton({ formData }: CreateInvoiceButtonProps) {
 
     const handleInvoiceCreated = () => {
         setIsOpen(false);
-        // La liste des factures est maintenant mise à jour via le contexte
-        // Pas besoin de recharger la page
     };
 
     return (

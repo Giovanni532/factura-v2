@@ -108,7 +108,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                             Gérez vos devis et suivez vos conversions
                         </p>
                     </div>
-                    <CreateQuoteButton />
+                    <CreateQuoteButton formData={formData} />
                 </div>
 
                 {/* Statistiques */}
@@ -201,7 +201,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                                         Effacer les filtres
                                     </Button>
                                 ) : (
-                                    <CreateQuoteButton />
+                                    <CreateQuoteButton formData={formData} />
                                 )}
                             </div>
                         ) : (

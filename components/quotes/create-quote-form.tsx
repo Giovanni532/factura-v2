@@ -203,6 +203,32 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
     }, [form.watch('issueDate'), form]);
 
     const onSubmit = (data: CreateQuoteFormData) => {
+        // Validation manuelle
+        if (!data.clientId) {
+            toast.error("Client requis");
+            return;
+        }
+        if (!data.templateId) {
+            toast.error("Template requis");
+            return;
+        }
+        if (!data.issueDate) {
+            toast.error("Date d'émission requise");
+            return;
+        }
+        if (!data.validUntil) {
+            toast.error("Date de validité requise");
+            return;
+        }
+        if (data.items.length === 0) {
+            toast.error("Au moins un article requis");
+            return;
+        }
+        if (data.items.some(item => !item.description)) {
+            toast.error("Description requise pour tous les articles");
+            return;
+        }
+
         // Préparer les données pour l'action
         const submitData = {
             ...data,
@@ -237,21 +263,31 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
     };
 
     const handleServiceSelect = (serviceId: string, index: number) => {
-        if (serviceId === "none") {
-            form.setValue(`items.${index}.description`, "");
-            form.setValue(`items.${index}.unitPrice`, 0);
-            form.setValue(`items.${index}.unit`, "unité");
-            form.setValue(`items.${index}.vatRate`, 20);
-            return;
-        }
-
         const service = services.find(s => s.id === serviceId);
         if (service) {
-            form.setValue(`items.${index}.description`, service.name);
+            // Mettre à jour les champs
+            form.setValue(`items.${index}.description`, service.description || service.name);
+            form.setValue(`items.${index}.quantity`, 1);
             form.setValue(`items.${index}.unitPrice`, service.unitPrice);
             form.setValue(`items.${index}.unit`, service.unit);
             form.setValue(`items.${index}.vatRate`, service.taxRate);
-            form.setValue(`items.${index}.serviceId`, serviceId);
+
+            // Forcer le recalcul immédiat des totaux
+            setTimeout(() => {
+                const items = form.getValues('items');
+                let subtotal = 0;
+                let vatAmount = 0;
+
+                items.forEach(item => {
+                    const itemTotal = (item.quantity || 0) * (item.unitPrice || 0);
+                    subtotal += itemTotal;
+                    vatAmount += itemTotal * ((item.vatRate || 0) / 100);
+                });
+
+                form.setValue('subtotal', subtotal);
+                form.setValue('vatAmount', vatAmount);
+                form.setValue('total', subtotal + vatAmount);
+            }, 0);
         }
     };
 
@@ -310,7 +346,7 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                                     name="templateId"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Template</FormLabel>
+                                            <FormLabel>Template *</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger>
@@ -320,7 +356,9 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                                                 <SelectContent>
                                                     {templates.map((template) => (
                                                         <SelectItem key={template.id} value={template.id}>
+                                                            {template.isFavorite && "⭐ "}
                                                             {template.name}
+                                                            {template.isPredefined && " (Prédéfini)"}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -461,151 +499,142 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                     {/* Articles */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Articles</CardTitle>
+                            <CardTitle>Prestations</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {fields.map((field, index) => (
-                                    <div key={field.id} className="border rounded-lg p-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                                            <div className="md:col-span-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.serviceId`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Service</FormLabel>
-                                                            <Select onValueChange={(value) => handleServiceSelect(value, index)} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Sélectionner un service" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    <SelectItem value="none">Service personnalisé</SelectItem>
-                                                                    {services.map((service) => (
-                                                                        <SelectItem key={service.id} value={service.id}>
-                                                                            {service.name}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                        <CardContent className="space-y-4">
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="space-y-4 p-4 border rounded-lg">
+                                    {/* Sélecteur de prestation */}
+                                    <div className="mb-4">
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.serviceId`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Sélectionner une prestation</FormLabel>
+                                                    <Select
+                                                        value={field.value || "none"}
+                                                        onValueChange={(value) => {
+                                                            field.onChange(value === "none" ? "" : value);
+                                                            if (value && value !== "none") {
+                                                                handleServiceSelect(value, index);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Choisir une prestation..." />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="none">Aucune prestation</SelectItem>
+                                                            {services.map((service) => (
+                                                                <SelectItem key={service.id} value={service.id}>
+                                                                    {service.name} - {formatCurrency(service.unitPrice)}/{service.unit}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
 
-                                            <div className="md:col-span-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.description`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Description *</FormLabel>
-                                                            <FormControl>
-                                                                <Input placeholder="Description de la prestation" {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.description`}
+                                            render={({ field }) => (
+                                                <FormItem className="md:col-span-2">
+                                                    <FormLabel>Description *</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Description de l'article" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            <div>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.quantity`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Quantité *</FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    type="number"
-                                                                    min="0.01"
-                                                                    step="0.01"
-                                                                    placeholder="1"
-                                                                    {...field}
-                                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.quantity`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Quantité *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            {...field}
+                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            <div>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.unitPrice`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Prix unitaire *</FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    step="0.01"
-                                                                    placeholder="0.00"
-                                                                    {...field}
-                                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.unitPrice`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Prix unitaire *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            {...field}
+                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            <div>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.vatRate`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>TVA (%)</FormLabel>
-                                                            <FormControl>
-                                                                <Input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    max="100"
-                                                                    step="0.1"
-                                                                    placeholder="20"
-                                                                    {...field}
-                                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.vatRate`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>TVA (%)</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.1"
+                                                            min="0"
+                                                            {...field}
+                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                                            <div className="flex items-end">
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => removeItem(index)}
-                                                    disabled={fields.length === 1}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
+                                        <div className="flex items-end">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => removeItem(index)}
+                                                disabled={fields.length === 1}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
+                            ))}
 
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={addItem}
-                                    className="w-full"
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Ajouter un article
-                                </Button>
-                            </div>
+                            <Button type="button" variant="outline" onClick={addItem}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Ajouter une prestation
+                            </Button>
                         </CardContent>
                     </Card>
 
