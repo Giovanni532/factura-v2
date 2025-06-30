@@ -43,16 +43,6 @@ export function DashboardMain({
         <SidebarGroup>
             <SidebarGroupContent className="flex flex-col gap-2">
                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link href={paths.invoices.create} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                                <IconCirclePlusFilled />
-                                <span>Nouvelle facture</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-                <SidebarMenu>
                     {navigationItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild>
