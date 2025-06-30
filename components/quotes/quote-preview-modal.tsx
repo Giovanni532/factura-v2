@@ -1,0 +1,254 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { ExternalLink, Download, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { QuoteWithDetails } from "@/validation/quote-schema";
+import { getQuotePreviewAction, downloadQuoteAction, sendQuoteAction } from "@/action/quote-actions";
+import { useAction } from "next-safe-action/hooks";
+import { toast } from "sonner";
+
+interface QuotePreviewModalProps {
+    quote: QuoteWithDetails;
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalProps) {
+    const [previewHtml, setPreviewHtml] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [showSendDialog, setShowSendDialog] = useState(false);
+    const [emailSubject, setEmailSubject] = useState(`Devis ${quote.quoteNumber} - ${quote.client.name}`);
+    const [emailMessage, setEmailMessage] = useState(`Bonjour ${quote.client.name},
+
+Veuillez trouver ci-joint le devis ${quote.quoteNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(quote.total)}.
+
+Date de validité : ${new Intl.DateTimeFormat('fr-FR').format(quote.validUntil)}
+
+Merci de votre confiance.
+
+Cordialement,
+Votre équipe`);
+
+    const { execute: executePreview, isPending: isPreviewLoading } = useAction(getQuotePreviewAction, {
+        onSuccess: (result) => {
+            if (result?.data?.html) {
+                setPreviewHtml(result.data.html);
+            }
+            setIsLoading(false);
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors du chargement de la prévisualisation");
+            setIsLoading(false);
+        }
+    });
+
+    const { execute: executeDownload, isPending: isDownloading } = useAction(downloadQuoteAction, {
+        onSuccess: (result) => {
+            if (result?.data) {
+                // Créer un blob avec le PDF et télécharger
+                const pdfData = atob(result.data.pdf);
+                const bytes = new Uint8Array(pdfData.length);
+                for (let i = 0; i < pdfData.length; i++) {
+                    bytes[i] = pdfData.charCodeAt(i);
+                }
+
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = result.data.filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                toast.success("Devis PDF téléchargé avec succès");
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors du téléchargement");
+        }
+    });
+
+    const { execute: executeSend, isPending: isSending } = useAction(sendQuoteAction, {
+        onSuccess: (result) => {
+            if (result?.data) {
+                toast.success(result.data.message);
+                setShowSendDialog(false);
+                onClose();
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors de l'envoi");
+        }
+    });
+
+    useEffect(() => {
+        if (isOpen && quote) {
+            setIsLoading(true);
+            executePreview({ quoteId: quote.id });
+        }
+    }, [isOpen, quote, executePreview]);
+
+    // Mettre à jour les valeurs par défaut quand le devis change
+    useEffect(() => {
+        setEmailSubject(`Devis ${quote.quoteNumber} - ${quote.client.name}`);
+        setEmailMessage(`Bonjour ${quote.client.name},
+
+Veuillez trouver ci-joint le devis ${quote.quoteNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(quote.total)}.
+
+Date de validité : ${new Intl.DateTimeFormat('fr-FR').format(quote.validUntil)}
+
+Merci de votre confiance.
+
+Cordialement,
+Votre équipe`);
+    }, [quote]);
+
+    const openInNewTab = () => {
+        const newWindow = window.open();
+        if (newWindow) {
+            newWindow.document.write(previewHtml);
+            newWindow.document.close();
+        }
+    };
+
+    const handleDownload = () => {
+        executeDownload({ quoteId: quote.id });
+    };
+
+    const handleSend = () => {
+        setShowSendDialog(true);
+    };
+
+    const handleConfirmSend = () => {
+        executeSend({
+            quoteId: quote.id,
+            subject: emailSubject,
+            message: emailMessage
+        });
+    };
+
+    // Vérifier si le devis peut être envoyé (pas déjà envoyé)
+    const canSend = quote.status !== 'sent' && quote.status !== 'accepted';
+
+    return (
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="max-w-6xl min-w-[90vw] min-h-[90vh] max-h-[90vh] flex flex-col">
+                    <DialogHeader className="flex-shrink-0">
+                        <div className="flex items-center justify-between">
+                            <DialogTitle className="text-xl">
+                                Aperçu : {quote.quoteNumber}
+                            </DialogTitle>
+                            <div className="flex gap-2 pr-6">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={openInNewTab}
+                                    className="flex items-center gap-2"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    Ouvrir dans un nouvel onglet
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    {isDownloading ? "Téléchargement..." : "Télécharger"}
+                                </Button>
+                                {canSend && (
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSend}
+                                        disabled={isSending}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                        {isSending ? "Envoi..." : "Envoyer"}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Prévisualisation du devis {quote.quoteNumber} pour {quote.client.name}
+                        </p>
+                    </DialogHeader>
+
+                    <div className="flex-1 min-h-0">
+                        <div className="h-full border rounded-lg overflow-hidden bg-white">
+                            {isLoading || isPreviewLoading ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                                        <p className="text-sm text-muted-foreground">Chargement de la prévisualisation...</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <iframe
+                                    srcDoc={previewHtml}
+                                    className="w-full min-w-[90vw] min-h-[75vh] h-full border-0"
+                                    title={`Aperçu ${quote.quoteNumber}`}
+                                    sandbox="allow-same-origin"
+                                />
+                            )}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de confirmation d'envoi */}
+            <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Envoyer le devis</DialogTitle>
+                        <DialogDescription>
+                            Le devis <strong>{quote.quoteNumber}</strong> sera envoyé à <strong>{quote.client.email}</strong> avec le PDF en pièce jointe.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email-subject">Objet de l'email</Label>
+                            <Input
+                                id="email-subject"
+                                value={emailSubject}
+                                onChange={(e) => setEmailSubject(e.target.value)}
+                                placeholder="Objet de l'email"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email-message">Message</Label>
+                            <Textarea
+                                id="email-message"
+                                value={emailMessage}
+                                onChange={(e) => setEmailMessage(e.target.value)}
+                                placeholder="Message de l'email"
+                                rows={6}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
+                            Annuler
+                        </Button>
+                        <Button onClick={handleConfirmSend} disabled={isSending}>
+                            {isSending ? "Envoi en cours..." : "Envoyer"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+} 
