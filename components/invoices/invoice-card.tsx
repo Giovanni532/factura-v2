@@ -16,6 +16,7 @@ import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, 
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useInvoicesContext } from "./invoices-context";
+import { InvoicePreviewModal } from "./invoice-preview-modal";
 
 interface InvoiceCardProps {
     invoice: InvoiceWithDetails;
@@ -26,6 +27,7 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [emailSubject, setEmailSubject] = useState(`Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
     const [emailMessage, setEmailMessage] = useState(`Bonjour ${invoice.client.name},
 
@@ -208,7 +210,7 @@ Votre équipe`);
     };
 
     const handleView = () => {
-        router.push(`/dashboard/invoices/${invoice.id}`);
+        setShowPreviewModal(true);
     };
 
     const handleEdit = () => {
@@ -328,6 +330,13 @@ Votre équipe`);
                     )}
                 </CardContent>
             </Card>
+
+            {/* Modal de prévisualisation de la facture */}
+            <InvoicePreviewModal
+                invoice={invoice}
+                isOpen={showPreviewModal}
+                onClose={() => setShowPreviewModal(false)}
+            />
 
             {/* Dialog de confirmation de suppression */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
