@@ -50,7 +50,7 @@ export async function getServicesWithStats(companyId: string) {
             const lastInvoiceUsed = invoiceUsage[0]?.lastUsed;
             const lastQuoteUsed = quoteUsage[0]?.lastUsed;
             const lastUsed = lastInvoiceUsed && lastQuoteUsed
-                ? new Date(Math.max(lastInvoiceUsed.getTime(), lastQuoteUsed.getTime()))
+                ? new Date(Math.max(new Date(lastInvoiceUsed).getTime(), new Date(lastQuoteUsed).getTime()))
                 : lastInvoiceUsed || lastQuoteUsed || null;
 
             return {
@@ -104,7 +104,7 @@ export async function getServiceById(serviceId: string, companyId: string) {
     const lastInvoiceUsed = invoiceUsage[0]?.lastUsed;
     const lastQuoteUsed = quoteUsage[0]?.lastUsed;
     const lastUsed = lastInvoiceUsed && lastQuoteUsed
-        ? new Date(Math.max(lastInvoiceUsed.getTime(), lastQuoteUsed.getTime()))
+        ? new Date(Math.max(new Date(lastInvoiceUsed).getTime(), new Date(lastQuoteUsed).getTime()))
         : lastInvoiceUsed || lastQuoteUsed || null;
 
     return {

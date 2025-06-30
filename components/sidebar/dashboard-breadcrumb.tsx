@@ -1,7 +1,6 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
@@ -9,19 +8,30 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 import Link from "next/link"
 import React from "react"
 
+// Mapping des mots anglais vers français
+const frenchTranslations: Record<string, string> = {
+    "invoices": "Factures",
+    "quotes": "Devis",
+    "clients": "Clients",
+    "services": "Services",
+    "templates": "Modèles"
+}
 
 export function DashboardBreadcrumb() {
 
     const pathname = usePathname()
-
     const breadcrumbs = pathname.split('/').map((path, index) => {
         const pathLink = `/${pathname.split('/').slice(0, index + 1).join('/')}`
+
+        // Traduire le mot si il existe dans le mapping, sinon utiliser la première lettre en majuscule
+        const displayText = frenchTranslations[path] || path.charAt(0).toUpperCase() + path.slice(1)
+
         return (
             <React.Fragment key={path}>
                 {index !== 0 && index !== 1 && <BreadcrumbSeparator />}
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                        <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/${pathLink}`}>{path.charAt(0).toUpperCase() + path.slice(1)}</Link>
+                        <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/${pathLink}`}>{displayText}</Link>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
             </React.Fragment>
