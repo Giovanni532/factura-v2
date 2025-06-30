@@ -393,7 +393,11 @@ export const updateInvoiceStatusAction = useMutation(
 
 // Action pour envoyer une facture par email
 export const sendInvoiceAction = useMutation(
-    z.object({ invoiceId: z.string() }),
+    z.object({
+        invoiceId: z.string(),
+        subject: z.string().min(1, "Objet requis"),
+        message: z.string().min(1, "Message requis")
+    }),
     async (input, { userId }) => {
         // Vérifier que l'utilisateur appartient à une entreprise
         const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
@@ -556,6 +560,8 @@ export const sendInvoiceAction = useMutation(
         // TODO: Ici vous devrez implémenter l'envoi d'email réel
         // Pour l'instant, on simule l'envoi
         console.log('Email à envoyer à:', invoiceData.client.email);
+        console.log('Objet:', input.subject);
+        console.log('Message:', input.message);
         console.log('Contenu HTML généré:', html);
 
         // Mettre à jour le statut de la facture à "sent"

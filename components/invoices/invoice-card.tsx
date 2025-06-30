@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
 import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
@@ -23,6 +26,17 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
+    const [emailSubject, setEmailSubject] = useState(`Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
+    const [emailMessage, setEmailMessage] = useState(`Bonjour ${invoice.client.name},
+
+Veuillez trouver ci-joint la facture ${invoice.invoiceNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(invoice.total)}.
+
+Date d'échéance : ${new Intl.DateTimeFormat('fr-FR').format(invoice.dueDate)}
+
+Merci de votre confiance.
+
+Cordialement,
+Votre équipe`);
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteInvoiceAction, {
         onSuccess: (result) => {
@@ -221,7 +235,11 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
     };
 
     const handleConfirmSend = () => {
-        executeSend({ invoiceId: invoice.id });
+        executeSend({
+            invoiceId: invoice.id,
+            subject: emailSubject,
+            message: emailMessage
+        });
     };
 
     return (
@@ -342,21 +360,43 @@ export function InvoiceCard({ invoice }: InvoiceCardProps) {
 
             {/* Modal de confirmation d'envoi */}
             <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Confirmer l'envoi</DialogTitle>
+                        <DialogTitle>Envoyer la facture</DialogTitle>
                         <DialogDescription>
-                            Êtes-vous sûr de vouloir envoyer la facture <strong>{invoice.invoiceNumber}</strong> à <strong>{invoice.client.email}</strong> ?
-                            <br /><br />
-                            La facture sera envoyée par email avec le PDF en pièce jointe et le statut sera mis à jour à "Envoyée".
+                            La facture <strong>{invoice.invoiceNumber}</strong> sera envoyée à <strong>{invoice.client.email}</strong> avec le PDF en pièce jointe.
                         </DialogDescription>
                     </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="email-subject">Objet de l'email</Label>
+                            <Input
+                                id="email-subject"
+                                value={emailSubject}
+                                onChange={(e) => setEmailSubject(e.target.value)}
+                                placeholder="Objet de l'email"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email-message">Message</Label>
+                            <Textarea
+                                id="email-message"
+                                value={emailMessage}
+                                onChange={(e) => setEmailMessage(e.target.value)}
+                                placeholder="Message de l'email"
+                                rows={6}
+                            />
+                        </div>
+                    </div>
+
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
                             Annuler
                         </Button>
                         <Button onClick={handleConfirmSend} disabled={isSending}>
-                            {isSending ? "Envoi en cours..." : "Confirmer l'envoi"}
+                            {isSending ? "Envoi en cours..." : "Envoyer"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
