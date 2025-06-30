@@ -109,7 +109,7 @@ export async function getQuoteById(quoteId: string, companyId: string): Promise<
             validUntil: quote.validUntil,
             total: quote.total,
             notes: quote.notes,
-            terms: sql<string>`''`,
+            terms: quote.terms,
             companyId: quote.companyId,
             clientId: quote.clientId,
             templateId: quote.templateId,

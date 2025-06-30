@@ -161,41 +161,97 @@ export const downloadInvoiceAction = useMutation(
         let html = selectedTemplate.html;
 
         // Remplacer les variables du template
-        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name);
-        html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address || "");
-        html = html.replace(/\{\{company\.city\}\}/g, templateData.company.city || "");
-        html = html.replace(/\{\{company\.postalCode\}\}/g, templateData.company.postalCode || "");
-        html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country || "");
-        html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email || "");
-        html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone || "");
-        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || "");
-        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || "");
+        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name || '');
 
-        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name);
-        html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address || "");
-        html = html.replace(/\{\{client\.city\}\}/g, templateData.client.city || "");
-        html = html.replace(/\{\{client\.postalCode\}\}/g, templateData.client.postalCode || "");
-        html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country || "");
-        html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email || "");
-        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || "");
-        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || "");
+        // Gérer les lignes d'adresse de l'entreprise
+        if (templateData.company.address) {
+            html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address);
+        } else {
+            html = html.replace(/<p>\{\{company\.address\}\}<\/p>/g, '');
+        }
 
-        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number);
-        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate);
-        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate);
-        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal);
-        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate);
-        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount);
-        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total);
-        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes);
+        if (templateData.company.city && templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, `${templateData.company.city}, ${templateData.company.postalCode}`);
+        } else if (templateData.company.city) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.city);
+        } else if (templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{company\.city\}\}, \{\{company\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.country) {
+            html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country);
+        } else {
+            html = html.replace(/<p>\{\{company\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.email) {
+            html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email);
+        } else {
+            html = html.replace(/<p>Email: \{\{company\.email\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.phone) {
+            html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone);
+        } else {
+            html = html.replace(/<p>Tél: \{\{company\.phone\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || '');
+        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || '');
+        html = html.replace(/\{\{company\.logo\}\}/g, templateData.company.logo || '');
+
+        // Gérer les lignes d'adresse du client
+        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name || '');
+
+        if (templateData.client.address) {
+            html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address);
+        } else {
+            html = html.replace(/<p>\{\{client\.address\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.city && templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, `${templateData.client.city}, ${templateData.client.postalCode}`);
+        } else if (templateData.client.city) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.city);
+        } else if (templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{client\.city\}\}, \{\{client\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.country) {
+            html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country);
+        } else {
+            html = html.replace(/<p>\{\{client\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.email) {
+            html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email);
+        } else {
+            html = html.replace(/<p>\{\{client\.email\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || '');
+        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || '');
+
+        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number || '');
+        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate || '');
+        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate || '');
+        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal || '0.00');
+        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate || '20');
+        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount || '0.00');
+        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total || '0.00');
+        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes || '');
 
         // Gérer les boucles d'items
         const itemsHtml = templateData.items.map(item => `
             <tr>
-                <td>${item.description}</td>
-                <td>${item.quantity}</td>
-                <td>${item.unitPrice} €</td>
-                <td>${item.total} €</td>
+                <td>${item.description || ''}</td>
+                <td>${item.quantity || '0'}</td>
+                <td>${item.unitPrice || '0.00'} €</td>
+                <td>${item.total || '0.00'} €</td>
             </tr>
         `).join('');
 
@@ -482,77 +538,108 @@ export const sendInvoiceAction = useMutation(
         // Générer le HTML avec les données
         let html = selectedTemplate.html;
 
-        // Remplacer les variables du template (même logique que downloadInvoiceAction)
-        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name);
-        html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address || "");
-        html = html.replace(/\{\{company\.city\}\}/g, templateData.company.city || "");
-        html = html.replace(/\{\{company\.postalCode\}\}/g, templateData.company.postalCode || "");
-        html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country || "");
-        html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email || "");
-        html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone || "");
-        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || "");
-        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || "");
+        // Remplacer les variables du template
+        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name || '');
 
-        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name);
-        html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address || "");
-        html = html.replace(/\{\{client\.city\}\}/g, templateData.client.city || "");
-        html = html.replace(/\{\{client\.postalCode\}\}/g, templateData.client.postalCode || "");
-        html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country || "");
-        html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email || "");
-        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || "");
-        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || "");
+        // Gérer les lignes d'adresse de l'entreprise
+        if (templateData.company.address) {
+            html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address);
+        } else {
+            html = html.replace(/<p>\{\{company\.address\}\}<\/p>/g, '');
+        }
 
-        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number);
-        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate);
-        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate);
-        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal);
-        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate);
-        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount);
-        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total);
-        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes);
+        if (templateData.company.city && templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, `${templateData.company.city}, ${templateData.company.postalCode}`);
+        } else if (templateData.company.city) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.city);
+        } else if (templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{company\.city\}\}, \{\{company\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.country) {
+            html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country);
+        } else {
+            html = html.replace(/<p>\{\{company\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.email) {
+            html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email);
+        } else {
+            html = html.replace(/<p>Email: \{\{company\.email\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.phone) {
+            html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone);
+        } else {
+            html = html.replace(/<p>Tél: \{\{company\.phone\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || '');
+        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || '');
+        html = html.replace(/\{\{company\.logo\}\}/g, templateData.company.logo || '');
+
+        // Gérer les lignes d'adresse du client
+        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name || '');
+
+        if (templateData.client.address) {
+            html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address);
+        } else {
+            html = html.replace(/<p>\{\{client\.address\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.city && templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, `${templateData.client.city}, ${templateData.client.postalCode}`);
+        } else if (templateData.client.city) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.city);
+        } else if (templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{client\.city\}\}, \{\{client\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.country) {
+            html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country);
+        } else {
+            html = html.replace(/<p>\{\{client\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.email) {
+            html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email);
+        } else {
+            html = html.replace(/<p>\{\{client\.email\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || '');
+        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || '');
+
+        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number || '');
+        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate || '');
+        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate || '');
+        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal || '0.00');
+        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate || '20');
+        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount || '0.00');
+        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total || '0.00');
+        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes || '');
 
         // Gérer les boucles d'items
         const itemsHtml = templateData.items.map(item => `
             <tr>
-                <td>${item.description}</td>
-                <td>${item.quantity}</td>
-                <td>${item.unitPrice} €</td>
-                <td>${item.total} €</td>
+                <td>${item.description || ''}</td>
+                <td>${item.quantity || '0'}</td>
+                <td>${item.unitPrice || '0.00'} €</td>
+                <td>${item.total || '0.00'} €</td>
             </tr>
         `).join('');
 
         html = html.replace(/\{\{#each items\}\}[\s\S]*?\{\{\/each\}\}/g, itemsHtml);
 
         // Gérer les conditions
-        if (templateData.company.logo) {
-            html = html.replace(/\{\{#if company\.logo\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-        } else {
-            html = html.replace(/\{\{#if company\.logo\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        }
-
-        if (templateData.company.siret) {
-            html = html.replace(/\{\{#if company\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-        } else {
-            html = html.replace(/\{\{#if company\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        }
-
-        if (templateData.company.vatNumber) {
-            html = html.replace(/\{\{#if company\.vatNumber\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-        } else {
-            html = html.replace(/\{\{#if company\.vatNumber\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        }
-
-        if (templateData.client.siret) {
-            html = html.replace(/\{\{#if client\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-        } else {
-            html = html.replace(/\{\{#if client\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        }
-
-        if (templateData.invoice.notes) {
-            html = html.replace(/\{\{#if invoice\.notes\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-        } else {
-            html = html.replace(/\{\{#if invoice\.notes\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        }
+        html = html.replace(/\{\{#if company\.logo\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        html = html.replace(/\{\{#if company\.siret\}\}/g, '');
+        html = html.replace(/\{\{\/if\}\}/g, '');
+        html = html.replace(/\{\{#if invoice\.notes\}\}/g, '');
 
         // Remplacer le CSS
         html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
@@ -684,51 +771,132 @@ export const getInvoicePreviewAction = useMutation(
         let html = selectedTemplate.html;
 
         // Remplacer les variables du template
-        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name);
-        html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address || "");
-        html = html.replace(/\{\{company\.city\}\}/g, templateData.company.city || "");
-        html = html.replace(/\{\{company\.postalCode\}\}/g, templateData.company.postalCode || "");
-        html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country || "");
-        html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email || "");
-        html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone || "");
-        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || "");
-        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || "");
+        html = html.replace(/\{\{company\.name\}\}/g, templateData.company.name || '');
 
-        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name);
-        html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address || "");
-        html = html.replace(/\{\{client\.city\}\}/g, templateData.client.city || "");
-        html = html.replace(/\{\{client\.postalCode\}\}/g, templateData.client.postalCode || "");
-        html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country || "");
-        html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email || "");
-        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || "");
-        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || "");
+        // Gérer les lignes d'adresse de l'entreprise
+        if (templateData.company.address) {
+            html = html.replace(/\{\{company\.address\}\}/g, templateData.company.address);
+        } else {
+            html = html.replace(/<p>\{\{company\.address\}\}<\/p>/g, '');
+        }
 
-        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number);
-        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate);
-        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate);
-        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal);
-        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate);
-        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount);
-        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total);
-        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes);
+        if (templateData.company.city && templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, `${templateData.company.city}, ${templateData.company.postalCode}`);
+        } else if (templateData.company.city) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.city);
+        } else if (templateData.company.postalCode) {
+            html = html.replace(/\{\{company\.city\}\}, \{\{company\.postalCode\}\}/g, templateData.company.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{company\.city\}\}, \{\{company\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.country) {
+            html = html.replace(/\{\{company\.country\}\}/g, templateData.company.country);
+        } else {
+            html = html.replace(/<p>\{\{company\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.email) {
+            html = html.replace(/\{\{company\.email\}\}/g, templateData.company.email);
+        } else {
+            html = html.replace(/<p>Email: \{\{company\.email\}\}<\/p>/g, '');
+        }
+
+        if (templateData.company.phone) {
+            html = html.replace(/\{\{company\.phone\}\}/g, templateData.company.phone);
+        } else {
+            html = html.replace(/<p>Tél: \{\{company\.phone\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{company\.siret\}\}/g, templateData.company.siret || '');
+        html = html.replace(/\{\{company\.vatNumber\}\}/g, templateData.company.vatNumber || '');
+        html = html.replace(/\{\{company\.logo\}\}/g, templateData.company.logo || '');
+
+        // Gérer les lignes d'adresse du client
+        html = html.replace(/\{\{client\.name\}\}/g, templateData.client.name || '');
+
+        if (templateData.client.address) {
+            html = html.replace(/\{\{client\.address\}\}/g, templateData.client.address);
+        } else {
+            html = html.replace(/<p>\{\{client\.address\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.city && templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, `${templateData.client.city}, ${templateData.client.postalCode}`);
+        } else if (templateData.client.city) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.city);
+        } else if (templateData.client.postalCode) {
+            html = html.replace(/\{\{client\.city\}\}, \{\{client\.postalCode\}\}/g, templateData.client.postalCode);
+        } else {
+            html = html.replace(/<p>\{\{client\.city\}\}, \{\{client\.postalCode\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.country) {
+            html = html.replace(/\{\{client\.country\}\}/g, templateData.client.country);
+        } else {
+            html = html.replace(/<p>\{\{client\.country\}\}<\/p>/g, '');
+        }
+
+        if (templateData.client.email) {
+            html = html.replace(/\{\{client\.email\}\}/g, templateData.client.email);
+        } else {
+            html = html.replace(/<p>\{\{client\.email\}\}<\/p>/g, '');
+        }
+
+        html = html.replace(/\{\{client\.siret\}\}/g, templateData.client.siret || '');
+        html = html.replace(/\{\{client\.vatNumber\}\}/g, templateData.client.vatNumber || '');
+
+        html = html.replace(/\{\{invoice\.number\}\}/g, templateData.invoice.number || '');
+        html = html.replace(/\{\{invoice\.issueDate\}\}/g, templateData.invoice.issueDate || '');
+        html = html.replace(/\{\{invoice\.dueDate\}\}/g, templateData.invoice.dueDate || '');
+        html = html.replace(/\{\{invoice\.subtotal\}\}/g, templateData.invoice.subtotal || '0.00');
+        html = html.replace(/\{\{invoice\.taxRate\}\}/g, templateData.invoice.taxRate || '20');
+        html = html.replace(/\{\{invoice\.taxAmount\}\}/g, templateData.invoice.taxAmount || '0.00');
+        html = html.replace(/\{\{invoice\.total\}\}/g, templateData.invoice.total || '0.00');
+        html = html.replace(/\{\{invoice\.notes\}\}/g, templateData.invoice.notes || '');
 
         // Gérer les boucles d'items
         const itemsHtml = templateData.items.map(item => `
             <tr>
-                <td>${item.description}</td>
-                <td>${item.quantity}</td>
-                <td>${item.unitPrice} €</td>
-                <td>${item.total} €</td>
+                <td>${item.description || ''}</td>
+                <td>${item.quantity || '0'}</td>
+                <td>${item.unitPrice || '0.00'} €</td>
+                <td>${item.total || '0.00'} €</td>
             </tr>
         `).join('');
 
         html = html.replace(/\{\{#each items\}\}[\s\S]*?\{\{\/each\}\}/g, itemsHtml);
 
         // Gérer les conditions
-        html = html.replace(/\{\{#if company\.logo\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-        html = html.replace(/\{\{#if company\.siret\}\}/g, '');
-        html = html.replace(/\{\{\/if\}\}/g, '');
-        html = html.replace(/\{\{#if invoice\.notes\}\}/g, '');
+        if (templateData.company.logo) {
+            html = html.replace(/\{\{#if company\.logo\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.logo\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.company.siret) {
+            html = html.replace(/\{\{#if company\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.company.vatNumber) {
+            html = html.replace(/\{\{#if company\.vatNumber\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if company\.vatNumber\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.client.siret) {
+            html = html.replace(/\{\{#if client\.siret\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if client\.siret\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
+
+        if (templateData.invoice.notes) {
+            html = html.replace(/\{\{#if invoice\.notes\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+        } else {
+            html = html.replace(/\{\{#if invoice\.notes\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+        }
 
         // Remplacer le CSS
         html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
