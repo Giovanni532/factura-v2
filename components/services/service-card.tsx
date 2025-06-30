@@ -163,7 +163,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 {service.lastUsed && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                         <Calendar className="w-3 h-3" />
-                        Dernière utilisation : {service.lastUsed.toLocaleDateString('fr-FR')}
+                        Dernière utilisation : {new Date(service.lastUsed).toLocaleDateString('fr-FR')}
                     </div>
                 )}
 
