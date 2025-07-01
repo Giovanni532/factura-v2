@@ -6,7 +6,218 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUserWithCompany } from '@/db/queries/company';
 import { CreateCompanyForm } from '@/components/forms/create-company-form';
-import { CompanyLogoUpload } from '@/components/forms/company-logo-upload';
+import { paths } from '@/paths';
+import { DashboardClient } from '@/components/dashboard/dashboard-client';
+import { db } from '@/lib/drizzle';
+import { user, company, invoice, quote, client, service, invoiceItem } from '@/db/schema';
+import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
+
+// Fonction pour récupérer les statistiques
+async function getDashboardStats(userId: string) {
+    const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+    if (!userData.length || !userData[0].companyId) return null;
+
+    const companyId = userData[0].companyId;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const invoiceStats = await db.select({
+        totalInvoices: sql<number>`count(*)`,
+        totalRevenue: sql<number>`sum(${invoice.total})`,
+        paidInvoices: sql<number>`count(case when ${invoice.status} = 'paid' then 1 end)`,
+        pendingInvoices: sql<number>`count(case when ${invoice.status} = 'sent' then 1 end)`,
+        overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < date('now') then 1 end)`,
+        monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} then 1 end)`,
+        monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+    })
+        .from(invoice)
+        .where(eq(invoice.companyId, companyId));
+
+    const quoteStats = await db.select({
+        totalQuotes: sql<number>`count(*)`,
+        acceptedQuotes: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
+        pendingQuotes: sql<number>`count(case when ${quote.status} = 'sent' then 1 end)`,
+        expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < date('now') then 1 end)`,
+        monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfMonth} and ${quote.createdAt} <= ${endOfMonth} then 1 end)`,
+    })
+        .from(quote)
+        .where(eq(quote.companyId, companyId));
+
+    const clientStats = await db.select({
+        totalClients: sql<number>`count(*)`,
+        activeClients: sql<number>`count(case when ${client.createdAt} >= date('now', '-30 days') then 1 end)`,
+    })
+        .from(client)
+        .where(eq(client.companyId, companyId));
+
+    const serviceStats = await db.select({
+        totalServices: sql<number>`count(*)`,
+        activeServices: sql<number>`count(case when ${service.isActive} = 1 then 1 end)`,
+    })
+        .from(service)
+        .where(eq(service.companyId, companyId));
+
+    return {
+        invoices: {
+            total: Number(invoiceStats[0]?.totalInvoices) || 0,
+            revenue: Number(invoiceStats[0]?.totalRevenue) || 0,
+            paid: Number(invoiceStats[0]?.paidInvoices) || 0,
+            pending: Number(invoiceStats[0]?.pendingInvoices) || 0,
+            overdue: Number(invoiceStats[0]?.overdueInvoices) || 0,
+            monthly: Number(invoiceStats[0]?.monthlyInvoices) || 0,
+            monthlyRevenue: Number(invoiceStats[0]?.monthlyRevenue) || 0,
+        },
+        quotes: {
+            total: Number(quoteStats[0]?.totalQuotes) || 0,
+            accepted: Number(quoteStats[0]?.acceptedQuotes) || 0,
+            pending: Number(quoteStats[0]?.pendingQuotes) || 0,
+            expired: Number(quoteStats[0]?.expiredQuotes) || 0,
+            monthly: Number(quoteStats[0]?.monthlyQuotes) || 0,
+        },
+        clients: {
+            total: Number(clientStats[0]?.totalClients) || 0,
+            active: Number(clientStats[0]?.activeClients) || 0,
+        },
+        services: {
+            total: Number(serviceStats[0]?.totalServices) || 0,
+            active: Number(serviceStats[0]?.activeServices) || 0,
+        },
+    };
+}
+
+// Fonction pour récupérer les données des graphiques
+async function getDashboardCharts(userId: string) {
+    const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+    if (!userData.length || !userData[0].companyId) return null;
+
+    const companyId = userData[0].companyId;
+
+    const monthlyInvoices = await db.select({
+        month: sql<string>`strftime('%Y-%m', ${invoice.createdAt})`,
+        count: sql<number>`count(*)`,
+        revenue: sql<number>`sum(case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+    })
+        .from(invoice)
+        .where(and(
+            eq(invoice.companyId, companyId),
+            gte(invoice.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
+        ))
+        .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
+        .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt})`);
+
+    const monthlyQuotes = await db.select({
+        month: sql<string>`strftime('%Y-%m', ${quote.createdAt})`,
+        count: sql<number>`count(*)`,
+        accepted: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
+    })
+        .from(quote)
+        .where(and(
+            eq(quote.companyId, companyId),
+            gte(quote.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
+        ))
+        .groupBy(sql`strftime('%Y-%m', ${quote.createdAt})`)
+        .orderBy(sql`strftime('%Y-%m', ${quote.createdAt})`);
+
+    const topServices = await db.select({
+        name: sql<string>`${invoiceItem.description}`,
+        count: sql<number>`count(*)`,
+        revenue: sql<number>`sum(${invoiceItem.total})`,
+    })
+        .from(invoiceItem)
+        .leftJoin(invoice, eq(invoiceItem.invoiceId, invoice.id))
+        .where(eq(invoice.companyId, companyId))
+        .groupBy(sql`${invoiceItem.description}`)
+        .orderBy(desc(sql`count(*)`))
+        .limit(5);
+
+    return {
+        monthlyInvoices: monthlyInvoices.map(item => ({
+            month: item.month,
+            invoices: Number(item.count) || 0,
+            revenue: Number(item.revenue) || 0,
+        })),
+        monthlyQuotes: monthlyQuotes.map(item => ({
+            month: item.month,
+            quotes: Number(item.count) || 0,
+            accepted: Number(item.accepted) || 0,
+        })),
+        topServices: topServices.map(item => ({
+            name: item.name || 'Service inconnu',
+            count: Number(item.count) || 0,
+            revenue: Number(item.revenue) || 0,
+        })),
+    };
+}
+
+// Fonction pour récupérer les échéances
+async function getUpcomingDeadlines(userId: string) {
+    const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+    if (!userData.length || !userData[0].companyId) return null;
+
+    const companyId = userData[0].companyId;
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+    const upcomingInvoices = await db.select({
+        id: invoice.id,
+        number: invoice.number,
+        dueDate: invoice.dueDate,
+        status: invoice.status,
+        total: invoice.total,
+        clientName: sql<string>`${client.name}`,
+    })
+        .from(invoice)
+        .leftJoin(client, eq(invoice.clientId, client.id))
+        .where(and(
+            eq(invoice.companyId, companyId),
+            eq(invoice.status, 'sent'),
+            gte(invoice.dueDate, new Date()),
+            lte(invoice.dueDate, thirtyDaysFromNow)
+        ))
+        .orderBy(invoice.dueDate)
+        .limit(10);
+
+    const upcomingQuotes = await db.select({
+        id: quote.id,
+        number: quote.number,
+        validUntil: quote.validUntil,
+        status: quote.status,
+        total: quote.total,
+        clientName: sql<string>`${client.name}`,
+    })
+        .from(quote)
+        .leftJoin(client, eq(quote.clientId, client.id))
+        .where(and(
+            eq(quote.companyId, companyId),
+            eq(quote.status, 'sent'),
+            gte(quote.validUntil, new Date()),
+            lte(quote.validUntil, thirtyDaysFromNow)
+        ))
+        .orderBy(quote.validUntil)
+        .limit(10);
+
+    return {
+        invoices: upcomingInvoices.map(inv => ({
+            id: inv.id,
+            number: inv.number,
+            dueDate: inv.dueDate,
+            status: inv.status,
+            total: Number(inv.total) || 0,
+            clientName: inv.clientName || 'Client inconnu',
+            daysLeft: Math.ceil((new Date(inv.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+        })),
+        quotes: upcomingQuotes.map(quote => ({
+            id: quote.id,
+            number: quote.number,
+            validUntil: quote.validUntil,
+            status: quote.status,
+            total: Number(quote.total) || 0,
+            clientName: quote.clientName || 'Client inconnu',
+            daysLeft: Math.ceil((new Date(quote.validUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+        })),
+    };
+}
 
 export default async function DashboardPage() {
     // Récupérer la session utilisateur côté serveur
@@ -16,7 +227,7 @@ export default async function DashboardPage() {
 
     // Rediriger vers la page de connexion si non connecté
     if (!session?.user) {
-        redirect('/api/auth/signin');
+        redirect(paths.login);
     }
 
     // Récupérer les données utilisateur avec sa compagnie
@@ -59,6 +270,17 @@ export default async function DashboardPage() {
         );
     }
 
+    // Récupérer les données de la dashboard côté serveur
+    const stats = await getDashboardStats(session.user.id);
+    const charts = await getDashboardCharts(session.user.id);
+    const deadlines = await getUpcomingDeadlines(session.user.id);
+
+    const dashboardData = {
+        stats,
+        charts,
+        deadlines,
+    };
+
     // Si l'utilisateur a une compagnie, afficher le tableau de bord
     return (
         <div className="min-h-screen bg-background">
@@ -68,173 +290,17 @@ export default async function DashboardPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                             <h1 className="text-3xl font-bold text-foreground mb-2">
-                                Bienvenue, {userWithCompany.company.name} !
+                                Bienvenue, {userWithCompany.user.name} !
                             </h1>
                             <p className="text-muted-foreground">
                                 Tableau de bord de facturation
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                Entreprise configurée
-                            </span>
-                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Contenu principal */}
             <div className="container mx-auto px-4 py-8">
-                {/* Informations de l'entreprise */}
-                <div className="mb-12">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-semibold text-foreground">
-                            Informations de l'entreprise
-                        </h2>
-                        <button className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                            Modifier
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Logo de l'entreprise */}
-                        <div className="md:col-span-2 lg:col-span-1">
-                            <CompanyLogoUpload
-                                currentLogo={userWithCompany.company.logo || undefined}
-                            />
-                        </div>
-                        {/* Informations générales */}
-                        <div className="space-y-4">
-                            <h3 className="font-medium text-foreground border-b border-border pb-2">
-                                Informations générales
-                            </h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <span className="text-sm text-muted-foreground">Nom de l'entreprise</span>
-                                    <p className="font-medium text-foreground">{userWithCompany.company.name}</p>
-                                </div>
-                                <div>
-                                    <span className="text-sm text-muted-foreground">Email</span>
-                                    <p className="font-medium text-foreground">{userWithCompany.company.email}</p>
-                                </div>
-                                {userWithCompany.company.phone && (
-                                    <div>
-                                        <span className="text-sm text-muted-foreground">Téléphone</span>
-                                        <p className="font-medium text-foreground">{userWithCompany.company.phone}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Adresse */}
-                        <div className="space-y-4">
-                            <h3 className="font-medium text-foreground border-b border-border pb-2">
-                                Adresse
-                            </h3>
-                            <div className="space-y-3">
-                                {userWithCompany.company.address && (
-                                    <div>
-                                        <span className="text-sm text-muted-foreground">Adresse</span>
-                                        <p className="font-medium text-foreground">{userWithCompany.company.address}</p>
-                                    </div>
-                                )}
-                                <div className="flex gap-4">
-                                    {userWithCompany.company.city && (
-                                        <div>
-                                            <span className="text-sm text-muted-foreground">Ville</span>
-                                            <p className="font-medium text-foreground">{userWithCompany.company.city}</p>
-                                        </div>
-                                    )}
-                                    {userWithCompany.company.postalCode && (
-                                        <div>
-                                            <span className="text-sm text-muted-foreground">Code postal</span>
-                                            <p className="font-medium text-foreground">{userWithCompany.company.postalCode}</p>
-                                        </div>
-                                    )}
-                                </div>
-                                {userWithCompany.company.country && (
-                                    <div>
-                                        <span className="text-sm text-muted-foreground">Pays</span>
-                                        <p className="font-medium text-foreground">{userWithCompany.company.country}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Informations fiscales */}
-                        <div className="space-y-4">
-                            <h3 className="font-medium text-foreground border-b border-border pb-2">
-                                Informations fiscales
-                            </h3>
-                            <div className="space-y-3">
-                                {userWithCompany.company.siret && (
-                                    <div>
-                                        <span className="text-sm text-muted-foreground">SIRET</span>
-                                        <p className="font-medium text-foreground">{userWithCompany.company.siret}</p>
-                                    </div>
-                                )}
-                                {userWithCompany.company.vatNumber && (
-                                    <div>
-                                        <span className="text-sm text-muted-foreground">Numéro de TVA</span>
-                                        <p className="font-medium text-foreground">{userWithCompany.company.vatNumber}</p>
-                                    </div>
-                                )}
-                                {!userWithCompany.company.siret && !userWithCompany.company.vatNumber && (
-                                    <p className="text-sm text-muted-foreground italic">
-                                        Aucune information fiscale renseignée
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions rapides */}
-                <div className="mb-12">
-                    <h2 className="text-2xl font-semibold text-foreground mb-6">
-                        Actions rapides
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <button className="p-6 text-left border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <div className="text-lg font-medium text-foreground mb-2">Nouvelle facture</div>
-                            <p className="text-sm text-muted-foreground">Créer une nouvelle facture</p>
-                        </button>
-                        <button className="p-6 text-left border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <div className="text-lg font-medium text-foreground mb-2">Nouveau client</div>
-                            <p className="text-sm text-muted-foreground">Ajouter un client</p>
-                        </button>
-                        <button className="p-6 text-left border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <div className="text-lg font-medium text-foreground mb-2">Modèles</div>
-                            <p className="text-sm text-muted-foreground">Gérer les modèles de factures</p>
-                        </button>
-                        <button className="p-6 text-left border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
-                            <div className="text-lg font-medium text-foreground mb-2">Paramètres</div>
-                            <p className="text-sm text-muted-foreground">Configurer l'application</p>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Aperçu des statistiques */}
-                <div>
-                    <h2 className="text-2xl font-semibold text-foreground mb-6">
-                        Aperçu
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="p-6 border border-border rounded-lg">
-                            <div className="text-2xl font-bold text-foreground mb-1">0</div>
-                            <div className="text-sm text-muted-foreground">Factures ce mois</div>
-                        </div>
-                        <div className="p-6 border border-border rounded-lg">
-                            <div className="text-2xl font-bold text-foreground mb-1">0</div>
-                            <div className="text-sm text-muted-foreground">Clients actifs</div>
-                        </div>
-                        <div className="p-6 border border-border rounded-lg">
-                            <div className="text-2xl font-bold text-foreground mb-1">0 €</div>
-                            <div className="text-sm text-muted-foreground">Chiffre d'affaires</div>
-                        </div>
-                    </div>
-                </div>
+                <DashboardClient initialData={dashboardData} />
             </div>
         </div>
     );
