@@ -18,25 +18,21 @@ import {
 } from "@/components/ui/chart"
 import { TrendingUp } from "lucide-react"
 
-// Configuration pour le graphique en barres (devis et factures)
+// Configuration pour le graphique en barres (revenus)
 const barChartConfig = {
-    running: {
-        label: "Factures",
+    benefice: {
+        label: "Chiffre d'affaires",
         color: "var(--chart-1)",
-    },
-    swimming: {
-        label: "Devis",
-        color: "var(--chart-2)",
     },
 } satisfies ChartConfig
 
-// Configuration pour le graphique en ligne (revenus)
+// Configuration pour le graphique en ligne (factures et devis)
 const lineChartConfig = {
-    desktop: {
+    invoice: {
         label: "Factures",
         color: "var(--chart-1)",
     },
-    mobile: {
+    quote: {
         label: "Devis",
         color: "var(--chart-2)",
     },
@@ -46,84 +42,53 @@ export function RevenueQuoteAndInvoiceChart({ charts }: { charts: any }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Devis et factures</CardTitle>
-                <CardDescription>Évolution mensuelle des revenus</CardDescription>
+                <CardTitle>Chiffre d'affaires mensuel</CardTitle>
+                <CardDescription>Évolution du CA sur les 6 derniers mois</CardDescription>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={barChartConfig}>
-                    <BarChart accessibilityLayer data={charts.revenue}>
+                    <BarChart
+                        accessibilityLayer
+                        data={charts}
+                        margin={{
+                            top: 20,
+                        }}
+                    >
+                        <CartesianGrid vertical={false} />
                         <XAxis
-                            dataKey="date"
+                            dataKey="month"
                             tickLine={false}
                             tickMargin={10}
                             axisLine={false}
-                            tickFormatter={(value) => {
-                                return new Date(value + "-01").toLocaleDateString("fr-FR", {
-                                    month: "short",
-                                })
-                            }}
-                        />
-                        <Bar
-                            dataKey="running"
-                            stackId="a"
-                            fill="var(--color-running)"
-                            radius={[0, 0, 4, 4]}
-                        />
-                        <Bar
-                            dataKey="swimming"
-                            stackId="a"
-                            fill="var(--color-swimming)"
-                            radius={[4, 4, 0, 0]}
+                            tickFormatter={(value) => value.slice(0, 3)}
                         />
                         <ChartTooltip
-                            content={
-                                <ChartTooltipContent
-                                    hideLabel
-                                    className="w-[180px]"
-                                    formatter={(value, name, item, index) => (
-                                        <>
-                                            <div
-                                                className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
-                                                style={
-                                                    {
-                                                        "--color-bg": `var(--color-${name})`,
-                                                    } as React.CSSProperties
-                                                }
-                                            />
-                                            {barChartConfig[name as keyof typeof barChartConfig]?.label ||
-                                                name}
-                                            <div className="text-foreground ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums">
-                                                {value.toLocaleString('fr-FR')}
-                                                <span className="text-muted-foreground font-normal">
-                                                    €
-                                                </span>
-                                            </div>
-                                            {/* Add this after the last item */}
-                                            {index === 1 && (
-                                                <div className="text-foreground mt-1.5 flex basis-full items-center border-t pt-1.5 text-xs font-medium">
-                                                    Total
-                                                    <div className="text-foreground ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums">
-                                                        {(item.payload.running + item.payload.swimming).toLocaleString('fr-FR')}
-                                                        <span className="text-muted-foreground font-normal">
-                                                            €
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                />
-                            }
                             cursor={false}
-                            defaultIndex={1}
+                            content={<ChartTooltipContent hideLabel />}
                         />
+                        <Bar dataKey="benefice" fill="var(--color-benefice)" radius={8}>
+                            <LabelList
+                                position="top"
+                                offset={12}
+                                className="fill-foreground"
+                                fontSize={12}
+                                formatter={(value: any) => `${value.toLocaleString('fr-FR')} €`}
+                            />
+                        </Bar>
                     </BarChart>
                 </ChartContainer>
             </CardContent>
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+                <div className="flex gap-2 leading-none font-medium">
+                    Chiffre d'affaires en hausse ce mois <TrendingUp className="h-4 w-4" />
+                </div>
+                <div className="text-muted-foreground leading-none">
+                    Affichage du CA des 6 derniers mois
+                </div>
+            </CardFooter>
         </Card>
     )
 }
-
 
 export function RevenueChart({ charts }: { charts: any }) {
     return (
@@ -138,7 +103,6 @@ export function RevenueChart({ charts }: { charts: any }) {
                         accessibilityLayer
                         data={charts}
                         margin={{
-                            top: 20,
                             left: 12,
                             right: 12,
                         }}
@@ -151,57 +115,34 @@ export function RevenueChart({ charts }: { charts: any }) {
                             tickMargin={8}
                             tickFormatter={(value) => value.slice(0, 3)}
                         />
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent indicator="line" />}
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                        <Line
+                            dataKey="invoice"
+                            type="monotone"
+                            stroke="var(--color-invoice)"
+                            strokeWidth={2}
+                            dot={false}
                         />
                         <Line
-                            dataKey="desktop"
-                            type="natural"
-                            stroke="var(--color-desktop)"
+                            dataKey="quote"
+                            type="monotone"
+                            stroke="var(--color-quote)"
                             strokeWidth={2}
-                            dot={{
-                                fill: "var(--color-desktop)",
-                            }}
-                            activeDot={{
-                                r: 6,
-                            }}
-                        >
-                            <LabelList
-                                position="top"
-                                offset={12}
-                                className="fill-foreground"
-                                fontSize={12}
-                            />
-                        </Line>
-                        <Line
-                            dataKey="mobile"
-                            type="natural"
-                            stroke="var(--color-mobile)"
-                            strokeWidth={2}
-                            dot={{
-                                fill: "var(--color-mobile)",
-                            }}
-                            activeDot={{
-                                r: 6,
-                            }}
-                        >
-                            <LabelList
-                                position="top"
-                                offset={12}
-                                className="fill-foreground"
-                                fontSize={12}
-                            />
-                        </Line>
+                            dot={false}
+                        />
                     </LineChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-                <div className="flex gap-2 leading-none font-medium">
-                    Activité en hausse ce mois <TrendingUp className="h-4 w-4" />
-                </div>
-                <div className="text-muted-foreground leading-none">
-                    Évolution des 6 derniers mois
+            <CardFooter>
+                <div className="flex w-full items-start gap-2 text-sm">
+                    <div className="grid gap-2">
+                        <div className="flex items-center gap-2 leading-none font-medium">
+                            Activité en hausse ce mois <TrendingUp className="h-4 w-4" />
+                        </div>
+                        <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                            Évolution des 6 derniers mois
+                        </div>
+                    </div>
                 </div>
             </CardFooter>
         </Card>

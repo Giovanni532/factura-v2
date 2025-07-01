@@ -119,17 +119,18 @@ async function getDashboardCharts(userId: string) {
         .groupBy(sql`strftime('%Y-%m', ${quote.createdAt})`)
         .orderBy(sql`strftime('%Y-%m', ${quote.createdAt})`);
 
-    const topServices = await db.select({
-        name: sql<string>`${invoiceItem.description}`,
-        count: sql<number>`count(*)`,
-        revenue: sql<number>`sum(${invoiceItem.total})`,
+    // Calcul des bénéfices mensuels (revenus des factures payées)
+    const monthlyBenefits = await db.select({
+        month: sql<string>`strftime('%Y-%m', ${invoice.createdAt})`,
+        benefice: sql<number>`sum(case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
     })
-        .from(invoiceItem)
-        .leftJoin(invoice, eq(invoiceItem.invoiceId, invoice.id))
-        .where(eq(invoice.companyId, companyId))
-        .groupBy(sql`${invoiceItem.description}`)
-        .orderBy(desc(sql`count(*)`))
-        .limit(5);
+        .from(invoice)
+        .where(and(
+            eq(invoice.companyId, companyId),
+            gte(invoice.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
+        ))
+        .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
+        .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt})`);
 
     return {
         monthlyInvoices: monthlyInvoices.map(item => ({
@@ -142,10 +143,9 @@ async function getDashboardCharts(userId: string) {
             quotes: Number(item.count) || 0,
             accepted: Number(item.accepted) || 0,
         })),
-        topServices: topServices.map(item => ({
-            name: item.name || 'Service inconnu',
-            count: Number(item.count) || 0,
-            revenue: Number(item.revenue) || 0,
+        monthlyBenefits: monthlyBenefits.map(item => ({
+            month: item.month,
+            benefice: Number(item.benefice) || 0,
         })),
     };
 }

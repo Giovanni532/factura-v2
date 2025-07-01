@@ -19,95 +19,60 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialData }: DashboardClientProps) {
-    const [stats, setStats] = useState<any>(initialData.stats);
-    const [charts, setCharts] = useState<any>(initialData.charts);
-    const [deadlines, setDeadlines] = useState<any>(initialData.deadlines);
-
-    if (!stats && !charts && !deadlines) {
-        return (
-            <div className="space-y-8">
-                {/* Skeleton pour les statistiques */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <Card key={i}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-8 w-8 rounded" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-8 w-16 mb-2" />
-                                <Skeleton className="h-3 w-20" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-
-                {/* Skeleton pour les graphiques */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <Card key={i}>
-                            <CardHeader>
-                                <Skeleton className="h-6 w-48 mb-2" />
-                                <Skeleton className="h-4 w-64" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-[350px] w-full" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-8">
-            {stats && (
+            {initialData.stats && (
                 <div className="space-y-6">
                     <h2 className="text-2xl font-semibold">Statistiques</h2>
-                    <StatsCards stats={stats} />
+                    <StatsCards stats={initialData.stats} />
                 </div>
             )}
             {/* Graphiques */}
-            {charts && (
+            {initialData.charts && (
                 <div className="space-y-6">
                     <h2 className="text-2xl font-semibold">Analyses</h2>
                     <div className="grid gap-6 md:grid-cols-2">
                         {/* Préparation des données pour les deux charts */}
                         {(() => {
-                            // On suppose que charts.monthlyInvoices et charts.monthlyQuotes sont ordonnés par mois croissant
-                            const months = Array.from(new Set([
-                                ...(charts.monthlyInvoices?.map((i: any) => i.month) || []),
-                                ...(charts.monthlyQuotes?.map((q: any) => q.month) || []),
+                            // Pour le bar chart - on utilise les données de bénéfices
+                            const benefitMonths = Array.from(new Set([
+                                ...(initialData.charts.monthlyBenefits?.map((b: any) => b.month) || []),
                             ])).sort();
 
-                            // Pour le bar chart (RevenueQuoteAndInvoiceChart)
-                            const revenueBarData = months.map((month) => {
-                                const inv = charts.monthlyInvoices?.find((i: any) => i.month === month) || {};
-                                const qte = charts.monthlyQuotes?.find((q: any) => q.month === month) || {};
-                                return {
-                                    date: month, // ou formater en nom de mois si besoin
-                                    running: Number(inv.revenue) || 0, // revenus factures
-                                    swimming: Number(qte.accepted) || 0, // nombre de devis acceptés (ou revenus devis si dispo)
-                                };
-                            });
+                            // Pour le line chart - on combine les mois des factures et devis
+                            const activityMonths = Array.from(new Set([
+                                ...(initialData.charts.monthlyInvoices?.map((i: any) => i.month) || []),
+                                ...(initialData.charts.monthlyQuotes?.map((q: any) => q.month) || []),
+                            ])).sort();
 
-                            // Pour le line chart (RevenueChart)
-                            const revenueLineData = months.map((month) => {
-                                const inv = charts.monthlyInvoices?.find((i: any) => i.month === month) || {};
-                                const qte = charts.monthlyQuotes?.find((q: any) => q.month === month) || {};
+                            // Pour le bar chart (RevenueQuoteAndInvoiceChart) - Chiffre d'affaires
+                            const revenueBarData = benefitMonths.map((month) => {
+                                const benefit = initialData.charts.monthlyBenefits?.find((b: any) => b.month === month) || {};
                                 // On affiche le nom du mois (ex: "Janvier")
                                 const monthName = new Date(month + "-01").toLocaleString("fr-FR", { month: "long" });
                                 return {
                                     month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                                    desktop: Number(inv.invoices) || 0, // nombre de factures
-                                    mobile: Number(qte.quotes) || 0, // nombre de devis
+                                    benefice: Number(benefit.benefice) || 0, // chiffre d'affaires des factures payées
+                                };
+                            });
+
+                            // Pour le line chart (RevenueChart) - Volume d'activité (factures et devis)
+                            const revenueLineData = activityMonths.map((month) => {
+                                const inv = initialData.charts.monthlyInvoices?.find((i: any) => i.month === month) || {};
+                                const qte = initialData.charts.monthlyQuotes?.find((q: any) => q.month === month) || {};
+                                // On affiche le nom du mois (ex: "Janvier")
+                                const monthName = new Date(month + "-01").toLocaleString("fr-FR", { month: "long" });
+                                return {
+                                    month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+                                    invoice: Number(inv.invoices) || 0, // nombre de factures
+                                    quote: Number(qte.quotes) || 0, // nombre de devis
                                 };
                             });
 
                             return (
                                 <>
-                                    <RevenueQuoteAndInvoiceChart charts={{ revenue: revenueBarData }} />
+                                    <RevenueQuoteAndInvoiceChart charts={revenueBarData} />
                                     <RevenueChart charts={revenueLineData} />
                                 </>
                             );
@@ -117,10 +82,10 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
             )}
 
             {/* Tableau des échéances */}
-            {deadlines && (
+            {initialData.deadlines && (
                 <div className="space-y-6">
                     <h2 className="text-2xl font-semibold">Suivi</h2>
-                    <DeadlinesTable deadlines={deadlines} />
+                    <DeadlinesTable deadlines={initialData.deadlines} />
                 </div>
             )}
 
