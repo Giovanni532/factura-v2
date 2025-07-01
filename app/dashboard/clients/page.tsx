@@ -8,7 +8,12 @@ import { headers } from "next/headers";
 import { getUserWithCompany } from "@/db/queries/company";
 import { paths } from "@/paths";
 
-export default async function ClientsPage() {
+interface InvoicesPageProps {
+    searchParams: Promise<{ [key: string]: string }>
+}
+
+export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
+    const searchParamsResult = await searchParams;
     const session = await auth.api.getSession({
         headers: await headers()
     });
@@ -26,7 +31,7 @@ export default async function ClientsPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
             </div>
-            <ClientsPageClient initialClients={clients} />
+            <ClientsPageClient initialClients={clients} newClient={searchParamsResult.new === "true" ? true : false} />
         </div>
     );
 } 

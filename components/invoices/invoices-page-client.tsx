@@ -19,18 +19,18 @@ interface InvoicesPageClientProps {
         search: string;
         status: string;
         clientId: string;
+        new: boolean;
     };
 }
 
 export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, formData, filters: initialFilters }: InvoicesPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-
     const [search, setSearch] = useState(initialFilters.search);
     const [statusFilter, setStatusFilter] = useState(initialFilters.status);
     const [invoices, setInvoices] = useState(initialInvoices);
     const [stats, setStats] = useState(initialStats);
-
+    const [newInvoice, setNewInvoice] = useState(initialFilters.new);
     // Filtrer les factures
     const filteredInvoices = useMemo(() => {
         return invoices.filter(invoice => {
@@ -71,6 +71,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
             }
         }
 
+        if (newFilters.new !== undefined) {
+            if (newFilters.new) {
+                setNewInvoice(true);
+            } else {
+                setNewInvoice(false);
+            }
+        }
+
         router.push(`/dashboard/invoices?${params.toString()}`);
     };
 
@@ -108,7 +116,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                             Gérez vos factures et suivez vos paiements
                         </p>
                     </div>
-                    <CreateInvoiceButton formData={formData} />
+                    <CreateInvoiceButton formData={formData} newInvoice={newInvoice} />
                 </div>
 
                 {/* Statistiques */}
@@ -201,7 +209,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                                         Effacer les filtres
                                     </Button>
                                 ) : (
-                                    <CreateInvoiceButton formData={formData} />
+                                    <CreateInvoiceButton formData={formData} newInvoice={newInvoice} />
                                 )}
                             </div>
                         ) : (

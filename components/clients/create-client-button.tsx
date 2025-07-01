@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateClientForm } from "@/components/clients/create-client-form";
@@ -12,8 +12,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-export function CreateClientButton() {
+export function CreateClientButton({ newClient }: { newClient: boolean }) {
     const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+    useEffect(() => {
+        setShowCreateDialog(newClient);
+    }, [newClient]);
 
     return (
         <>

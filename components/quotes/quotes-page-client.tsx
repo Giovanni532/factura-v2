@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ interface QuotesPageClientProps {
         search: string;
         status: string;
         clientId: string;
+        new: boolean;
     };
 }
 
@@ -30,7 +31,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     const [statusFilter, setStatusFilter] = useState(initialFilters.status);
     const [quotes, setQuotes] = useState(initialQuotes);
     const [stats, setStats] = useState(initialStats);
-
+    const [newQuote, setNewQuote] = useState(initialFilters.new);
     // Filtrer les devis
     const filteredQuotes = useMemo(() => {
         return quotes.filter(quote => {
@@ -71,6 +72,14 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
             }
         }
 
+        if (newFilters.new !== undefined) {
+            if (newFilters.new) {
+                setNewQuote(true);
+            } else {
+                setNewQuote(false);
+            }
+        }
+
         router.push(`/dashboard/quotes?${params.toString()}`);
     };
 
@@ -108,7 +117,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                             Gérez vos devis et suivez vos conversions
                         </p>
                     </div>
-                    <CreateQuoteButton formData={formData} />
+                    <CreateQuoteButton formData={formData} newQuote={newQuote} />
                 </div>
 
                 {/* Statistiques */}
@@ -201,7 +210,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                                         Effacer les filtres
                                     </Button>
                                 ) : (
-                                    <CreateQuoteButton formData={formData} />
+                                    <CreateQuoteButton formData={formData} newQuote={newQuote} />
                                 )}
                             </div>
                         ) : (

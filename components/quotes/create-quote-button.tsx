@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
@@ -8,10 +8,15 @@ import { CreateQuoteForm } from "./create-quote-form";
 
 interface CreateQuoteButtonProps {
     formData?: any;
+    newQuote: boolean;
 }
 
-export function CreateQuoteButton({ formData }: CreateQuoteButtonProps) {
+export function CreateQuoteButton({ formData, newQuote }: CreateQuoteButtonProps) {
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        setOpen(newQuote);
+    }, [newQuote]);
 
     return (
         <>

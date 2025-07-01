@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { StatsCards } from "./stats-cards";
 import { RevenueChart, RevenueQuoteAndInvoiceChart } from "./charts";
 import { DeadlinesTable } from "./deadlines-table";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, FileText, Users } from "lucide-react";
+import { FileText, Users } from "lucide-react";
+import Link from "next/link";
+import { Button } from "../ui/button";
+import { paths } from "@/paths";
 
 interface DashboardData {
     stats: any;
@@ -93,61 +93,47 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold">Actions rapides</h2>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
+                    <Button variant="outline" className="w-full h-24" asChild>
+                        <Link href={paths.invoices.list + "?new=true"}>
+                            <div className="flex items-center gap-3 w-full h-full">
                                 <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                                     <FileText className="h-5 w-5 text-blue-600" />
                                 </div>
-                                <div>
+                                <div className="flex flex-col items-start w-full">
                                     <div className="font-medium">Nouvelle facture</div>
                                     <div className="text-sm text-muted-foreground">Créer une facture</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </Link>
+                    </Button>
 
-                    <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
+                    <Button variant="outline" className="w-full h-24" asChild>
+                        <Link href={paths.quotes.list + "?new=true"}>
+                            <div className="flex items-center gap-3 w-full h-full">
                                 <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
                                     <FileText className="h-5 w-5 text-purple-600" />
                                 </div>
-                                <div>
+                                <div className="flex flex-col items-start w-full">
                                     <div className="font-medium">Nouveau devis</div>
                                     <div className="text-sm text-muted-foreground">Créer un devis</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </Link>
+                    </Button>
 
-                    <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
+                    <Button variant="outline" className="w-full h-24" asChild>
+                        <Link href={paths.clients.list + "?new=true"}>
+                            <div className="flex items-center gap-3 w-full h-full">
                                 <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20">
                                     <Users className="h-5 w-5 text-orange-600" />
                                 </div>
-                                <div>
+                                <div className="flex flex-col items-start w-full">
                                     <div className="font-medium">Nouveau client</div>
                                     <div className="text-sm text-muted-foreground">Ajouter un client</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
-                                    <TrendingUp className="h-5 w-5 text-green-600" />
-                                </div>
-                                <div>
-                                    <div className="font-medium">Rapports</div>
-                                    <div className="text-sm text-muted-foreground">Voir les analyses</div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </Link>
+                    </Button>
                 </div>
             </div>
         </div>

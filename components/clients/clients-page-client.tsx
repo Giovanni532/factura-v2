@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, Filter, Users, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,18 @@ import { ClientsContext } from "@/components/clients/clients-context";
 
 interface ClientsPageClientProps {
     initialClients: ClientWithStats[];
+    newClient: boolean;
 }
 
-export function ClientsPageClient({ initialClients }: ClientsPageClientProps) {
-    const router = useRouter();
+export function ClientsPageClient({ initialClients, newClient }: ClientsPageClientProps) {
     const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+    const [newClientUrl, setNewClientUrl] = useState(newClient);
+
+    useEffect(() => {
+        setNewClientUrl(newClient);
+    }, [newClient]);
 
     // Filtrer les clients
     const filteredClients = clients.filter(client => {
@@ -144,7 +149,7 @@ export function ClientsPageClient({ initialClients }: ClientsPageClientProps) {
                                 Inactifs
                             </Button>
                         </div>
-                        <CreateClientButton />
+                        <CreateClientButton newClient={newClientUrl} />
                     </div>
                 </div>
 
@@ -162,7 +167,7 @@ export function ClientsPageClient({ initialClients }: ClientsPageClientProps) {
                                     : "Commencez par ajouter votre premier client."
                                 }
                             </p>
-                            {!searchTerm && <CreateClientButton />}
+                            {!searchTerm && <CreateClientButton newClient={newClientUrl} />}
                         </CardContent>
                     </Card>
                 ) : (

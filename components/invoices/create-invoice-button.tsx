@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,12 +9,17 @@ import { CreateInvoiceForm } from "@/components/invoices/create-invoice-form";
 
 interface CreateInvoiceButtonProps {
     formData?: any;
+    newInvoice: boolean;
 }
 
-export function CreateInvoiceButton({ formData }: CreateInvoiceButtonProps) {
+export function CreateInvoiceButton({ formData, newInvoice }: CreateInvoiceButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const searchParams = useSearchParams();
     const clientId = searchParams.get('client');
+
+    useEffect(() => {
+        setIsOpen(newInvoice);
+    }, [newInvoice]);
 
     const handleClose = () => {
         setIsOpen(false);

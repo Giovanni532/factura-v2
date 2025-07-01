@@ -69,6 +69,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
                 search: searchParamsResult.search || "",
                 status: searchParamsResult.status || "all",
                 clientId: searchParamsResult.client || "",
+                new: searchParamsResult.new === "true" ? true : false,
             }}
         />
     );
