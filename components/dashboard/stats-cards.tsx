@@ -7,9 +7,6 @@ import {
     DollarSign,
     FileText,
     Users,
-    Package,
-    AlertTriangle,
-    CheckCircle
 } from "lucide-react";
 
 interface StatsCardsProps {
@@ -22,6 +19,8 @@ interface StatsCardsProps {
             overdue: number;
             monthly: number;
             monthlyRevenue: number;
+            lastMonthRevenue: number;
+            lastMonthInvoices: number;
         };
         quotes: {
             total: number;
@@ -29,6 +28,7 @@ interface StatsCardsProps {
             pending: number;
             expired: number;
             monthly: number;
+            lastMonthQuotes: number;
         };
         clients: {
             total: number;
@@ -48,7 +48,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
             value: `${stats.invoices.revenue.toLocaleString('fr-FR')} €`,
             description: `${stats.invoices.monthlyRevenue.toLocaleString('fr-FR')} € ce mois`,
             icon: DollarSign,
-            trend: stats.invoices.monthlyRevenue > 0 ? "up" : "down",
+            trend: stats.invoices.monthlyRevenue > stats.invoices.lastMonthRevenue ? "up" : "down",
             color: "text-green-600",
             bgColor: "bg-green-50 dark:bg-green-900/20",
         },
@@ -57,7 +57,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
             value: stats.invoices.total.toString(),
             description: `${stats.invoices.monthly} ce mois`,
             icon: FileText,
-            trend: stats.invoices.monthly > 0 ? "up" : "down",
+            trend: stats.invoices.monthly > stats.invoices.lastMonthInvoices ? "up" : "down",
             color: "text-blue-600",
             bgColor: "bg-blue-50 dark:bg-blue-900/20",
         },
@@ -66,7 +66,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
             value: stats.quotes.total.toString(),
             description: `${stats.quotes.monthly} ce mois`,
             icon: FileText,
-            trend: stats.quotes.monthly > 0 ? "up" : "down",
+            trend: stats.quotes.monthly > stats.quotes.lastMonthQuotes ? "up" : "down",
             color: "text-purple-600",
             bgColor: "bg-purple-50 dark:bg-purple-900/20",
         },

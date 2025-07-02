@@ -22,6 +22,10 @@ async function getDashboardStats(userId: string) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+    // Mois précédent
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
     const invoiceStats = await db.select({
         totalInvoices: sql<number>`count(*)`,
         totalRevenue: sql<number>`sum(${invoice.total})`,
@@ -30,6 +34,8 @@ async function getDashboardStats(userId: string) {
         overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < date('now') then 1 end)`,
         monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} then 1 end)`,
         monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+        lastMonthRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfLastMonth} and ${invoice.createdAt} <= ${endOfLastMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+        lastMonthInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfLastMonth} and ${invoice.createdAt} <= ${endOfLastMonth} then 1 end)`,
     })
         .from(invoice)
         .where(eq(invoice.companyId, companyId));
@@ -40,6 +46,7 @@ async function getDashboardStats(userId: string) {
         pendingQuotes: sql<number>`count(case when ${quote.status} = 'sent' then 1 end)`,
         expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < date('now') then 1 end)`,
         monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfMonth} and ${quote.createdAt} <= ${endOfMonth} then 1 end)`,
+        lastMonthQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfLastMonth} and ${quote.createdAt} <= ${endOfLastMonth} then 1 end)`,
     })
         .from(quote)
         .where(eq(quote.companyId, companyId));
@@ -67,6 +74,8 @@ async function getDashboardStats(userId: string) {
             overdue: Number(invoiceStats[0]?.overdueInvoices) || 0,
             monthly: Number(invoiceStats[0]?.monthlyInvoices) || 0,
             monthlyRevenue: Number(invoiceStats[0]?.monthlyRevenue) || 0,
+            lastMonthRevenue: Number(invoiceStats[0]?.lastMonthRevenue) || 0,
+            lastMonthInvoices: Number(invoiceStats[0]?.lastMonthInvoices) || 0,
         },
         quotes: {
             total: Number(quoteStats[0]?.totalQuotes) || 0,
@@ -74,6 +83,7 @@ async function getDashboardStats(userId: string) {
             pending: Number(quoteStats[0]?.pendingQuotes) || 0,
             expired: Number(quoteStats[0]?.expiredQuotes) || 0,
             monthly: Number(quoteStats[0]?.monthlyQuotes) || 0,
+            lastMonthQuotes: Number(quoteStats[0]?.lastMonthQuotes) || 0,
         },
         clients: {
             total: Number(clientStats[0]?.totalClients) || 0,
