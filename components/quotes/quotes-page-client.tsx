@@ -20,6 +20,7 @@ interface QuotesPageClientProps {
         status: string;
         clientId: string;
         new: boolean;
+        id: string;
     };
 }
 
@@ -32,6 +33,13 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     const [quotes, setQuotes] = useState(initialQuotes);
     const [stats, setStats] = useState(initialStats);
     const [newQuote, setNewQuote] = useState(initialFilters.new);
+    const [id, setId] = useState<string | null>(initialFilters.id);
+
+    // Synchroniser l'ID avec les paramètres de recherche
+    useEffect(() => {
+        const currentId = searchParams.get('id');
+        setId(currentId);
+    }, [searchParams]);
     // Filtrer les devis
     const filteredQuotes = useMemo(() => {
         return quotes.filter(quote => {
@@ -216,7 +224,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                         ) : (
                             <div className="space-y-4">
                                 {filteredQuotes.map((quote) => (
-                                    <QuoteCard key={quote.id} quote={quote} />
+                                    <QuoteCard key={quote.id} quote={quote} idToOpen={id} />
                                 ))}
                             </div>
                         )}

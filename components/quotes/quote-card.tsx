@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,15 +21,17 @@ import { QuotePreviewModal } from "./quote-preview-modal";
 
 interface QuoteCardProps {
     quote: QuoteWithDetails;
+    idToOpen: string | null;
 }
 
-export function QuoteCard({ quote }: QuoteCardProps) {
+export function QuoteCard({ quote, idToOpen }: QuoteCardProps) {
     const router = useRouter();
     const { quotes, setQuotes, stats, setStats } = useQuotesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [showStatusDialog, setShowStatusDialog] = useState(false);
+    const [wasManuallyClosed, setWasManuallyClosed] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState(quote.status);
     const [emailSubject, setEmailSubject] = useState(`Devis ${quote.quoteNumber} - ${quote.client.name}`);
     const [emailMessage, setEmailMessage] = useState(`Bonjour ${quote.client.name},
@@ -42,6 +44,20 @@ Merci de votre confiance.
 
 Cordialement,
 Votre équipe`);
+
+    // Ouvrir automatiquement la modal si l'ID correspond à ce devis
+    useEffect(() => {
+        if (idToOpen && idToOpen === quote.id && !wasManuallyClosed) {
+            setShowPreviewModal(true);
+        } else if (idToOpen && idToOpen !== quote.id && showPreviewModal) {
+            // Fermer la modal si l'ID change et ne correspond plus à ce devis
+            setShowPreviewModal(false);
+            setWasManuallyClosed(false);
+        } else if (!idToOpen) {
+            // Réinitialiser wasManuallyClosed quand il n'y a plus d'ID
+            setWasManuallyClosed(false);
+        }
+    }, [idToOpen, quote.id, wasManuallyClosed]);
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteQuoteAction, {
         onSuccess: (result) => {
@@ -213,6 +229,10 @@ Votre équipe`);
 
     const handleView = () => {
         setShowPreviewModal(true);
+        // Ajouter l'ID à l'URL pour permettre le partage
+        const url = new URL(window.location.href);
+        url.searchParams.set('id', quote.id);
+        window.history.replaceState({}, '', url.toString());
     };
 
     const handleEdit = () => {
@@ -338,7 +358,16 @@ Votre équipe`);
             <QuotePreviewModal
                 quote={quote}
                 isOpen={showPreviewModal}
-                onClose={() => setShowPreviewModal(false)}
+                onClose={() => {
+                    setShowPreviewModal(false);
+                    setWasManuallyClosed(true);
+                    // Nettoyer l'URL si la modal était ouverte via l'ID
+                    if (idToOpen === quote.id) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete('id');
+                        window.history.replaceState({}, '', url.toString());
+                    }
+                }}
             />
 
             {/* Dialog de modification du statut */}
