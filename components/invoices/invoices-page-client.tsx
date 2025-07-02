@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ interface InvoicesPageClientProps {
         status: string;
         clientId: string;
         new: boolean;
+        id: string;
     };
 }
 
@@ -31,6 +32,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
     const [invoices, setInvoices] = useState(initialInvoices);
     const [stats, setStats] = useState(initialStats);
     const [newInvoice, setNewInvoice] = useState(initialFilters.new);
+    const [id, setId] = useState<string | null>(initialFilters.id);
+
+    // Synchroniser l'ID avec les paramètres de recherche
+    useEffect(() => {
+        const currentId = searchParams.get('id');
+        setId(currentId);
+    }, [searchParams]);
+
     // Filtrer les factures
     const filteredInvoices = useMemo(() => {
         return invoices.filter(invoice => {
@@ -76,6 +85,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                 setNewInvoice(true);
             } else {
                 setNewInvoice(false);
+            }
+        }
+
+        if (newFilters.id !== undefined) {
+            if (newFilters.id) {
+                setId(newFilters.id);
+            } else {
+                setId(null);
             }
         }
 
@@ -215,7 +232,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                         ) : (
                             <div className="space-y-4">
                                 {filteredInvoices.map((invoice) => (
-                                    <InvoiceCard key={invoice.id} invoice={invoice} />
+                                    <InvoiceCard key={invoice.id} invoice={invoice} idToOpen={id} />
                                 ))}
                             </div>
                         )}

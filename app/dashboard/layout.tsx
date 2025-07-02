@@ -5,7 +5,19 @@ import {
     SidebarProvider,
 } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
-import { headers } from "next/headers";
+import { headers } from "next/headers"
+import { getUserWithCompany } from "@/db/queries/company"
+import { getRecentDocuments } from "@/db/queries/invoice"
+
+interface RecentDocument {
+    id: string
+    number: string
+    type: 'invoice' | 'quote'
+    status: string
+    total: number
+    clientName: string
+    createdAt: Date
+}
 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -14,6 +26,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
     })
 
     const user = session?.user
+
+    // Récupérer les documents récents côté serveur
+    let recentDocuments: RecentDocument[] = []
+    if (user) {
+        try {
+            const userWithCompany = await getUserWithCompany(user.id)
+            const companyId = userWithCompany.company?.id
+
+            if (companyId) {
+                recentDocuments = await getRecentDocuments(companyId)
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération des documents récents:", error)
+        }
+    }
 
     return (
         <SidebarProvider
@@ -31,6 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     email: user?.email || "",
                     avatar: user?.image || "/avatars/default.jpg"
                 }}
+                recentDocuments={recentDocuments}
             />
             <SidebarInset>
                 <DashboardHeader />

@@ -111,15 +111,26 @@ const sidebarData = {
     ] as NavItem[],
 }
 
+interface RecentDocument {
+    id: string
+    number: string
+    type: 'invoice' | 'quote'
+    status: string
+    total: number
+    clientName: string
+    createdAt: Date
+}
+
 interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
     currentUser: {
         name: string
         email: string
         avatar: string
     }
+    recentDocuments?: RecentDocument[]
 }
 
-export function DashboardSidebar({ currentUser, ...props }: DashboardSidebarProps) {
+export function DashboardSidebar({ currentUser, recentDocuments = [], ...props }: DashboardSidebarProps) {
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -139,7 +150,7 @@ export function DashboardSidebar({ currentUser, ...props }: DashboardSidebarProp
             </SidebarHeader>
             <SidebarContent>
                 <DashboardMain navigationItems={sidebarData.mainNavigation} />
-                <DashboardDocuments />
+                <DashboardDocuments recentDocuments={recentDocuments} />
             </SidebarContent>
             <SidebarFooter>
                 <DashboardUser currentUser={currentUser} />

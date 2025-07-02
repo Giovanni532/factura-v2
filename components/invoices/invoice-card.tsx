@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,15 +21,16 @@ import { InvoicePreviewModal } from "./invoice-preview-modal";
 
 interface InvoiceCardProps {
     invoice: InvoiceWithDetails;
+    idToOpen: string | null;
 }
 
-export function InvoiceCard({ invoice }: InvoiceCardProps) {
-    const router = useRouter();
+export function InvoiceCard({ invoice, idToOpen }: InvoiceCardProps) {
     const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [showStatusDialog, setShowStatusDialog] = useState(false);
+    const [wasManuallyClosed, setWasManuallyClosed] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState(invoice.status);
     const [emailSubject, setEmailSubject] = useState(`Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
     const [emailMessage, setEmailMessage] = useState(`Bonjour ${invoice.client.name},
@@ -42,6 +43,20 @@ Merci de votre confiance.
 
 Cordialement,
 Votre équipe`);
+
+    // Ouvrir automatiquement la modal si l'ID correspond à cette facture
+    useEffect(() => {
+        if (idToOpen && idToOpen === invoice.id && !wasManuallyClosed) {
+            setShowPreviewModal(true);
+        } else if (idToOpen && idToOpen !== invoice.id && showPreviewModal) {
+            // Fermer la modal si l'ID change et ne correspond plus à cette facture
+            setShowPreviewModal(false);
+            setWasManuallyClosed(false);
+        } else if (!idToOpen) {
+            // Réinitialiser wasManuallyClosed quand il n'y a plus d'ID
+            setWasManuallyClosed(false);
+        }
+    }, [idToOpen, invoice.id, wasManuallyClosed]);
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteInvoiceAction, {
         onSuccess: (result) => {
@@ -216,6 +231,10 @@ Votre équipe`);
 
     const handleView = () => {
         setShowPreviewModal(true);
+        // Ajouter l'ID à l'URL pour permettre le partage
+        const url = new URL(window.location.href);
+        url.searchParams.set('id', invoice.id);
+        window.history.replaceState({}, '', url.toString());
     };
 
     const handleEdit = () => {
@@ -341,7 +360,16 @@ Votre équipe`);
             <InvoicePreviewModal
                 invoice={invoice}
                 isOpen={showPreviewModal}
-                onClose={() => setShowPreviewModal(false)}
+                onClose={() => {
+                    setShowPreviewModal(false);
+                    setWasManuallyClosed(true);
+                    // Nettoyer l'URL si la modal était ouverte via l'ID
+                    if (idToOpen === invoice.id) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete('id');
+                        window.history.replaceState({}, '', url.toString());
+                    }
+                }}
             />
 
             {/* Dialog de modification du statut */}

@@ -1,5 +1,5 @@
 import { db } from "@/lib/drizzle";
-import { invoice, invoiceItem, client, template } from "@/db/schema";
+import { invoice, invoiceItem, client, template, quote } from "@/db/schema";
 import { eq, desc, and, like, sql } from "drizzle-orm";
 import { InvoiceWithDetails, InvoiceStats } from "@/validation/invoice-schema";
 
@@ -249,4 +249,56 @@ export async function getInvoiceTemplates(companyId: string) {
             eq(template.type, 'invoice')
         ))
         .orderBy(template.name);
+}
+
+// Récupérer les 5 derniers documents (factures et devis) d'une entreprise
+export async function getRecentDocuments(companyId: string) {
+    // Récupérer les 5 dernières factures
+    const recentInvoices = await db
+        .select({
+            id: invoice.id,
+            number: invoice.number,
+            type: sql<'invoice'>`'invoice'`,
+            status: invoice.status,
+            total: invoice.total,
+            clientName: client.name,
+            createdAt: invoice.createdAt,
+        })
+        .from(invoice)
+        .leftJoin(client, eq(invoice.clientId, client.id))
+        .where(eq(invoice.companyId, companyId))
+        .orderBy(desc(invoice.createdAt))
+        .limit(5);
+
+    // Récupérer les 5 derniers devis
+    const recentQuotes = await db
+        .select({
+            id: quote.id,
+            number: quote.number,
+            type: sql<'quote'>`'quote'`,
+            status: quote.status,
+            total: quote.total,
+            clientName: client.name,
+            createdAt: quote.createdAt,
+        })
+        .from(quote)
+        .leftJoin(client, eq(quote.clientId, client.id))
+        .where(eq(quote.companyId, companyId))
+        .orderBy(desc(quote.createdAt))
+        .limit(5);
+
+    // Combiner et trier par date de création
+    const allDocuments = [
+        ...recentInvoices.map(inv => ({
+            ...inv,
+            clientName: inv.clientName || 'Client inconnu',
+        })),
+        ...recentQuotes.map(quote => ({
+            ...quote,
+            clientName: quote.clientName || 'Client inconnu',
+        }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Retourner les 5 plus récents
+    return allDocuments.slice(0, 5);
 } 
