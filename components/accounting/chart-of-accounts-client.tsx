@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAction } from "next-safe-action/hooks"
+import { toast } from "sonner"
 import {
     IconPlus,
     IconSearch,
@@ -14,6 +19,9 @@ import {
     IconFileText
 } from "@tabler/icons-react"
 import { createAccountAction, updateAccountAction, deleteAccountAction } from "@/action/accounting-actions"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { createAccountSchema, updateAccountSchema } from "@/validation/accounting-schema"
 
 interface AccountWithBalance {
     id: string
@@ -32,25 +40,105 @@ interface ChartOfAccountsClientProps {
 export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) {
     const [searchTerm, setSearchTerm] = useState("")
     const [localAccounts, setLocalAccounts] = useState(accounts)
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+    const [editingAccount, setEditingAccount] = useState<AccountWithBalance | null>(null)
 
-    // Mutations
-    const handleCreate = async (data: any) => {
-        const res = await createAccountAction.execute(data)
-        if (res.success) {
-            setLocalAccounts((prev) => [...prev, res.account])
+    // Formulaires
+    const createForm = useForm({
+        resolver: zodResolver(createAccountSchema),
+        defaultValues: {
+            code: "",
+            name: "",
+            type: "asset" as const,
+            parentId: undefined,
         }
+    })
+
+    const updateForm = useForm({
+        resolver: zodResolver(updateAccountSchema),
+        defaultValues: {
+            id: "",
+            code: "",
+            name: "",
+            type: "asset" as const,
+            parentId: undefined,
+        }
+    })
+
+    // Actions
+    const { execute: executeCreate, isPending: isCreating } = useAction(createAccountAction, {
+        onSuccess: (data) => {
+            toast.success("Compte créé avec succès")
+            if (data.data?.account) {
+                const newAccount: AccountWithBalance = {
+                    ...data.data.account,
+                    balance: 0,
+                    children: []
+                }
+                setLocalAccounts((prev) => [...prev, newAccount])
+            }
+            setIsCreateDialogOpen(false)
+            createForm.reset()
+        },
+        onError: () => {
+            toast.error("Erreur lors de la création du compte")
+        }
+    })
+
+    const { execute: executeUpdate, isPending: isUpdating } = useAction(updateAccountAction, {
+        onSuccess: (data) => {
+            toast.success("Compte mis à jour avec succès")
+            if (data.data?.account) {
+                const updatedAccount: AccountWithBalance = {
+                    ...data.data.account,
+                    balance: 0,
+                    children: []
+                }
+                setLocalAccounts((prev) => prev.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc))
+            }
+            setEditingAccount(null)
+            updateForm.reset()
+        },
+        onError: () => {
+            toast.error("Erreur lors de la mise à jour du compte")
+        }
+    })
+
+    const { execute: executeDelete, isPending: isDeleting } = useAction(deleteAccountAction, {
+        onSuccess: () => {
+            toast.success("Compte supprimé avec succès")
+            if (editingAccount) {
+                setLocalAccounts((prev) => prev.filter(acc => acc.id !== editingAccount.id))
+            }
+            setEditingAccount(null)
+        },
+        onError: () => {
+            toast.error("Erreur lors de la suppression du compte")
+        }
+    })
+
+    const handleCreate = (data: any) => {
+        executeCreate(data)
     }
-    const handleUpdate = async (id: string, data: any) => {
-        const res = await updateAccountAction.execute({ id, ...data })
-        if (res.success) {
-            setLocalAccounts((prev) => prev.map(acc => acc.id === id ? res.account : acc))
-        }
+
+    const handleUpdate = (data: any) => {
+        executeUpdate(data)
     }
-    const handleDelete = async (id: string) => {
-        const res = await deleteAccountAction.execute({ id })
-        if (res.success) {
-            setLocalAccounts((prev) => prev.filter(acc => acc.id !== id))
-        }
+
+    const handleDelete = (account: AccountWithBalance) => {
+        setEditingAccount(account)
+        executeDelete({ id: account.id })
+    }
+
+    const openEditDialog = (account: AccountWithBalance) => {
+        setEditingAccount(account)
+        updateForm.reset({
+            id: account.id,
+            code: account.code,
+            name: account.name,
+            type: account.type,
+            parentId: account.parentAccountId || undefined,
+        })
     }
 
     const getTypeColor = (type: AccountWithBalance["type"]) => {
@@ -105,10 +193,81 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                     />
                     <IconSearch className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <Button onClick={() => handleCreate({ code: "999", name: "Nouveau compte", type: "asset" })}>
-                    <IconPlus className="h-4 w-4 mr-2" />
-                    Nouveau compte
-                </Button>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <IconPlus className="h-4 w-4 mr-2" />
+                            Nouveau compte
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Créer un nouveau compte</DialogTitle>
+                        </DialogHeader>
+                        <Form {...createForm}>
+                            <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
+                                <FormField
+                                    control={createForm.control}
+                                    name="code"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Code du compte</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="512000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nom du compte</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Banque" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Type de compte</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Sélectionner un type" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="asset">Actif</SelectItem>
+                                                    <SelectItem value="liability">Passif</SelectItem>
+                                                    <SelectItem value="equity">Capitaux propres</SelectItem>
+                                                    <SelectItem value="revenue">Produits</SelectItem>
+                                                    <SelectItem value="expense">Charges</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="flex justify-end space-x-2">
+                                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                                        Annuler
+                                    </Button>
+                                    <Button type="submit" disabled={isCreating}>
+                                        {isCreating ? "Création..." : "Créer"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* Liste des comptes */}
@@ -151,10 +310,15 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <Button variant="ghost" size="sm" onClick={() => handleUpdate(account.id, { name: account.name + " (modifié)" })}>
+                                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(account)}>
                                                 <IconEdit className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleDelete(account.id)}>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDelete(account)}
+                                                disabled={isDeleting}
+                                            >
                                                 <IconTrash className="h-4 w-4" />
                                             </Button>
                                         </div>
@@ -189,10 +353,15 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center space-x-2">
-                                                        <Button variant="ghost" size="sm" onClick={() => handleUpdate(child.id, { name: child.name + " (modifié)" })}>
+                                                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(child)}>
                                                             <IconEdit className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(child.id)}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(child)}
+                                                            disabled={isDeleting}
+                                                        >
                                                             <IconTrash className="h-4 w-4" />
                                                         </Button>
                                                     </div>
@@ -206,6 +375,77 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Dialog de modification */}
+            <Dialog open={!!editingAccount} onOpenChange={() => setEditingAccount(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Modifier le compte</DialogTitle>
+                    </DialogHeader>
+                    <Form {...updateForm}>
+                        <form onSubmit={updateForm.handleSubmit(handleUpdate)} className="space-y-4">
+                            <FormField
+                                control={updateForm.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Code du compte</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={updateForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nom du compte</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={updateForm.control}
+                                name="type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Type de compte</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="asset">Actif</SelectItem>
+                                                <SelectItem value="liability">Passif</SelectItem>
+                                                <SelectItem value="equity">Capitaux propres</SelectItem>
+                                                <SelectItem value="revenue">Produits</SelectItem>
+                                                <SelectItem value="expense">Charges</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                                <Button type="button" variant="outline" onClick={() => setEditingAccount(null)}>
+                                    Annuler
+                                </Button>
+                                <Button type="submit" disabled={isUpdating}>
+                                    {isUpdating ? "Mise à jour..." : "Mettre à jour"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 } 

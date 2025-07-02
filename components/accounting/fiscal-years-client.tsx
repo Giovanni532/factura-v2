@@ -4,6 +4,14 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { useAction } from "next-safe-action/hooks"
+import { toast } from "sonner"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import {
     IconPlus,
     IconEdit,
@@ -16,6 +24,7 @@ import {
     IconX
 } from "@tabler/icons-react"
 import { createFiscalYearAction, updateFiscalYearAction, deleteFiscalYearAction } from "@/action/accounting-actions"
+import { createFiscalYearSchema, updateFiscalYearSchema } from "@/validation/accounting-schema"
 
 interface FiscalYearWithStats {
     id: string
@@ -34,25 +43,110 @@ interface FiscalYearsClientProps {
 
 export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
     const [localFiscalYears, setLocalFiscalYears] = useState(fiscalYears)
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+    const [editingFiscalYear, setEditingFiscalYear] = useState<FiscalYearWithStats | null>(null)
 
-    // Mutations
-    const handleCreate = async (data: any) => {
-        const res = await createFiscalYearAction(data)
-        if (res.success) {
-            setLocalFiscalYears((prev) => [...prev, res.fiscalYear])
+    // Formulaires
+    const createForm = useForm({
+        resolver: zodResolver(createFiscalYearSchema),
+        defaultValues: {
+            name: "",
+            startDate: "",
+            endDate: "",
+            status: "open" as const,
+            isCurrent: false,
         }
+    })
+
+    const updateForm = useForm({
+        resolver: zodResolver(updateFiscalYearSchema),
+        defaultValues: {
+            id: "",
+            name: "",
+            startDate: "",
+            endDate: "",
+            status: "open" as const,
+            isCurrent: false,
+        }
+    })
+
+    // Actions
+    const { execute: executeCreate, isPending: isCreating } = useAction(createFiscalYearAction, {
+        onSuccess: (data) => {
+            toast.success("Exercice fiscal créé avec succès")
+            if (data.data?.fiscalYear) {
+                const newFiscalYear: FiscalYearWithStats = {
+                    ...data.data.fiscalYear,
+                    totalRevenue: 0,
+                    totalExpenses: 0,
+                    netIncome: 0
+                }
+                setLocalFiscalYears((prev) => [...prev, newFiscalYear])
+            }
+            setIsCreateDialogOpen(false)
+            createForm.reset()
+        },
+        onError: () => {
+            toast.error("Erreur lors de la création de l'exercice fiscal")
+        }
+    })
+
+    const { execute: executeUpdate, isPending: isUpdating } = useAction(updateFiscalYearAction, {
+        onSuccess: (data) => {
+            toast.success("Exercice fiscal mis à jour avec succès")
+            if (data.data?.fiscalYear) {
+                const updatedFiscalYear: FiscalYearWithStats = {
+                    ...data.data.fiscalYear,
+                    totalRevenue: editingFiscalYear?.totalRevenue || 0,
+                    totalExpenses: editingFiscalYear?.totalExpenses || 0,
+                    netIncome: editingFiscalYear?.netIncome || 0
+                }
+                setLocalFiscalYears((prev) => prev.map(fy => fy.id === updatedFiscalYear.id ? updatedFiscalYear : fy))
+            }
+            setEditingFiscalYear(null)
+            updateForm.reset()
+        },
+        onError: () => {
+            toast.error("Erreur lors de la mise à jour de l'exercice fiscal")
+        }
+    })
+
+    const { execute: executeDelete, isPending: isDeleting } = useAction(deleteFiscalYearAction, {
+        onSuccess: () => {
+            toast.success("Exercice fiscal supprimé avec succès")
+            if (editingFiscalYear) {
+                setLocalFiscalYears((prev) => prev.filter(fy => fy.id !== editingFiscalYear.id))
+            }
+            setEditingFiscalYear(null)
+        },
+        onError: () => {
+            toast.error("Erreur lors de la suppression de l'exercice fiscal")
+        }
+    })
+
+    const handleCreate = (data: any) => {
+        executeCreate(data)
     }
-    const handleUpdate = async (id: string, data: any) => {
-        const res = await updateFiscalYearAction({ id, ...data })
-        if (res.success) {
-            setLocalFiscalYears((prev) => prev.map(fy => fy.id === id ? res.fiscalYear : fy))
-        }
+
+    const handleUpdate = (data: any) => {
+        executeUpdate(data)
     }
-    const handleDelete = async (id: string) => {
-        const res = await deleteFiscalYearAction({ id })
-        if (res.success) {
-            setLocalFiscalYears((prev) => prev.filter(fy => fy.id !== id))
-        }
+
+    const handleDelete = (fiscalYear: FiscalYearWithStats) => {
+        setEditingFiscalYear(fiscalYear)
+        executeDelete({ id: fiscalYear.id })
+    }
+
+    const openEditDialog = (fiscalYear: FiscalYearWithStats) => {
+        setEditingFiscalYear(fiscalYear)
+        updateForm.reset({
+            id: fiscalYear.id,
+            name: fiscalYear.name,
+            startDate: fiscalYear.startDate.toISOString().split('T')[0],
+            endDate: fiscalYear.endDate.toISOString().split('T')[0],
+            status: fiscalYear.isClosed ? 'closed' : 'open',
+            isCurrent: false,
+        })
     }
 
     const getStatusColor = (status: FiscalYearWithStats["isClosed"]) => {
@@ -95,10 +189,91 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                 <div className="flex items-center space-x-4">
                     <h2 className="text-lg font-semibold">Exercices fiscaux</h2>
                 </div>
-                <Button>
-                    <IconPlus className="h-4 w-4 mr-2" />
-                    Nouvel exercice
-                </Button>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <IconPlus className="h-4 w-4 mr-2" />
+                            Nouvel exercice
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Créer un nouvel exercice fiscal</DialogTitle>
+                        </DialogHeader>
+                        <Form {...createForm}>
+                            <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
+                                <FormField
+                                    control={createForm.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nom de l'exercice</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Exercice 2024" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="startDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Date de début</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="endDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Date de fin</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={createForm.control}
+                                    name="status"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Statut</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Sélectionner un statut" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="open">Ouvert</SelectItem>
+                                                    <SelectItem value="closed">Clôturé</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="flex justify-end space-x-2">
+                                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                                        Annuler
+                                    </Button>
+                                    <Button type="submit" disabled={isCreating}>
+                                        {isCreating ? "Création..." : "Créer"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* Liste des exercices */}
@@ -167,7 +342,12 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
 
                                     {/* Actions */}
                                     <div className="flex items-center space-x-2 pt-2">
-                                        <Button variant="outline" size="sm" className="flex-1">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1"
+                                            onClick={() => openEditDialog(year)}
+                                        >
                                             <IconEdit className="h-4 w-4 mr-2" />
                                             Modifier
                                         </Button>
@@ -176,7 +356,12 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                                                 <IconLock className="h-4 w-4" />
                                             </Button>
                                         )}
-                                        <Button variant="ghost" size="sm">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDelete(year)}
+                                            disabled={isDeleting}
+                                        >
                                             <IconTrash className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -218,6 +403,87 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Dialog de modification */}
+            <Dialog open={!!editingFiscalYear} onOpenChange={() => setEditingFiscalYear(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Modifier l'exercice fiscal</DialogTitle>
+                    </DialogHeader>
+                    <Form {...updateForm}>
+                        <form onSubmit={updateForm.handleSubmit(handleUpdate)} className="space-y-4">
+                            <FormField
+                                control={updateForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Nom de l'exercice</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={updateForm.control}
+                                name="startDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Date de début</FormLabel>
+                                        <FormControl>
+                                            <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={updateForm.control}
+                                name="endDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Date de fin</FormLabel>
+                                        <FormControl>
+                                            <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={updateForm.control}
+                                name="status"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Statut</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="open">Ouvert</SelectItem>
+                                                <SelectItem value="closed">Clôturé</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                                <Button type="button" variant="outline" onClick={() => setEditingFiscalYear(null)}>
+                                    Annuler
+                                </Button>
+                                <Button type="submit" disabled={isUpdating}>
+                                    {isUpdating ? "Mise à jour..." : "Mettre à jour"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 } 
