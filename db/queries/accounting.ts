@@ -166,13 +166,14 @@ export async function getJournalEntries(
     if (filters.status) {
         whereConditions.push(eq(journalEntry.isPosted, filters.status === 'posted'))
     }
-    if (filters.search) {
-        whereConditions.push(
-            or(
-                like(journalEntry.number, `%${filters.search}%`),
-                like(journalEntry.description, `%${filters.search}%`)
-            )
-        )
+    if (typeof filters.search === 'string' && filters.search.length > 0) {
+        const search = `%${filters.search}%`
+        const orConditions = [
+            sql`COALESCE(${journalEntry.number}, '') LIKE ${search}`,
+            sql`COALESCE(${journalEntry.description}, '') LIKE ${search}`,
+            sql`COALESCE(${journalEntry.reference}, '') LIKE ${search}`,
+        ]
+        whereConditions.push(or(...orConditions))
     }
 
     const entries = await db
@@ -279,13 +280,13 @@ export async function getPayments(
     if (filters.endDate) {
         whereConditions.push(lte(payment.paymentDate, new Date(filters.endDate)))
     }
-    if (filters.search) {
-        whereConditions.push(
-            or(
-                like(payment.reference, `%${filters.search}%`),
-                like(payment.notes, `%${filters.search}%`)
-            )
-        )
+    if (typeof filters.search === 'string' && filters.search.length > 0) {
+        const search = `%${filters.search}%`
+        const orConditions = [
+            sql`COALESCE(${payment.reference}, '') LIKE ${search}`,
+            sql`COALESCE(${payment.notes}, '') LIKE ${search}`,
+        ]
+        whereConditions.push(or(...orConditions))
     }
 
     const payments = await db
@@ -509,4 +510,94 @@ export async function getAccountingStats(companyId: string) {
             change: 0
         }
     }
+}
+
+// Historique des revenus par mois
+export async function getRevenueHistory(companyId: string, months: number = 12) {
+    const monthsData = []
+    const currentDate = new Date()
+
+    for (let i = months - 1; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+
+        const monthNames = [
+            "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+            "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+        ]
+
+        const monthName = monthNames[date.getMonth()]
+
+        // Récupérer les revenus pour ce mois
+        const revenueResult = await db
+            .select({
+                total: sql<number>`COALESCE(SUM(${journalEntryLine.credit}), 0)`
+            })
+            .from(journalEntryLine)
+            .innerJoin(journalEntry, eq(journalEntryLine.journalEntryId, journalEntry.id))
+            .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
+            .where(
+                and(
+                    eq(chartOfAccounts.type, 'revenue'),
+                    eq(journalEntry.isPosted, true),
+                    gte(journalEntry.date, startOfMonth),
+                    lte(journalEntry.date, endOfMonth)
+                )
+            )
+
+        monthsData.push({
+            month: monthName,
+            revenue: revenueResult[0]?.total || 0
+        })
+    }
+
+    return monthsData
+}
+
+// Activités récentes comptables
+export async function getRecentAccountingActivities(companyId: string, limit: number = 10) {
+    // Récupérer les dernières factures
+    const recentInvoices = await db
+        .select({
+            id: invoice.id,
+            type: sql<string>`'invoice'`,
+            description: sql<string>`CONCAT('Facture #', ${invoice.number})`,
+            amount: invoice.total,
+            date: invoice.createdAt,
+            status: invoice.status,
+        })
+        .from(invoice)
+        .where(eq(invoice.companyId, companyId))
+        .orderBy(desc(invoice.createdAt))
+        .limit(limit / 2)
+
+    // Récupérer les derniers paiements
+    const recentPayments = await db
+        .select({
+            id: payment.id,
+            type: sql<string>`'payment'`,
+            description: sql<string>`CONCAT('Paiement - ', ${payment.reference})`,
+            amount: payment.amount,
+            date: payment.paymentDate,
+            status: sql<string>`'completed'`,
+        })
+        .from(payment)
+        .where(eq(payment.companyId, companyId))
+        .orderBy(desc(payment.paymentDate))
+        .limit(limit / 2)
+
+    // Combiner et trier par date
+    const allActivities = [...recentInvoices, ...recentPayments]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, limit)
+
+    return allActivities.map(activity => ({
+        id: activity.id,
+        type: activity.type as 'invoice' | 'payment',
+        description: activity.description,
+        amount: activity.amount,
+        date: activity.date,
+        status: activity.status as 'paid' | 'pending' | 'completed'
+    }))
 } 
