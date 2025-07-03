@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { fr as frCalendar } from "react-day-picker/locale"
@@ -22,25 +23,27 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
     IconPlus,
-    IconSearch,
-    IconEye,
-    IconEdit,
-    IconTrash,
-    IconCash,
-    IconCreditCard,
-    IconCalendar as IconCalendarTabler,
-    IconUser,
     IconBuilding,
     IconLoader2,
-    IconChevronDown
+    IconChevronDown,
+    IconUser,
+    IconTag,
+    IconEdit,
+    IconTrash
 } from "@tabler/icons-react"
+import { CalendarIcon, Plus, Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
+
+// Composants refactorisés
+import { PaymentsSection } from "./payments-section"
+import { SuppliersSection } from "./suppliers-section"
+import { CategoriesSection } from "./categories-section"
+
+// Actions et validations
 import { createPaymentAction, updatePaymentAction, deletePaymentAction } from "@/action/accounting-actions"
 import { createSupplierAction, createExpenseCategoryAction, updateSupplierAction, updateExpenseCategoryAction, deleteSupplierAction, deleteExpenseCategoryAction } from "@/action/extended-accounting-actions"
 import { createPaymentSchema, updatePaymentSchema, createSupplierSchema, createExpenseCategorySchema, updateSupplierSchema, updateExpenseCategorySchema } from "@/validation/accounting-schema"
 import { usePayments } from "@/hooks/payments-context"
 import { ExtendedPaymentWithDetails } from "@/db/queries/extended-accounting"
-import { CalendarIcon, Plus, Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface PaymentsClientProps {
     initialPayments: ExtendedPaymentWithDetails[]
@@ -62,12 +65,16 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
         filteredPayments
     } = usePayments()
 
+    // États principaux
+    const [activeTab, setActiveTab] = useState("payments")
+    const [activeSubTab, setActiveSubTab] = useState("suppliers")
+
+    // États pour les modals paiements
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [selectedPayment, setSelectedPayment] = useState<ExtendedPaymentWithDetails | null>(null)
     const [paymentToDelete, setPaymentToDelete] = useState<ExtendedPaymentWithDetails | null>(null)
-    const [paymentType, setPaymentType] = useState<'incoming' | 'outgoing'>('incoming')
 
     // États pour les modals fournisseurs et catégories
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false)
@@ -324,81 +331,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
         }
     }
 
-    // Séparer les paiements par type
-    const incomingPayments = filteredPayments.filter(p => p.type === 'incoming')
-    const outgoingPayments = filteredPayments.filter(p => p.type === 'outgoing')
-
-    const PaymentCard = ({ payment }: { payment: ExtendedPaymentWithDetails }) => (
-        <Card key={payment.id} className="mb-4">
-            <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                            {payment.type === 'incoming' ? (
-                                <ArrowDownCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                                <ArrowUpCircle className="h-4 w-4 text-red-600" />
-                            )}
-                            <span className="font-medium">{payment.description}</span>
-                            <Badge variant={payment.type === 'incoming' ? 'default' : 'destructive'} className={payment.type === 'incoming' ? 'bg-green-500' : 'bg-red-500'}>
-                                {payment.type === 'incoming' ? 'Encaissement' : 'Décaissement'}
-                            </Badge>
-                        </div>
-
-                        <div className="text-sm text-muted-foreground space-y-1">
-                            <p><span className="font-medium">Montant:</span> {payment.amount.toFixed(2)} €</p>
-                            <p><span className="font-medium">Date:</span> {format(payment.paymentDate, "dd/MM/yyyy")}</p>
-                            <p><span className="font-medium">Méthode:</span> {payment.method}</p>
-                            {payment.reference && (
-                                <p><span className="font-medium">Référence:</span> {payment.reference}</p>
-                            )}
-
-                            {/* Informations contextuelles */}
-                            {payment.invoice && (
-                                <p><span className="font-medium">Facture:</span> {payment.invoice.number} - {payment.invoice.client.name}</p>
-                            )}
-                            {payment.supplier && (
-                                <p><span className="font-medium">Fournisseur:</span> {payment.supplier.name}</p>
-                            )}
-                            {payment.expenseCategory && (
-                                <div className="flex items-center gap-2">
-                                    <span className="font-medium">Catégorie:</span>
-                                    {payment.expenseCategory.color && (
-                                        <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: payment.expenseCategory.color }}
-                                        />
-                                    )}
-                                    <span>{payment.expenseCategory.name}</span>
-                                </div>
-                            )}
-
-                            {payment.notes && (
-                                <p><span className="font-medium">Notes:</span> {payment.notes}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(payment)}
-                        >
-                            <IconEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(payment)}
-                        >
-                            <IconTrash className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
+    // Composants de cartes refactorisés dans des fichiers séparés
 
     const handleEditSupplier = (supplier: any) => {
         setSelectedSupplier(supplier)
@@ -453,93 +386,45 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
         }
     }
 
-    const SupplierCard = ({ supplier }: { supplier: any }) => (
-        <Card className="mb-4">
-            <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                            <IconBuilding className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium">{supplier.name}</span>
-                            <Badge variant={supplier.isActive ? "default" : "secondary"}>
-                                {supplier.isActive ? "Actif" : "Inactif"}
-                            </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                            {supplier.email && <p><span className="font-medium">Email:</span> {supplier.email}</p>}
-                            {supplier.phone && <p><span className="font-medium">Téléphone:</span> {supplier.phone}</p>}
-                            {supplier.address && <p><span className="font-medium">Adresse:</span> {supplier.address}, {supplier.city} {supplier.postalCode}</p>}
-                            {supplier.siret && <p><span className="font-medium">SIRET:</span> {supplier.siret}</p>}
-                            {supplier.vatNumber && <p><span className="font-medium">TVA:</span> {supplier.vatNumber}</p>}
-                            {supplier.notes && <p><span className="font-medium">Notes:</span> {supplier.notes}</p>}
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditSupplier(supplier)}
-                        >
-                            <IconEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteSupplier(supplier)}
-                        >
-                            <IconTrash className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
+    // Composants SupplierCard et CategoryCard refactorisés dans des fichiers séparés
 
-    const CategoryCard = ({ category }: { category: any }) => (
-        <Card className="mb-4">
-            <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                            {category.color && (
-                                <div
-                                    className="w-4 h-4 rounded-full"
-                                    style={{ backgroundColor: category.color }}
-                                />
-                            )}
-                            <span className="font-medium">{category.name}</span>
-                            <Badge variant={category.isActive ? "default" : "secondary"}>
-                                {category.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                            {category.description && <p><span className="font-medium">Description:</span> {category.description}</p>}
-                            <p><span className="font-medium">Couleur:</span> {category.color}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCategory(category)}
-                        >
-                            <IconEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteCategory(category)}
-                        >
-                            <IconTrash className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
+    // Filtrage des paiements
+    const filtered = filteredPayments.filter(payment => {
+        const matchesSearch = payment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            payment.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            payment.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+        return matchesSearch
+    })
+
+    const incomingPayments = filtered.filter(p => p.type === 'incoming')
+    const outgoingPayments = filtered.filter(p => p.type === 'outgoing')
+
+    // Gestionnaires d'événements pour les paiements
+    const handleEditPayment = (payment: ExtendedPaymentWithDetails) => {
+        setSelectedPayment(payment)
+        updateForm.reset({
+            id: payment.id,
+            type: payment.type,
+            amount: payment.amount,
+            date: format(payment.paymentDate, "yyyy-MM-dd"),
+            method: payment.method,
+            reference: payment.reference || "",
+            description: payment.description,
+            notes: payment.notes || "",
+            invoiceId: payment.invoiceId || undefined,
+            supplierId: payment.supplierId || undefined,
+            expenseCategoryId: payment.expenseCategoryId || undefined,
+        })
+        setEditDialogOpen(true)
+    }
+
+    const handleDeletePaymentClick = (payment: ExtendedPaymentWithDetails) => {
+        setPaymentToDelete(payment)
+        setDeleteDialogOpen(true)
+    }
 
     return (
-        <div className="container mx-auto p-6">
+        <div className="p-8">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Paiements & Fournisseurs</h1>
@@ -549,11 +434,20 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                 </div>
 
                 <div className="flex gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Rechercher..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 w-64"
+                        />
+                    </div>
                     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                         <DialogTrigger asChild>
                             <Button>
-                                <IconPlus className="mr-2 h-4 w-4" />
-                                Nouveau Paiement
+                                <Plus className="h-4 w-4 mr-2" />
+                                Nouveau paiement
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl min-w-2xl">
@@ -847,167 +741,73 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                 </div>
             </div>
 
-            {/* Barre de recherche */}
-            <div className="mb-6">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
-            </div>
-
-            {/* Onglets principaux */}
-            <Tabs defaultValue="payments" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="payments" className="flex items-center gap-2">
                         💰 Paiements
-                        <Badge variant="outline" className="text-xs">
-                            {filteredPayments.length}
+                        <Badge variant="secondary" className="ml-auto">
+                            {filtered.length}
                         </Badge>
                     </TabsTrigger>
-                    <TabsTrigger value="reference-data" className="flex items-center gap-2">
+                    <TabsTrigger value="reference" className="flex items-center gap-2">
                         ⚙️ Données de référence
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="ml-auto">
                             {suppliers.length + expenseCategories.length}
                         </Badge>
                     </TabsTrigger>
                 </TabsList>
 
-                {/* Onglet Paiements */}
-                <TabsContent value="payments" className="mt-6">
-                    <Tabs defaultValue="all" className="w-full">
-                        <TabsList>
-                            <TabsTrigger value="all">Tous ({filteredPayments.length})</TabsTrigger>
-                            <TabsTrigger value="incoming">Encaissements ({incomingPayments.length})</TabsTrigger>
-                            <TabsTrigger value="outgoing">Décaissements ({outgoingPayments.length})</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="all">
-                            <div className="mt-6">
-                                {filteredPayments.length === 0 ? (
-                                    <Card>
-                                        <CardContent className="p-8 text-center">
-                                            <p className="text-muted-foreground">Aucun paiement trouvé.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    filteredPayments.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
-                                )}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="incoming">
-                            <div className="mt-6">
-                                {incomingPayments.length === 0 ? (
-                                    <Card>
-                                        <CardContent className="p-8 text-center">
-                                            <p className="text-muted-foreground">Aucun encaissement trouvé.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    incomingPayments.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
-                                )}
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="outgoing">
-                            <div className="mt-6">
-                                {outgoingPayments.length === 0 ? (
-                                    <Card>
-                                        <CardContent className="p-8 text-center">
-                                            <p className="text-muted-foreground">Aucun décaissement trouvé.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    outgoingPayments.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
-                                )}
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                <TabsContent value="payments">
+                    <PaymentsSection
+                        filteredPayments={filtered}
+                        incomingPayments={incomingPayments}
+                        outgoingPayments={outgoingPayments}
+                        onEdit={handleEditPayment}
+                        onDelete={handleDeletePaymentClick}
+                    />
                 </TabsContent>
 
-                {/* Onglet Données de référence */}
-                <TabsContent value="reference-data" className="mt-6">
-                    <Tabs defaultValue="suppliers" className="w-full">
+                <TabsContent value="reference">
+                    <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
                         <TabsList>
                             <TabsTrigger value="suppliers" className="flex items-center gap-2">
                                 🏢 Fournisseurs
-                                <Badge variant="outline" className="text-xs">
-                                    {suppliers.length}
-                                </Badge>
+                                <Badge variant="secondary">{suppliers.length}</Badge>
                             </TabsTrigger>
                             <TabsTrigger value="categories" className="flex items-center gap-2">
                                 🏷️ Catégories
-                                <Badge variant="outline" className="text-xs">
-                                    {expenseCategories.length}
-                                </Badge>
+                                <Badge variant="secondary">{expenseCategories.length}</Badge>
                             </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="suppliers">
-                            <div className="mt-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-medium">Gestion des fournisseurs</h3>
-                                    <Button onClick={() => setSupplierDialogOpen(true)}>
-                                        <IconPlus className="mr-2 h-4 w-4" />
-                                        Nouveau Fournisseur
-                                    </Button>
-                                </div>
-                                {suppliers.length === 0 ? (
-                                    <Card>
-                                        <CardContent className="p-8 text-center">
-                                            <IconBuilding className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-medium mb-2">Aucun fournisseur</h3>
-                                            <p className="text-muted-foreground mb-4">
-                                                Ajoutez votre premier fournisseur pour commencer à gérer vos décaissements.
-                                            </p>
-                                            <Button onClick={() => setSupplierDialogOpen(true)}>
-                                                <IconPlus className="mr-2 h-4 w-4" />
-                                                Ajouter un fournisseur
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <div className="grid gap-4">
-                                        {suppliers.map((supplier: any) => <SupplierCard key={supplier.id} supplier={supplier} />)}
-                                    </div>
-                                )}
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-medium">Gestion des fournisseurs</h3>
+                                <Button onClick={() => setSupplierDialogOpen(true)}>
+                                    <IconPlus className="mr-2 h-4 w-4" />
+                                    Nouveau Fournisseur
+                                </Button>
                             </div>
+                            <SuppliersSection
+                                suppliers={suppliers}
+                                onEdit={handleEditSupplier}
+                                onDelete={handleDeleteSupplier}
+                            />
                         </TabsContent>
 
                         <TabsContent value="categories">
-                            <div className="mt-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-medium">Gestion des catégories de dépenses</h3>
-                                    <Button onClick={() => setCategoryDialogOpen(true)}>
-                                        <IconPlus className="mr-2 h-4 w-4" />
-                                        Nouvelle Catégorie
-                                    </Button>
-                                </div>
-                                {expenseCategories.length === 0 ? (
-                                    <Card>
-                                        <CardContent className="p-8 text-center">
-                                            <IconUser className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                            <h3 className="text-lg font-medium mb-2">Aucune catégorie</h3>
-                                            <p className="text-muted-foreground mb-4">
-                                                Créez des catégories pour mieux organiser vos dépenses.
-                                            </p>
-                                            <Button onClick={() => setCategoryDialogOpen(true)}>
-                                                <IconPlus className="mr-2 h-4 w-4" />
-                                                Créer une catégorie
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <div className="grid gap-4">
-                                        {expenseCategories.map((category: any) => <CategoryCard key={category.id} category={category} />)}
-                                    </div>
-                                )}
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-medium">Gestion des catégories de dépenses</h3>
+                                <Button onClick={() => setCategoryDialogOpen(true)}>
+                                    <IconPlus className="mr-2 h-4 w-4" />
+                                    Nouvelle Catégorie
+                                </Button>
                             </div>
+                            <CategoriesSection
+                                categories={expenseCategories}
+                                onEdit={handleEditCategory}
+                                onDelete={handleDeleteCategory}
+                            />
                         </TabsContent>
                     </Tabs>
                 </TabsContent>
