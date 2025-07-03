@@ -74,6 +74,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     const [showCustomDateDialog, setShowCustomDateDialog] = useState(false)
     const [generatedReport, setGeneratedReport] = useState<any>(null)
     const [showReportDialog, setShowReportDialog] = useState(false)
+    const [isViewMode, setIsViewMode] = useState(false)
 
     // Définition des rapports disponibles
     const reports: Report[] = [
@@ -119,9 +120,31 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     const { execute: executeGenerateReport, isPending: isGeneratingReport } = useAction(generateReportAction, {
         onSuccess: (result: any) => {
             if (result?.data?.data) {
-                setGeneratedReport(result.data.data);
-                setShowReportDialog(true);
-                toast.success(result.data.message || "Rapport généré avec succès");
+                const reportData = result.data.data;
+                const reportType = reportData.type;
+
+                // Obtenir le nom du rapport
+                const reportNames = {
+                    'balance_sheet': 'Bilan comptable',
+                    'income_statement': 'Compte de résultat',
+                    'cash_flow': 'Tableau des flux de trésorerie',
+                    'trial_balance': 'Balance de vérification'
+                };
+
+                const reportName = reportNames[reportType as keyof typeof reportNames];
+
+                // Si c'est en mode visualisation, afficher dans la modal
+                if (isViewMode || selectedFormat === 'pdf') {
+                    setGeneratedReport(reportData);
+                    setShowReportDialog(true);
+                    toast.success(`${reportName} généré avec succès`);
+                } else {
+                    // Sinon télécharger directement
+                    downloadReport(reportData, selectedFormat, reportType);
+                }
+
+                // Réinitialiser le mode visualisation
+                setIsViewMode(false);
             }
         },
         onError: (error) => {
@@ -188,7 +211,8 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     };
 
     const handleViewReport = (reportType: "balance_sheet" | "income_statement" | "cash_flow" | "trial_balance") => {
-        // Pour l'instant, générer en format PDF pour la visualisation
+        setIsViewMode(true);
+
         const params: any = {
             type: reportType,
             format: "pdf"
@@ -243,10 +267,99 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
         return `${sign}${value.toFixed(1)}%`;
     };
 
+    // Fonction pour télécharger un rapport
+    const downloadReport = (reportData: any, format: string, reportType: string) => {
+        const reportNames = {
+            'balance_sheet': 'Bilan_comptable',
+            'income_statement': 'Compte_de_resultat',
+            'cash_flow': 'Flux_de_tresorerie',
+            'trial_balance': 'Balance_de_verification'
+        };
+
+        const fileName = `${reportNames[reportType as keyof typeof reportNames]}_${new Date().toISOString().split('T')[0]}`;
+
+        if (format === 'csv') {
+            downloadCSV(reportData, fileName, reportType);
+        } else if (format === 'excel') {
+            downloadExcel(reportData, fileName, reportType);
+        } else {
+            // Pour PDF, on affiche le rapport dans la modal pour l'instant
+            setGeneratedReport(reportData);
+            setShowReportDialog(true);
+            toast.info("Affichage du rapport. Utilisez l'impression de votre navigateur pour générer un PDF.");
+        }
+    };
+
+    // Fonction pour télécharger en CSV
+    const downloadCSV = (reportData: any, fileName: string, reportType: string) => {
+        let csvContent = '';
+
+        if (reportType === 'balance_sheet') {
+            csvContent = 'Type,Nom,Montant\n';
+            csvContent += 'ACTIFS,,\n';
+            reportData.assets.current.forEach((item: any) => {
+                csvContent += `Actif,"${item.name}","${item.amount}"\n`;
+            });
+            csvContent += `,"Total Actifs","${reportData.assets.totalAssets}"\n`;
+            csvContent += 'PASSIFS,,\n';
+            reportData.liabilities.current.forEach((item: any) => {
+                csvContent += `Passif,"${item.name}","${item.amount}"\n`;
+            });
+            csvContent += 'CAPITAUX PROPRES,,\n';
+            reportData.equity.items.forEach((item: any) => {
+                csvContent += `Capitaux,"${item.name}","${item.amount}"\n`;
+            });
+        } else if (reportType === 'income_statement') {
+            csvContent = 'Type,Compte,Montant\n';
+            csvContent += 'REVENUS,,\n';
+            reportData.revenue.items.forEach((item: any) => {
+                csvContent += `Revenu,"${item.name}","${item.amount}"\n`;
+            });
+            csvContent += `,"Total Revenus","${reportData.revenue.totalRevenue}"\n`;
+            csvContent += 'DEPENSES,,\n';
+            reportData.expenses.items.forEach((item: any) => {
+                csvContent += `Dépense,"${item.name}","${item.amount}"\n`;
+            });
+            csvContent += `,"Total Dépenses","${reportData.expenses.totalExpenses}"\n`;
+            csvContent += `,"Résultat Net","${reportData.netIncome}"\n`;
+        } else if (reportType === 'cash_flow') {
+            csvContent = 'Type,Description,Montant\n';
+            csvContent += 'FLUX D\'EXPLOITATION,,\n';
+            reportData.operating.inflows.forEach((item: any) => {
+                csvContent += `Encaissement,"${item.name}","${item.amount}"\n`;
+            });
+            reportData.operating.outflows.forEach((item: any) => {
+                csvContent += `Décaissement,"${item.name}","${item.amount}"\n`;
+            });
+            csvContent += `,"Flux net d'exploitation","${reportData.operating.netOperating}"\n`;
+            csvContent += `,"Flux de trésorerie net","${reportData.netCashFlow}"\n`;
+        } else if (reportType === 'trial_balance') {
+            csvContent = 'Code,Nom,Débit,Crédit,Solde\n';
+            reportData.accounts.forEach((account: any) => {
+                csvContent += `"${account.code}","${account.name}","${account.debit}","${account.credit}","${account.balance}"\n`;
+            });
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${fileName}.csv`;
+        link.click();
+        toast.success("Rapport CSV téléchargé avec succès");
+    };
+
+    // Fonction pour télécharger en Excel (simulation avec CSV enrichi)
+    const downloadExcel = (reportData: any, fileName: string, reportType: string) => {
+        // Pour une vraie implémentation Excel, il faudrait utiliser une librairie comme xlsx
+        // Pour l'instant, on génère un CSV avec un nom .xls
+        downloadCSV(reportData, fileName, reportType);
+        toast.success("Rapport Excel téléchargé avec succès (format CSV compatible)");
+    };
+
     return (
         <div className="space-y-6">
             {/* En-tête avec contrôles */}
-            <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            <div className="flex flex-col space-y-4 lg:flex-row lg:items-end lg:justify-between lg:space-y-0">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Rapports comptables</h1>
                     <p className="text-muted-foreground">
@@ -254,7 +367,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                     </p>
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col space-y-4 lg:flex-row lg:items-end lg:space-y-0 lg:space-x-3">
                     {/* Sélection de l'exercice comptable */}
                     <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Exercice comptable</Label>
@@ -263,7 +376,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                             onValueChange={setSelectedFiscalYear}
                             disabled={isLoadingFiscalYears}
                         >
-                            <SelectTrigger className="w-40">
+                            <SelectTrigger className="w-[160px]">
                                 <SelectValue placeholder="Sélectionner..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -283,77 +396,81 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         </Select>
                     </div>
 
-                    {/* Période personnalisée */}
-                    <Dialog open={showCustomDateDialog} onOpenChange={setShowCustomDateDialog}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <CalendarIcon className="h-4 w-4 mr-2" />
-                                Période personnalisée
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Sélectionner une période</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Date de début</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {customDateRange.startDate ? format(customDateRange.startDate, "dd/MM/yyyy") : "Sélectionner"}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={customDateRange.startDate}
-                                                    onSelect={(date) => setCustomDateRange(prev => ({ ...prev, startDate: date }))}
-                                                    locale={fr}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Date de fin</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {customDateRange.endDate ? format(customDateRange.endDate, "dd/MM/yyyy") : "Sélectionner"}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={customDateRange.endDate}
-                                                    onSelect={(date) => setCustomDateRange(prev => ({ ...prev, endDate: date }))}
-                                                    locale={fr}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                </div>
-                                <Button
-                                    className="w-full"
-                                    onClick={() => setShowCustomDateDialog(false)}
-                                    disabled={!customDateRange.startDate || !customDateRange.endDate}
-                                >
-                                    Appliquer la période
+                    {/* 
+                     personnalisée */}
+                    <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Ou période personnalisée</Label>
+                        <Dialog open={showCustomDateDialog} onOpenChange={setShowCustomDateDialog}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="default" className="w-[200px]">
+                                    <CalendarIcon className="h-4 w-4 mr-2" />
+                                    Période personnalisée
                                 </Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Sélectionner une période</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Date de début</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {customDateRange.startDate ? format(customDateRange.startDate, "dd/MM/yyyy") : "Sélectionner"}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={customDateRange.startDate}
+                                                        onSelect={(date) => setCustomDateRange(prev => ({ ...prev, startDate: date }))}
+                                                        locale={fr}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Date de fin</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {customDateRange.endDate ? format(customDateRange.endDate, "dd/MM/yyyy") : "Sélectionner"}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={customDateRange.endDate}
+                                                        onSelect={(date) => setCustomDateRange(prev => ({ ...prev, endDate: date }))}
+                                                        locale={fr}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => setShowCustomDateDialog(false)}
+                                        disabled={!customDateRange.startDate || !customDateRange.endDate}
+                                    >
+                                        Appliquer la période
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
 
                     {/* Format d'export */}
                     <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Format</Label>
                         <Select value={selectedFormat} onValueChange={(value: "pdf" | "excel" | "csv") => setSelectedFormat(value)}>
-                            <SelectTrigger className="w-24">
+                            <SelectTrigger className="w-[80px]">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -367,12 +484,13 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                     {/* Actualiser */}
                     <Button
                         variant="outline"
-                        size="sm"
+                        size="default"
                         onClick={() => {
                             executeGetFiscalYears({});
                             executeGetStats({ fiscalYearId: selectedFiscalYear });
                         }}
                         disabled={isLoadingFiscalYears || isLoadingStats}
+                        className="w-[40px]"
                     >
                         <IconRefresh className="h-4 w-4" />
                     </Button>
@@ -558,14 +676,44 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
 
             {/* Modal pour afficher les rapports générés */}
             <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[80vh] min-w-[700px] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>
-                            {generatedReport?.type === 'balance_sheet' && 'Bilan comptable'}
-                            {generatedReport?.type === 'income_statement' && 'Compte de résultat'}
-                            {generatedReport?.type === 'cash_flow' && 'Tableau des flux de trésorerie'}
-                            {generatedReport?.type === 'trial_balance' && 'Balance de vérification'}
-                        </DialogTitle>
+                        <div className="flex flex-row items-center justify-between">
+                            <DialogTitle>
+                                {generatedReport?.type === 'balance_sheet' && 'Bilan comptable'}
+                                {generatedReport?.type === 'income_statement' && 'Compte de résultat'}
+                                {generatedReport?.type === 'cash_flow' && 'Tableau des flux de trésorerie'}
+                                {generatedReport?.type === 'trial_balance' && 'Balance de vérification'}
+                            </DialogTitle>
+                            <div className="flex items-center space-x-2 mr-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => downloadReport(generatedReport, 'csv', generatedReport?.type)}
+                                    disabled={!generatedReport}
+                                >
+                                    <IconDownload className="h-4 w-4 mr-2" />
+                                    CSV
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => downloadReport(generatedReport, 'excel', generatedReport?.type)}
+                                    disabled={!generatedReport}
+                                >
+                                    <IconDownload className="h-4 w-4 mr-2" />
+                                    Excel
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => window.print()}
+                                >
+                                    <IconFileText className="h-4 w-4 mr-2" />
+                                    Imprimer
+                                </Button>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <div className="space-y-4">

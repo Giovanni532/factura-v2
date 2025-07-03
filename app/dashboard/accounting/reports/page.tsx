@@ -27,13 +27,6 @@ export default async function ReportsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Rapports</h1>
-                <p className="text-muted-foreground">
-                    Consultez vos rapports financiers et comptables.
-                </p>
-            </div>
-
             <ReportsClient initialStats={stats} />
         </div>
     )
