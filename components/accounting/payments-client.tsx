@@ -185,6 +185,8 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
         }
     })
 
+    // Le contexte usePayments gère déjà toutes les opérations CRUD
+
     // Actions pour créer des fournisseurs et catégories
     const { execute: createSupplier, isPending: isCreatingSupplier } = useAction(createSupplierAction, {
         onSuccess: (data) => {
@@ -275,6 +277,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
             await updatePayment(data)
             setEditDialogOpen(false)
             updateForm.reset()
+            setSelectedPayment(null)
         } catch (error) {
             console.error("Erreur lors de la modification:", error)
         }

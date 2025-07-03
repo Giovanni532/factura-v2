@@ -133,7 +133,7 @@ export const deleteExtendedPaymentAction = useMutation(
                 )
             )
 
-        return { success: true }
+        return { success: true, id: input.id }
     }
 )
 

@@ -5,6 +5,7 @@ import { ExtendedPaymentWithDetails } from '@/db/queries/extended-accounting'
 import { useAction } from 'next-safe-action/hooks'
 import { createExtendedPaymentAction, updateExtendedPaymentAction, deleteExtendedPaymentAction } from '@/action/extended-accounting-actions'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 interface PaymentsContextType {
     payments: ExtendedPaymentWithDetails[]
@@ -36,15 +37,22 @@ interface PaymentsProviderProps {
 }
 
 export function PaymentsProvider({ children, initialPayments }: PaymentsProviderProps) {
+    const router = useRouter()
     const [payments, setPayments] = useState<ExtendedPaymentWithDetails[]>(initialPayments)
     const [isLoading, setIsLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
 
-    // Actions
+    // Actions avec optimistic updates
     const { execute: executeCreate, isPending: isCreating } = useAction(createExtendedPaymentAction, {
         onSuccess: (data) => {
             toast.success("Paiement créé avec succès")
-            refreshPayments()
+            // Ajouter le nouveau paiement au state local
+            const paymentData = data.data;
+            if (paymentData && paymentData.payment) {
+                setPayments(prev => [paymentData.payment, ...prev])
+            }
+            // Rafraîchir en arrière-plan pour synchroniser
+            router.refresh()
         },
         onError: (error) => {
             toast.error("Erreur lors de la création du paiement")
@@ -55,7 +63,15 @@ export function PaymentsProvider({ children, initialPayments }: PaymentsProvider
     const { execute: executeUpdate, isPending: isUpdating } = useAction(updateExtendedPaymentAction, {
         onSuccess: (data) => {
             toast.success("Paiement mis à jour avec succès")
-            refreshPayments()
+            // Mettre à jour le paiement dans le state local
+            const paymentData = data.data;
+            if (paymentData && paymentData.payment) {
+                setPayments(prev => prev.map(payment =>
+                    payment.id === paymentData.payment.id ? paymentData.payment : payment
+                ))
+            }
+            // Rafraîchir en arrière-plan pour synchroniser
+            router.refresh()
         },
         onError: (error) => {
             toast.error("Erreur lors de la mise à jour du paiement")
@@ -64,9 +80,15 @@ export function PaymentsProvider({ children, initialPayments }: PaymentsProvider
     })
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteExtendedPaymentAction, {
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Paiement supprimé avec succès")
-            refreshPayments()
+            // Supprimer le paiement du state local en utilisant l'ID retourné
+            const deletedData = data.data;
+            if (deletedData && deletedData.id) {
+                setPayments(prev => prev.filter(payment => payment.id !== deletedData.id))
+            }
+            // Rafraîchir en arrière-plan pour synchroniser
+            router.refresh()
         },
         onError: (error) => {
             toast.error("Erreur lors de la suppression du paiement")
@@ -78,7 +100,7 @@ export function PaymentsProvider({ children, initialPayments }: PaymentsProvider
         setIsLoading(true)
         try {
             // Recharger la page pour récupérer les nouvelles données
-            window.location.reload()
+            router.refresh()
         } catch (error) {
             console.error("Error refreshing payments:", error)
         } finally {
@@ -87,15 +109,15 @@ export function PaymentsProvider({ children, initialPayments }: PaymentsProvider
     }
 
     const createPayment = async (data: any) => {
-        await executeCreate(data)
+        executeCreate(data)
     }
 
     const updatePayment = async (data: any) => {
-        await executeUpdate(data)
+        executeUpdate(data)
     }
 
     const deletePayment = async (id: string) => {
-        await executeDelete({ id })
+        executeDelete({ id })
     }
 
     // Filtrer les paiements selon le terme de recherche
