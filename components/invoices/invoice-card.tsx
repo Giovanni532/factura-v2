@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Eye, Edit, Trash2, Download, Send } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, Download, Send, Bell } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
 import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
@@ -28,11 +28,13 @@ export function InvoiceCard({ invoice, idToOpen }: InvoiceCardProps) {
     const { invoices, setInvoices, stats, setStats } = useInvoicesContext();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSendDialog, setShowSendDialog] = useState(false);
+    const [showReminderDialog, setShowReminderDialog] = useState(false);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [showStatusDialog, setShowStatusDialog] = useState(false);
     const [wasManuallyClosed, setWasManuallyClosed] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState(invoice.status);
     const [emailSubject, setEmailSubject] = useState(`Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
+    const [reminderSubject, setReminderSubject] = useState(`Rappel - Facture ${invoice.invoiceNumber} - ${invoice.client.name}`);
     const [emailMessage, setEmailMessage] = useState(`Bonjour ${invoice.client.name},
 
 Veuillez trouver ci-joint la facture ${invoice.invoiceNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(invoice.total)}.
@@ -40,6 +42,16 @@ Veuillez trouver ci-joint la facture ${invoice.invoiceNumber} d'un montant de ${
 Date d'échéance : ${new Intl.DateTimeFormat('fr-FR').format(invoice.dueDate)}
 
 Merci de votre confiance.
+
+Cordialement,
+Votre équipe`);
+    const [reminderMessage, setReminderMessage] = useState(`Bonjour ${invoice.client.name},
+
+Nous vous rappelons que la facture ${invoice.invoiceNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(invoice.total)} est en retard de paiement.
+
+Date d'échéance : ${new Intl.DateTimeFormat('fr-FR').format(invoice.dueDate)}
+
+Merci de procéder au règlement dans les plus brefs délais.
 
 Cordialement,
 Votre équipe`);
@@ -192,6 +204,19 @@ Votre équipe`);
         }
     });
 
+    // TODO: Créer une action spécifique pour les rappels (remindInvoiceAction)
+    const { execute: executeReminder, isPending: isReminding } = useAction(sendInvoiceAction, {
+        onSuccess: (result) => {
+            if (result?.data) {
+                toast.success("Rappel envoyé avec succès");
+                setShowReminderDialog(false);
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error.serverError?.message || "Erreur lors de l'envoi du rappel");
+        }
+    });
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'draft': return 'bg-gray-100 text-gray-800';
@@ -269,6 +294,18 @@ Votre équipe`);
         });
     };
 
+    const handleReminder = () => {
+        setShowReminderDialog(true);
+    };
+
+    const handleConfirmReminder = () => {
+        executeReminder({
+            invoiceId: invoice.id,
+            subject: reminderSubject,
+            message: reminderMessage
+        });
+    };
+
     return (
         <>
             <Card className="hover:shadow-md transition-shadow">
@@ -291,10 +328,12 @@ Votre équipe`);
                                     <Eye className="mr-2 h-4 w-4" />
                                     Voir
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleEdit}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Modifier le statut
-                                </DropdownMenuItem>
+                                {(invoice.status !== 'paid' && invoice.status !== 'cancelled') && (
+                                    <DropdownMenuItem onClick={handleEdit}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Modifier le statut
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
                                     <Download className="mr-2 h-4 w-4" />
                                     {isDownloading ? "Téléchargement..." : "Télécharger"}
@@ -303,6 +342,12 @@ Votre équipe`);
                                     <Send className="mr-2 h-4 w-4" />
                                     {isSending ? "Envoi..." : "Envoyer"}
                                 </DropdownMenuItem>
+                                {invoice.status === 'overdue' && (
+                                    <DropdownMenuItem onClick={handleReminder} disabled={isReminding}>
+                                        <Bell className="mr-2 h-4 w-4" />
+                                        {isReminding ? "Envoi du rappel..." : "Envoyer un rappel"}
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                     onClick={() => setShowDeleteDialog(true)}
                                     className="text-red-600"
@@ -353,6 +398,27 @@ Votre équipe`);
                             </Button>
                         </div>
                     )}
+                    {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                        <div className="mt-4 flex gap-2">
+                            {invoice.status === 'overdue' && (
+                                <Button
+                                    size="sm"
+                                    onClick={handleReminder}
+                                    disabled={isReminding}
+                                >
+                                    <Bell className="mr-2 h-4 w-4" />
+                                    {isReminding ? "Envoi du rappel..." : "Envoyer un rappel"}
+                                </Button>
+                            )}
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleEdit}
+                            >
+                                Modifier le statut
+                            </Button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -390,7 +456,10 @@ Votre équipe`);
                                     <SelectValue placeholder="Sélectionner un statut" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="draft">Brouillon</SelectItem>
+                                    {/* On ne peut pas revenir à "draft" si le statut est "sent" ou plus */}
+                                    {invoice.status === 'draft' && (
+                                        <SelectItem value="draft">Brouillon</SelectItem>
+                                    )}
                                     <SelectItem value="sent">Envoyée</SelectItem>
                                     <SelectItem value="paid">Payée</SelectItem>
                                     <SelectItem value="overdue">En retard</SelectItem>
@@ -486,6 +555,50 @@ Votre équipe`);
                         </Button>
                         <Button onClick={handleConfirmSend} disabled={isSending}>
                             {isSending ? "Envoi en cours..." : "Envoyer"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de confirmation de rappel */}
+            <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Envoyer un rappel</DialogTitle>
+                        <DialogDescription>
+                            Un rappel pour la facture <strong>{invoice.invoiceNumber}</strong> sera envoyé à <strong>{invoice.client.email}</strong> avec le PDF en pièce jointe.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="reminder-subject">Objet de l'email</Label>
+                            <Input
+                                id="reminder-subject"
+                                value={reminderSubject}
+                                onChange={(e) => setReminderSubject(e.target.value)}
+                                placeholder="Objet de l'email de rappel"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="reminder-message">Message</Label>
+                            <Textarea
+                                id="reminder-message"
+                                value={reminderMessage}
+                                onChange={(e) => setReminderMessage(e.target.value)}
+                                placeholder="Message de rappel"
+                                rows={8}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowReminderDialog(false)} disabled={isReminding}>
+                            Annuler
+                        </Button>
+                        <Button onClick={handleConfirmReminder} disabled={isReminding}>
+                            {isReminding ? "Envoi en cours..." : "Envoyer le rappel"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
