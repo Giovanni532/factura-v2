@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { AccountingOverview } from "@/components/accounting/accounting-overview"
 import { AccountingStatsCards } from "@/components/accounting/accounting-stats-cards"
 import { getAccountingStats, getRevenueHistory, getRecentAccountingActivities } from "@/db/queries/accounting"
@@ -45,17 +44,13 @@ export default async function AccountingPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <AccountingStatsCards stats={stats} />
-            </Suspense>
+            <AccountingStatsCards stats={stats} />
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <AccountingOverview
-                    stats={stats}
-                    revenueHistory={revenueHistory}
-                    recentActivities={recentActivities}
-                />
-            </Suspense>
+            <AccountingOverview
+                stats={stats}
+                revenueHistory={revenueHistory}
+                recentActivities={recentActivities}
+            />
         </div>
     )
 } 

@@ -16,7 +16,7 @@ import { InvoiceWithDetails } from "@/validation/invoice-schema";
 import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
-import { useInvoicesContext } from "./invoices-context";
+import { useInvoicesContext } from "../../hooks/invoices-context";
 import { InvoicePreviewModal } from "./invoice-preview-modal";
 
 interface InvoiceCardProps {

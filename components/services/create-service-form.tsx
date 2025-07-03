@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useServicesContext } from "@/components/services/services-context";
+import { useServicesContext } from "@/hooks/services-context";
 import type { z } from "zod";
 
 type CreateServiceFormData = z.infer<typeof createServiceSchema>;

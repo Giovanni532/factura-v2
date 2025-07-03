@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { deleteServiceAction } from "@/action/service-actions";
 import { ServiceWithStats } from "@/validation/service-schema";
-import { useServicesContext } from "./services-context";
+import { useServicesContext } from "../../hooks/services-context";
 
 interface ServiceCardProps {
     service: ServiceWithStats;

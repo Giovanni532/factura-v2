@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { QuoteWithDetails, QuoteStats } from "@/validation/quote-schema";
 import { QuoteCard } from "@/components/quotes/quote-card";
 import { CreateQuoteButton } from "@/components/quotes/create-quote-button";
-import { QuotesContext } from "@/components/quotes/quotes-context";
+import { QuotesContext } from "@/hooks/quotes-context";
 
 interface QuotesPageClientProps {
     quotes: QuoteWithDetails[];

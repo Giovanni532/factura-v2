@@ -11,7 +11,7 @@ import { ServiceCard } from "@/components/services/service-card";
 import { CategoryCard } from "@/components/services/category-card";
 import { CreateServiceButton } from "@/components/services/create-service-button";
 import { CreateCategoryButton } from "@/components/services/create-category-button";
-import { ServicesContext } from "./services-context";
+import { ServicesContext } from "../../hooks/services-context";
 import { Briefcase, Tag, TrendingUp, Package, Euro, Search, Filter, X } from "lucide-react";
 
 interface ServicesPageClientProps {

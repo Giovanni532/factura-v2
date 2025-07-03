@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { ReportsClient } from "@/components/accounting/reports-client"
 import { getAccountingStats } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
@@ -35,9 +34,7 @@ export default async function ReportsPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <ReportsClient stats={stats} />
-            </Suspense>
+            <ReportsClient stats={stats} />
         </div>
     )
 } 

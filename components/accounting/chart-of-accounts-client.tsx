@@ -16,12 +16,15 @@ import {
     IconEdit,
     IconTrash,
     IconFolder,
-    IconFileText
+    IconFileText,
+    IconChevronDown,
+    IconChevronRight
 } from "@tabler/icons-react"
 import { createAccountAction, updateAccountAction, deleteAccountAction } from "@/action/accounting-actions"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createAccountSchema, updateAccountSchema } from "@/validation/accounting-schema"
+import { Search } from "lucide-react"
 
 interface AccountWithBalance {
     id: string
@@ -42,6 +45,8 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
     const [localAccounts, setLocalAccounts] = useState(accounts)
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<AccountWithBalance | null>(null)
+    const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+    const [selectedParentAccount, setSelectedParentAccount] = useState<AccountWithBalance | null>(null)
 
     // Formulaires
     const createForm = useForm({
@@ -75,13 +80,42 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                     balance: 0,
                     children: []
                 }
-                setLocalAccounts((prev) => [...prev, newAccount])
+
+                // Mettre à jour la structure hiérarchique
+                if (newAccount.parentAccountId) {
+                    // C'est un sous-compte, l'ajouter au parent
+                    setLocalAccounts((prev) => {
+                        const updated = [...prev]
+                        const addToParent = (accounts: AccountWithBalance[]): AccountWithBalance[] => {
+                            return accounts.map(account => {
+                                if (account.id === newAccount.parentAccountId) {
+                                    return {
+                                        ...account,
+                                        children: [...(account.children || []), newAccount]
+                                    }
+                                }
+                                if (account.children) {
+                                    return {
+                                        ...account,
+                                        children: addToParent(account.children)
+                                    }
+                                }
+                                return account
+                            })
+                        }
+                        return addToParent(updated)
+                    })
+                } else {
+                    // C'est un compte principal, l'ajouter à la liste
+                    setLocalAccounts((prev) => [...prev, newAccount])
+                }
             }
             setIsCreateDialogOpen(false)
             createForm.reset()
+            setSelectedParentAccount(null)
         },
-        onError: () => {
-            toast.error("Erreur lors de la création du compte")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la création du compte")
         }
     })
 
@@ -94,13 +128,34 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                     balance: 0,
                     children: []
                 }
-                setLocalAccounts((prev) => prev.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc))
+
+                // Mettre à jour le compte dans la structure hiérarchique
+                setLocalAccounts((prev) => {
+                    const updateInHierarchy = (accounts: AccountWithBalance[]): AccountWithBalance[] => {
+                        return accounts.map(account => {
+                            if (account.id === updatedAccount.id) {
+                                return {
+                                    ...updatedAccount,
+                                    children: account.children || []
+                                }
+                            }
+                            if (account.children) {
+                                return {
+                                    ...account,
+                                    children: updateInHierarchy(account.children)
+                                }
+                            }
+                            return account
+                        })
+                    }
+                    return updateInHierarchy(prev)
+                })
             }
             setEditingAccount(null)
             updateForm.reset()
         },
-        onError: () => {
-            toast.error("Erreur lors de la mise à jour du compte")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la mise à jour du compte")
         }
     })
 
@@ -108,12 +163,26 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
         onSuccess: () => {
             toast.success("Compte supprimé avec succès")
             if (editingAccount) {
-                setLocalAccounts((prev) => prev.filter(acc => acc.id !== editingAccount.id))
+                // Supprimer le compte de la structure hiérarchique
+                setLocalAccounts((prev) => {
+                    const removeFromHierarchy = (accounts: AccountWithBalance[]): AccountWithBalance[] => {
+                        return accounts.filter(account => {
+                            if (account.id === editingAccount.id) {
+                                return false
+                            }
+                            if (account.children) {
+                                account.children = removeFromHierarchy(account.children)
+                            }
+                            return true
+                        })
+                    }
+                    return removeFromHierarchy(prev)
+                })
             }
             setEditingAccount(null)
         },
-        onError: () => {
-            toast.error("Erreur lors de la suppression du compte")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la suppression du compte")
         }
     })
 
@@ -139,6 +208,27 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
             type: account.type,
             parentId: account.parentAccountId || undefined,
         })
+    }
+
+    const openCreateSubAccountDialog = (parentAccount: AccountWithBalance) => {
+        setSelectedParentAccount(parentAccount)
+        createForm.reset({
+            code: "",
+            name: "",
+            type: parentAccount.type, // Hériter du type du parent
+            parentId: parentAccount.id,
+        })
+        setIsCreateDialogOpen(true)
+    }
+
+    const toggleExpanded = (accountId: string) => {
+        const newExpanded = new Set(expandedAccounts)
+        if (newExpanded.has(accountId)) {
+            newExpanded.delete(accountId)
+        } else {
+            newExpanded.add(accountId)
+        }
+        setExpandedAccounts(newExpanded)
     }
 
     const getTypeColor = (type: AccountWithBalance["type"]) => {
@@ -180,18 +270,116 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
         account.code.includes(searchTerm)
     )
 
+    const renderAccount = (account: AccountWithBalance, level: number = 0) => {
+        const hasChildren = account.children && account.children.length > 0
+        const isExpanded = expandedAccounts.has(account.id)
+        const isParent = hasChildren
+
+        return (
+            <div key={account.id} className="space-y-2">
+                <div
+                    className={`flex items-center justify-between p-4 border rounded-lg ${level > 0 ? 'bg-muted/20' : 'bg-background'
+                        }`}
+                    style={{ marginLeft: `${level * 24}px` }}
+                >
+                    <div className="flex items-center space-x-4">
+                        {isParent ? (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleExpanded(account.id)}
+                                className="p-1 h-6 w-6"
+                            >
+                                {isExpanded ? (
+                                    <IconChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <IconChevronRight className="h-4 w-4" />
+                                )}
+                            </Button>
+                        ) : (
+                            <div className="w-6" />
+                        )}
+
+                        <IconFolder className="h-5 w-5 text-blue-500" />
+
+                        <div>
+                            <div className="flex items-center space-x-2">
+                                <span className="font-mono font-medium text-sm">{account.code}</span>
+                                <span className="text-sm text-muted-foreground">-</span>
+                                <span className="font-medium">{account.name}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                                <Badge variant="secondary" className={getTypeColor(account.type)}>
+                                    {getTypeLabel(account.type)}
+                                </Badge>
+                                {hasChildren && (
+                                    <Badge variant="outline" className="text-xs">
+                                        {account.children!.length} sous-compte(s)
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                            <div className="font-medium">
+                                {account.balance.toLocaleString('fr-FR', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                })}
+                            </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openCreateSubAccountDialog(account)}
+                                className="text-blue-600 hover:text-blue-700"
+                                title="Ajouter un sous-compte"
+                            >
+                                <IconPlus className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(account)}>
+                                <IconEdit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(account)}
+                                disabled={isDeleting}
+                                className="text-red-600 hover:text-red-700"
+                            >
+                                <IconTrash className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sous-comptes */}
+                {hasChildren && isExpanded && (
+                    <div className="space-y-2">
+                        {account.children!.map((child) => renderAccount(child, level + 1))}
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-6">
             {/* Actions */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Input
-                        placeholder="Rechercher un compte..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-64"
-                    />
-                    <IconSearch className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-1 items-center space-x-2 max-w-sm">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Rechercher un compte..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-8"
+                        />
+                    </div>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
@@ -202,7 +390,12 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Créer un nouveau compte</DialogTitle>
+                            <DialogTitle>
+                                {selectedParentAccount
+                                    ? `Créer un sous-compte de ${selectedParentAccount.name}`
+                                    : "Créer un nouveau compte"
+                                }
+                            </DialogTitle>
                         </DialogHeader>
                         <Form {...createForm}>
                             <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
@@ -213,7 +406,11 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                         <FormItem>
                                             <FormLabel>Code du compte</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="512000" {...field} />
+                                                <Input
+                                                    placeholder="512000"
+                                                    {...field}
+                                                    className="font-mono"
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -257,7 +454,14 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                     )}
                                 />
                                 <div className="flex justify-end space-x-2">
-                                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsCreateDialogOpen(false)
+                                            setSelectedParentAccount(null)
+                                        }}
+                                    >
                                         Annuler
                                     </Button>
                                     <Button type="submit" disabled={isCreating}>
@@ -277,101 +481,13 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {filteredAccounts.map((account) => (
-                            <div key={account.id} className="space-y-2">
-                                <div className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div className="flex items-center space-x-4">
-                                        <IconFolder className="h-5 w-5 text-muted-foreground" />
-                                        <div>
-                                            <div className="flex items-center space-x-2">
-                                                <span className="font-medium">{account.code}</span>
-                                                <span className="text-sm text-muted-foreground">-</span>
-                                                <span className="font-medium">{account.name}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2 mt-1">
-                                                <Badge variant="secondary" className={getTypeColor(account.type)}>
-                                                    {getTypeLabel(account.type)}
-                                                </Badge>
-                                                {account.children && (
-                                                    <Badge variant="outline">
-                                                        {account.children.length} sous-compte(s)
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <div className="text-right">
-                                            <div className="font-medium">
-                                                {account.balance.toLocaleString('fr-FR', {
-                                                    style: 'currency',
-                                                    currency: 'EUR'
-                                                })}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(account)}>
-                                                <IconEdit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDelete(account)}
-                                                disabled={isDeleting}
-                                            >
-                                                <IconTrash className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Sous-comptes */}
-                                {account.children && (
-                                    <div className="ml-8 space-y-2">
-                                        {account.children.map((child) => (
-                                            <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                                                <div className="flex items-center space-x-4">
-                                                    <IconFileText className="h-4 w-4 text-muted-foreground" />
-                                                    <div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="font-medium">{child.code}</span>
-                                                            <span className="text-sm text-muted-foreground">-</span>
-                                                            <span className="font-medium">{child.name}</span>
-                                                        </div>
-                                                        <Badge variant="secondary" className={getTypeColor(child.type)}>
-                                                            {getTypeLabel(child.type)}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-4">
-                                                    <div className="text-right">
-                                                        <div className="font-medium">
-                                                            {child.balance.toLocaleString('fr-FR', {
-                                                                style: 'currency',
-                                                                currency: 'EUR'
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(child)}>
-                                                            <IconEdit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(child)}
-                                                            disabled={isDeleting}
-                                                        >
-                                                            <IconTrash className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                        {filteredAccounts.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                {searchTerm ? "Aucun compte trouvé" : "Aucun compte créé"}
                             </div>
-                        ))}
+                        ) : (
+                            filteredAccounts.map((account) => renderAccount(account))
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -391,7 +507,7 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                     <FormItem>
                                         <FormLabel>Code du compte</FormLabel>
                                         <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} className="font-mono" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

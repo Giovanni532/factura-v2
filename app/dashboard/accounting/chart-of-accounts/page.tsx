@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { ChartOfAccountsClient } from "@/components/accounting/chart-of-accounts-client"
 import { getChartOfAccounts } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
@@ -35,9 +34,7 @@ export default async function ChartOfAccountsPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <ChartOfAccountsClient accounts={accounts} />
-            </Suspense>
+            <ChartOfAccountsClient accounts={accounts} />
         </div>
     )
 } 

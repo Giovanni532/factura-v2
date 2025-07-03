@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { PaymentsClient } from "@/components/accounting/payments-client"
 import { getPayments } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
@@ -42,9 +41,7 @@ export default async function PaymentsPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <PaymentsClient payments={payments} />
-            </Suspense>
+            <PaymentsClient payments={payments} />
         </div>
     )
 } 

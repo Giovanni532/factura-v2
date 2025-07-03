@@ -11,7 +11,7 @@ import {
     user,
     company
 } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { z } from "zod"
 import {
     createAccountSchema,
@@ -23,6 +23,8 @@ import {
     createFiscalYearSchema,
     updateFiscalYearSchema
 } from "@/validation/accounting-schema"
+import { getUserWithCompany } from "@/db/queries/company"
+import { ActionError } from "@/lib/safe-action"
 
 // Schémas pour les actions de suppression
 const deleteSchema = z.object({
@@ -33,58 +35,143 @@ const deleteSchema = z.object({
 export const createAccountAction = useMutation(
     createAccountSchema,
     async (input, { userId }) => {
-        // Vérifier que l'utilisateur appartient à une entreprise
-        const userResult = await db.select().from(user).where(eq(user.id, userId)).limit(1)
-        const currentUser = userResult[0]
+        const userWithCompany = await getUserWithCompany(userId)
+        const companyId = userWithCompany.company?.id
 
-        if (!currentUser?.companyId) {
-            throw new Error("Utilisateur non associé à une entreprise")
+        if (!companyId) {
+            throw new ActionError("Entreprise non trouvée")
         }
 
-        const newAccount = await db.insert(chartOfAccounts).values({
-            code: input.code,
-            name: input.name,
-            type: input.type,
-            parentAccountId: input.parentId,
-            companyId: currentUser.companyId,
-        }).returning()
+        // Vérifier si le code existe déjà
+        const existingAccount = await db
+            .select()
+            .from(chartOfAccounts)
+            .where(
+                and(
+                    eq(chartOfAccounts.code, input.code),
+                    eq(chartOfAccounts.companyId, companyId)
+                )
+            )
+            .limit(1)
 
-        return { success: true, account: newAccount[0] }
+        if (existingAccount.length > 0) {
+            throw new ActionError("Un compte avec ce code existe déjà")
+        }
+
+        // Vérifier si le compte parent existe si parentId est fourni
+        if (input.parentId) {
+            const parentAccount = await db
+                .select()
+                .from(chartOfAccounts)
+                .where(
+                    and(
+                        eq(chartOfAccounts.id, input.parentId),
+                        eq(chartOfAccounts.companyId, companyId)
+                    )
+                )
+                .limit(1)
+
+            if (parentAccount.length === 0) {
+                throw new ActionError("Le compte parent n'existe pas")
+            }
+        }
+
+        const [account] = await db
+            .insert(chartOfAccounts)
+            .values({
+                code: input.code,
+                name: input.name,
+                type: input.type,
+                parentAccountId: input.parentId || null,
+                companyId,
+                // Le solde sera calculé dynamiquement à partir des écritures
+            })
+            .returning()
+
+        return { success: true, account }
     }
 )
 
 export const updateAccountAction = useMutation(
     updateAccountSchema,
     async (input, { userId }) => {
-        const userResult = await db.select().from(user).where(eq(user.id, userId)).limit(1)
-        const currentUser = userResult[0]
+        const userWithCompany = await getUserWithCompany(userId)
+        const companyId = userWithCompany.company?.id
 
-        if (!currentUser?.companyId) {
-            throw new Error("Utilisateur non associé à une entreprise")
+        if (!companyId) {
+            throw new ActionError("Entreprise non trouvée")
         }
 
-        const updateData: any = {}
-        if (input.code) updateData.code = input.code
-        if (input.name) updateData.name = input.name
-        if (input.type) updateData.type = input.type
-        if (input.parentId !== undefined) updateData.parentAccountId = input.parentId
-        updateData.updatedAt = new Date()
-
-        const updatedAccount = await db.update(chartOfAccounts)
-            .set(updateData)
+        // Vérifier si le compte existe
+        const existingAccount = await db
+            .select()
+            .from(chartOfAccounts)
             .where(
                 and(
                     eq(chartOfAccounts.id, input.id),
-                    eq(chartOfAccounts.companyId, currentUser.companyId)
+                    eq(chartOfAccounts.companyId, companyId)
                 )
             )
-            .returning()
+            .limit(1)
 
-        if (!updatedAccount[0]) {
-            throw new Error("Compte non trouvé")
+        if (existingAccount.length === 0) {
+            throw new ActionError("Compte non trouvé")
         }
 
-        return { success: true, account: updatedAccount[0] }
+        // Vérifier si le nouveau code existe déjà (sauf pour ce compte)
+        const duplicateCode = await db
+            .select()
+            .from(chartOfAccounts)
+            .where(
+                and(
+                    eq(chartOfAccounts.code, input.code),
+                    eq(chartOfAccounts.companyId, companyId),
+                    sql`${chartOfAccounts.id} != ${input.id}`
+                )
+            )
+            .limit(1)
+
+        if (duplicateCode.length > 0) {
+            throw new ActionError("Un autre compte avec ce code existe déjà")
+        }
+
+        // Vérifier si le compte parent existe si parentId est fourni
+        if (input.parentId) {
+            const parentAccount = await db
+                .select()
+                .from(chartOfAccounts)
+                .where(
+                    and(
+                        eq(chartOfAccounts.id, input.parentId),
+                        eq(chartOfAccounts.companyId, companyId)
+                    )
+                )
+                .limit(1)
+
+            if (parentAccount.length === 0) {
+                throw new ActionError("Le compte parent n'existe pas")
+            }
+
+            // Éviter les références circulaires
+            if (input.parentId === input.id) {
+                throw new ActionError("Un compte ne peut pas être son propre parent")
+            }
+        }
+
+        const [account] = await db
+            .update(chartOfAccounts)
+            .set({
+                code: input.code,
+                name: input.name,
+                type: input.type,
+                parentAccountId: input.parentId || null,
+                // Le solde sera calculé dynamiquement à partir des écritures
+                updatedAt: new Date(),
+            })
+            .where(eq(chartOfAccounts.id, input.id))
+            .returning()
+
+        return { success: true, account }
     }
 )
 

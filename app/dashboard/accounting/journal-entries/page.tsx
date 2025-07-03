@@ -1,9 +1,9 @@
-import { Suspense } from "react"
 import { JournalEntriesClient } from "@/components/accounting/journal-entries-client"
-import { getJournalEntries } from "@/db/queries/accounting"
+import { getJournalEntries, getChartOfAccounts } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { getUserWithCompany } from "@/db/queries/company"
+import { JournalEntriesProvider } from "@/hooks/use-journal-entries"
 
 export default async function JournalEntriesPage() {
     const session = await auth.api.getSession({
@@ -12,6 +12,7 @@ export default async function JournalEntriesPage() {
 
     const user = session?.user
     let entries: any[] = []
+    let accounts: any[] = []
 
     if (user) {
         try {
@@ -19,6 +20,7 @@ export default async function JournalEntriesPage() {
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
+                // Récupérer les écritures
                 entries = await getJournalEntries(companyId, {
                     limit: 20,
                     offset: 0,
@@ -27,9 +29,12 @@ export default async function JournalEntriesPage() {
                     status: undefined,
                     search: undefined
                 })
+
+                // Récupérer les comptes pour la sélection
+                accounts = await getChartOfAccounts(companyId)
             }
         } catch (error) {
-            console.error("Erreur lors de la récupération des écritures:", error)
+            console.error("Erreur lors de la récupération des données:", error)
         }
     }
 
@@ -42,9 +47,9 @@ export default async function JournalEntriesPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <JournalEntriesClient entries={entries} />
-            </Suspense>
+            <JournalEntriesProvider entries={entries} accounts={accounts}>
+                <JournalEntriesClient entries={entries} accounts={accounts} />
+            </JournalEntriesProvider>
         </div>
     )
 } 

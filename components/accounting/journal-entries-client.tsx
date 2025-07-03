@@ -9,10 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { useAction } from "next-safe-action/hooks"
 import { toast } from "sonner"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 import {
     IconPlus,
     IconSearch,
@@ -21,10 +25,13 @@ import {
     IconTrash,
     IconFileText,
     IconCalendar,
-    IconCalculator
+    IconCalculator,
+    IconX
 } from "@tabler/icons-react"
 import { createJournalEntryAction, updateJournalEntryAction, deleteJournalEntryAction } from "@/action/accounting-actions"
 import { createJournalEntrySchema, updateJournalEntrySchema } from "@/validation/accounting-schema"
+import { useJournalEntries } from "@/hooks/use-journal-entries"
+import { useRouter } from "next/navigation"
 
 interface JournalEntryWithLines {
     id: string
@@ -46,23 +53,39 @@ interface JournalEntryWithLines {
     }[]
 }
 
-interface JournalEntriesClientProps {
-    entries: JournalEntryWithLines[]
+interface AccountWithBalance {
+    id: string
+    code: string
+    name: string
+    type: "asset" | "liability" | "equity" | "revenue" | "expense"
+    parentAccountId?: string | null
+    balance: number
+    children?: AccountWithBalance[]
 }
 
-export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
+interface JournalEntriesClientProps {
+    entries: JournalEntryWithLines[]
+    accounts: AccountWithBalance[] // Ajout des comptes pour la sélection
+}
+
+export function JournalEntriesClient({ entries, accounts }: JournalEntriesClientProps) {
     const [searchTerm, setSearchTerm] = useState("")
-    const [localEntries, setLocalEntries] = useState(entries)
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntryWithLines | null>(null)
     const [viewingEntry, setViewingEntry] = useState<JournalEntryWithLines | null>(null)
+    const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<JournalEntryWithLines | null>(null)
+
+    const router = useRouter()
+
+    // Utiliser le context
+    const { entries: contextEntries, addEntry, updateEntry, deleteEntry, getAccountInfo } = useJournalEntries()
 
     // Formulaires
     const createForm = useForm({
         resolver: zodResolver(createJournalEntrySchema),
         defaultValues: {
             number: "",
-            date: "",
+            date: new Date().toISOString().split('T')[0],
             description: "",
             status: "draft" as const,
             lines: [
@@ -72,12 +95,17 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
         }
     })
 
+    const { fields, append, remove } = useFieldArray({
+        control: createForm.control,
+        name: "lines"
+    })
+
     const updateForm = useForm({
         resolver: zodResolver(updateJournalEntrySchema),
         defaultValues: {
             id: "",
             number: "",
-            date: "",
+            date: new Date().toISOString().split('T')[0],
             description: "",
             status: "draft" as const,
             lines: []
@@ -89,63 +117,97 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
         onSuccess: (data) => {
             toast.success("Écriture comptable créée avec succès")
             if (data.data?.entry && data.data?.lines) {
+                // Mapper les lignes avec les infos des comptes
+                const linesWithAccountInfo = data.data.lines.map((line: any) => {
+                    const accountInfo = getAccountInfo(line.accountId)
+                    return {
+                        ...line,
+                        accountCode: accountInfo?.code || "",
+                        accountName: accountInfo?.name || ""
+                    }
+                })
+
                 const newEntry: JournalEntryWithLines = {
                     ...data.data.entry,
                     reference: null,
                     type: "general",
                     total: data.data.lines.reduce((sum: number, line: any) => sum + line.debit, 0),
-                    lines: data.data.lines.map((line: any) => ({
-                        ...line,
-                        accountCode: "",
-                        accountName: ""
-                    }))
+                    lines: linesWithAccountInfo
                 }
-                setLocalEntries((prev) => [...prev, newEntry])
+                addEntry(newEntry)
             }
             setIsCreateDialogOpen(false)
-            createForm.reset()
+            createForm.reset({
+                number: "",
+                date: new Date().toISOString().split('T')[0],
+                description: "",
+                status: "draft" as const,
+                lines: [
+                    { accountId: "", debit: 0, credit: 0, description: "" },
+                    { accountId: "", debit: 0, credit: 0, description: "" }
+                ]
+            })
+            router.refresh()
         },
-        onError: () => {
-            toast.error("Erreur lors de la création de l'écriture comptable")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la création de l'écriture comptable")
         }
     })
 
     const { execute: executeUpdate, isPending: isUpdating } = useAction(updateJournalEntryAction, {
         onSuccess: (data) => {
             toast.success("Écriture comptable mise à jour avec succès")
-            if (data.data?.entry) {
+            if (data.data?.entry && editingEntry) {
+                // Garder les lignes existantes avec leurs infos de compte
                 const updatedEntry: JournalEntryWithLines = {
                     ...data.data.entry,
-                    reference: editingEntry?.reference || null,
-                    type: editingEntry?.type || "general",
-                    total: editingEntry?.total || 0,
-                    lines: editingEntry?.lines || []
+                    reference: editingEntry.reference || null,
+                    type: editingEntry.type || "general",
+                    total: editingEntry.total || 0,
+                    lines: editingEntry.lines || []
                 }
-                setLocalEntries((prev) => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e))
+                updateEntry(updatedEntry)
             }
             setEditingEntry(null)
             updateForm.reset()
+            router.refresh()
         },
-        onError: () => {
-            toast.error("Erreur lors de la mise à jour de l'écriture comptable")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la mise à jour de l'écriture comptable")
         }
     })
 
     const { execute: executeDelete, isPending: isDeleting } = useAction(deleteJournalEntryAction, {
         onSuccess: () => {
             toast.success("Écriture comptable supprimée avec succès")
-            if (editingEntry) {
-                setLocalEntries((prev) => prev.filter(e => e.id !== editingEntry.id))
+            if (deleteConfirmEntry) {
+                // Mise à jour directe du contexte
+                deleteEntry(deleteConfirmEntry.id)
             }
-            setEditingEntry(null)
+            setDeleteConfirmEntry(null)
+            router.refresh()
         },
-        onError: () => {
-            toast.error("Erreur lors de la suppression de l'écriture comptable")
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la suppression de l'écriture comptable")
+            setDeleteConfirmEntry(null)
         }
     })
 
     const handleCreate = (data: any) => {
-        executeCreate(data)
+        // Filtrer les lignes vides
+        const validLines = data.lines.filter((line: any) =>
+            line.accountId && (line.debit > 0 || line.credit > 0)
+        )
+
+        if (validLines.length < 2) {
+            toast.error("Au moins deux lignes sont requises")
+            return
+        }
+
+        executeCreate({
+            ...data,
+            lines: validLines
+        })
     }
 
     const handleUpdate = (data: any) => {
@@ -153,8 +215,13 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
     }
 
     const handleDelete = (entry: JournalEntryWithLines) => {
-        setEditingEntry(entry)
-        executeDelete({ id: entry.id })
+        setDeleteConfirmEntry(entry)
+    }
+
+    const confirmDelete = () => {
+        if (deleteConfirmEntry) {
+            executeDelete({ id: deleteConfirmEntry.id })
+        }
     }
 
     const openEditDialog = (entry: JournalEntryWithLines) => {
@@ -173,6 +240,18 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                 description: line.description || ""
             }))
         })
+    }
+
+    const addLine = () => {
+        append({ accountId: "", debit: 0, credit: 0, description: "" })
+    }
+
+    const removeLine = (index: number) => {
+        if (fields.length > 2) {
+            remove(index)
+        } else {
+            toast.error("Au moins deux lignes sont requises")
+        }
     }
 
     const getStatusColor = (status: JournalEntryWithLines["isPosted"]) => {
@@ -197,23 +276,35 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
         }
     }
 
-    const filteredEntries = localEntries.filter(entry =>
+    const filteredEntries = contextEntries.filter(entry =>
         entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.number.includes(searchTerm)
+        entry.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.reference?.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    // Aplatir tous les comptes pour la sélection
+    const allAccounts = accounts.reduce((acc: AccountWithBalance[], account) => {
+        acc.push(account)
+        if (account.children) {
+            acc.push(...account.children)
+        }
+        return acc
+    }, [])
 
     return (
         <div className="space-y-6">
             {/* Actions */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Input
-                        placeholder="Rechercher une écriture..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-64"
-                    />
-                    <IconSearch className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-1 items-center space-x-2 max-w-sm">
+                    <div className="relative flex-1">
+                        <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Rechercher une écriture..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-8"
+                        />
+                    </div>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
@@ -222,7 +313,7 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                             Nouvelle écriture
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-4xl min-w-4xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Créer une nouvelle écriture comptable</DialogTitle>
                         </DialogHeader>
@@ -248,9 +339,31 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Date</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} />
-                                                </FormControl>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant="outline"
+                                                                className="w-full justify-start text-left font-normal"
+                                                            >
+                                                                <IconCalendar className="mr-2 h-4 w-4" />
+                                                                {field.value ? (
+                                                                    format(new Date(field.value), "PPP", { locale: fr })
+                                                                ) : (
+                                                                    <span>Sélectionner une date</span>
+                                                                )}
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={field.value ? new Date(field.value) : undefined}
+                                                            onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -284,18 +397,142 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                                                 <SelectContent>
                                                     <SelectItem value="draft">Brouillon</SelectItem>
                                                     <SelectItem value="posted">Comptabilisée</SelectItem>
-                                                    <SelectItem value="cancelled">Annulée</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                                <div className="flex justify-end space-x-2">
+
+                                {/* Lignes d'écriture */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <FormLabel className="text-base font-semibold">Lignes d'écriture</FormLabel>
+                                        <Button type="button" variant="outline" size="sm" onClick={addLine}>
+                                            <IconPlus className="h-4 w-4 mr-2" />
+                                            Ajouter une ligne
+                                        </Button>
+                                    </div>
+                                    <div className="rounded-lg border bg-muted/50 divide-y">
+                                        <div className="grid grid-cols-5 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted rounded-t-lg">
+                                            <div>Compte</div>
+                                            <div>Débit</div>
+                                            <div>Crédit</div>
+                                            <div>Description</div>
+                                            <div></div>
+                                        </div>
+                                        {fields.map((field, index) => (
+                                            <div key={field.id} className="grid grid-cols-5 gap-3 px-4 py-3 items-center group bg-white hover:bg-muted/80 transition">
+                                                <FormField
+                                                    control={createForm.control}
+                                                    name={`lines.${index}.accountId`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="mb-0">
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="h-9">
+                                                                        <SelectValue placeholder="Sélectionner" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {allAccounts.map((account) => (
+                                                                        <SelectItem key={account.id} value={account.id}>
+                                                                            {account.code} - {account.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={createForm.control}
+                                                    name={`lines.${index}.debit`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="mb-0">
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    placeholder="0.00"
+                                                                    {...field}
+                                                                    value={isNaN(field.value) ? "" : field.value}
+                                                                    onChange={e => field.onChange(Number(e.target.value) || 0)}
+                                                                    className="h-9"
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={createForm.control}
+                                                    name={`lines.${index}.credit`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="mb-0">
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    placeholder="0.00"
+                                                                    {...field}
+                                                                    value={isNaN(field.value) ? "" : field.value}
+                                                                    onChange={e => field.onChange(Number(e.target.value) || 0)}
+                                                                    className="h-9"
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={createForm.control}
+                                                    name={`lines.${index}.description`}
+                                                    render={({ field }) => (
+                                                        <FormItem className="mb-0">
+                                                            <FormControl>
+                                                                <Input placeholder="Description" {...field} className="h-9" />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <div className="flex items-center justify-end">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => removeLine(index)}
+                                                        className="text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                                        tabIndex={-1}
+                                                        aria-label="Supprimer la ligne"
+                                                    >
+                                                        <IconX className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Résumé Débit/Crédit */}
+                                    <div className="flex justify-end gap-8 mt-2 text-sm">
+                                        <div className="font-medium text-muted-foreground">
+                                            Total Débit : {createForm.watch("lines").reduce((sum, l) => sum + (Number(l.debit) || 0), 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                                        </div>
+                                        <div className="font-medium text-muted-foreground">
+                                            Total Crédit : {createForm.watch("lines").reduce((sum, l) => sum + (Number(l.credit) || 0), 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                                        </div>
+                                    </div>
+                                    {/* Erreurs de validation globales */}
+                                    {createForm.formState.errors.lines && (
+                                        <div className="text-red-600 text-sm font-medium mt-2">
+                                            {createForm.formState.errors.lines.message as string}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex justify-end space-x-2 mt-4">
                                     <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                                         Annuler
                                     </Button>
-                                    <Button type="submit" disabled={isCreating}>
+                                    <Button type="submit" disabled={!createForm.formState.isValid || isCreating}>
                                         {isCreating ? "Création..." : "Créer"}
                                     </Button>
                                 </div>
@@ -312,107 +549,113 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {filteredEntries.map((entry) => (
-                            <div key={entry.id} className="border rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-4">
-                                        <IconFileText className="h-5 w-5 text-muted-foreground" />
-                                        <div>
-                                            <div className="flex items-center space-x-2">
-                                                <span className="font-medium">{entry.number}</span>
-                                                <Badge variant="secondary" className={getStatusColor(entry.isPosted)}>
-                                                    {getStatusLabel(entry.isPosted)}
-                                                </Badge>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">{entry.description}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <div className="text-right">
-                                            <div className="flex items-center space-x-2">
-                                                <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-sm">
-                                                    {new Date(entry.date).toLocaleDateString('fr-FR')}
-                                                </span>
-                                            </div>
-                                            <div className="font-medium">
-                                                {entry.total.toLocaleString('fr-FR', {
-                                                    style: 'currency',
-                                                    currency: 'EUR'
-                                                })}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setViewingEntry(entry)}
-                                            >
-                                                <IconEye className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => openEditDialog(entry)}
-                                            >
-                                                <IconEdit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDelete(entry)}
-                                                disabled={isDeleting}
-                                            >
-                                                <IconTrash className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Lignes d'écriture */}
-                                <div className="bg-muted/20 rounded-lg p-3">
-                                    <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground mb-2">
-                                        <div>Compte</div>
-                                        <div>Description</div>
-                                        <div className="text-right">Débit</div>
-                                        <div className="text-right">Crédit</div>
-                                    </div>
-                                    {entry.lines.map((line) => (
-                                        <div key={line.id} className="grid grid-cols-4 gap-4 py-2 border-b last:border-b-0">
-                                            <div>
-                                                <div className="font-medium">{line.accountCode}</div>
-                                                <div className="text-sm text-muted-foreground">{line.accountName}</div>
-                                            </div>
-                                            <div className="text-sm">{line.description}</div>
-                                            <div className="text-right">
-                                                {line.debit > 0 ? (
-                                                    <span className="font-medium">
-                                                        {line.debit.toLocaleString('fr-FR', {
-                                                            style: 'currency',
-                                                            currency: 'EUR'
-                                                        })}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-muted-foreground">-</span>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                {line.credit > 0 ? (
-                                                    <span className="font-medium">
-                                                        {line.credit.toLocaleString('fr-FR', {
-                                                            style: 'currency',
-                                                            currency: 'EUR'
-                                                        })}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-muted-foreground">-</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                        {filteredEntries.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                {searchTerm ? "Aucune écriture trouvée" : "Aucune écriture comptable"}
                             </div>
-                        ))}
+                        ) : (
+                            filteredEntries.map((entry) => (
+                                <div key={entry.id} className="border rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-4">
+                                            <IconFileText className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="font-medium">{entry.number}</span>
+                                                    <Badge variant="secondary" className={getStatusColor(entry.isPosted)}>
+                                                        {getStatusLabel(entry.isPosted)}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">{entry.description}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-4">
+                                            <div className="text-right">
+                                                <div className="flex items-center space-x-2">
+                                                    <IconCalendar className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="text-sm">
+                                                        {format(new Date(entry.date), "dd/MM/yyyy", { locale: fr })}
+                                                    </span>
+                                                </div>
+                                                <div className="font-medium">
+                                                    {entry.total.toLocaleString('fr-FR', {
+                                                        style: 'currency',
+                                                        currency: 'EUR'
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setViewingEntry(entry)}
+                                                >
+                                                    <IconEye className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => openEditDialog(entry)}
+                                                >
+                                                    <IconEdit className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(entry)}
+                                                    disabled={isDeleting}
+                                                >
+                                                    <IconTrash className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Lignes d'écriture */}
+                                    <div className="bg-muted/20 rounded-lg p-3">
+                                        <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground mb-2">
+                                            <div>Compte</div>
+                                            <div>Description</div>
+                                            <div className="text-right">Débit</div>
+                                            <div className="text-right">Crédit</div>
+                                        </div>
+                                        {entry.lines.map((line) => (
+                                            <div key={line.id} className="grid grid-cols-4 gap-4 py-2 border-b last:border-b-0">
+                                                <div>
+                                                    <div className="font-medium">{line.accountCode}</div>
+                                                    <div className="text-sm text-muted-foreground">{line.accountName}</div>
+                                                </div>
+                                                <div className="text-sm">{line.description}</div>
+                                                <div className="text-right">
+                                                    {line.debit > 0 ? (
+                                                        <span className="font-medium">
+                                                            {line.debit.toLocaleString('fr-FR', {
+                                                                style: 'currency',
+                                                                currency: 'EUR'
+                                                            })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-right">
+                                                    {line.credit > 0 ? (
+                                                        <span className="font-medium">
+                                                            {line.credit.toLocaleString('fr-FR', {
+                                                                style: 'currency',
+                                                                currency: 'EUR'
+                                                            })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -445,9 +688,31 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Date</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full justify-start text-left font-normal"
+                                                        >
+                                                            <IconCalendar className="mr-2 h-4 w-4" />
+                                                            {field.value ? (
+                                                                format(new Date(field.value), "PPP", { locale: fr })
+                                                            ) : (
+                                                                <span>Sélectionner une date</span>
+                                                            )}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -481,7 +746,6 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                                             <SelectContent>
                                                 <SelectItem value="draft">Brouillon</SelectItem>
                                                 <SelectItem value="posted">Comptabilisée</SelectItem>
-                                                <SelectItem value="cancelled">Annulée</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -517,7 +781,7 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                                 <div>
                                     <label className="text-sm font-medium">Date</label>
                                     <p className="text-sm text-muted-foreground">
-                                        {new Date(viewingEntry.date).toLocaleDateString('fr-FR')}
+                                        {format(new Date(viewingEntry.date), "PPP", { locale: fr })}
                                     </p>
                                 </div>
                             </div>
@@ -581,6 +845,28 @@ export function JournalEntriesClient({ entries }: JournalEntriesClientProps) {
                             </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog de confirmation de suppression */}
+            <Dialog open={!!deleteConfirmEntry} onOpenChange={() => setDeleteConfirmEntry(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Confirmer la suppression de l'écriture comptable</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Êtes-vous sûr de vouloir supprimer l'écriture {deleteConfirmEntry?.number} ?
+                        </p>
+                        <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setDeleteConfirmEntry(null)}>
+                                Annuler
+                            </Button>
+                            <Button type="button" variant="destructive" onClick={confirmDelete}>
+                                Supprimer
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

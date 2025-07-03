@@ -21,7 +21,7 @@ import { createInvoiceAction } from "@/action/invoice-actions";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useInvoicesContext } from "./invoices-context";
+import { useInvoicesContext } from "../../hooks/invoices-context";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
 
 interface Service {

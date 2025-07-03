@@ -12,9 +12,19 @@ export const accountSchema = z.object({
     description: z.string().optional(),
 })
 
-export const createAccountSchema = accountSchema.omit({ id: true })
-export const updateAccountSchema = accountSchema.partial().extend({
-    id: z.string().min(1, "L'ID du compte est requis")
+export const createAccountSchema = z.object({
+    code: z.string().min(1, "Le code est requis").regex(/^\d{6}$/, "Le code doit contenir exactement 6 chiffres"),
+    name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+    type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
+    parentId: z.string().optional(),
+})
+
+export const updateAccountSchema = z.object({
+    id: z.string(),
+    code: z.string().min(1, "Le code est requis").regex(/^\d{6}$/, "Le code doit contenir exactement 6 chiffres"),
+    name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+    type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
+    parentId: z.string().optional(),
 })
 
 // Schémas pour les écritures comptables

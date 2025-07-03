@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { deleteServiceCategoryAction } from "@/action/service-actions";
 import { ServiceCategory } from "@/validation/service-schema";
-import { useServicesContext } from "./services-context";
+import { useServicesContext } from "../../hooks/services-context";
 
 interface CategoryCardProps {
     category: ServiceCategory;

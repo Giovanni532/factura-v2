@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 import { deleteClientAction } from "@/action/client-actions";
 import { ClientWithStats } from "@/validation/client-schema";
-import { useClientsContext } from "./clients-context";
+import { useClientsContext } from "../../hooks/clients-context";
 
 interface ClientCardProps {
     client: ClientWithStats;

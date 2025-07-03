@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InvoiceWithDetails, InvoiceStats } from "@/validation/invoice-schema";
 import { InvoiceCard } from "./invoice-card";
 import { CreateInvoiceButton } from "./create-invoice-button";
-import { InvoicesContext } from "./invoices-context";
+import { InvoicesContext } from "../../hooks/invoices-context";
 
 interface InvoicesPageClientProps {
     invoices: InvoiceWithDetails[];

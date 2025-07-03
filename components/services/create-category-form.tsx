@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useServicesContext } from "./services-context";
+import { useServicesContext } from "../../hooks/services-context";
 import type { z } from "zod";
 
 type CreateCategoryFormData = z.infer<typeof createServiceCategorySchema>;

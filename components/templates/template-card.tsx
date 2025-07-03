@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { toggleFavoriteAction, setDefaultTemplateAction, deleteTemplateAction } from "@/action/template-actions";
 import { TemplateWithFavorite } from "@/validation/template-schema";
 import { TemplatePreviewModal } from "./template-preview-modal";
-import { useTemplatesContext } from "./templates-context";
+import { useTemplatesContext } from "../../hooks/templates-context";
 
 interface TemplateCardProps {
     template: TemplateWithFavorite;

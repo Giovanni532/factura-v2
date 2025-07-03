@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ClientWithStats } from "@/validation/client-schema";
 import { ClientCard } from "@/components/clients/client-card";
 import { CreateClientButton } from "@/components/clients/create-client-button";
-import { ClientsContext } from "@/components/clients/clients-context";
+import { ClientsContext } from "@/hooks/clients-context";
 
 interface ClientsPageClientProps {
     initialClients: ClientWithStats[];

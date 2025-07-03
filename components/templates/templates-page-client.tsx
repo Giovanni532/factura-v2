@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TemplateCard } from "./template-card";
 import { TemplateWithFavorite } from "@/validation/template-schema";
-import { TemplatesProvider } from "./templates-context";
+import { TemplatesProvider } from "../../hooks/templates-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";

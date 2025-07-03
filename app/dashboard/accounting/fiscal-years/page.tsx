@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import { FiscalYearsClient } from "@/components/accounting/fiscal-years-client"
 import { getFiscalYears } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
@@ -35,9 +34,7 @@ export default async function FiscalYearsPage() {
                 </p>
             </div>
 
-            <Suspense fallback={<div>Chargement...</div>}>
-                <FiscalYearsClient fiscalYears={fiscalYears} />
-            </Suspense>
+            <FiscalYearsClient fiscalYears={fiscalYears} />
         </div>
     )
 } 

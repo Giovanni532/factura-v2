@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PhoneInput } from "@/components/ui/phone-input";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useClientsContext } from "./clients-context";
+import { useClientsContext } from "../../hooks/clients-context";
 import type { z } from "zod";
 
 type CreateClientFormData = z.infer<typeof createClientSchema>;

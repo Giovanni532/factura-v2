@@ -21,7 +21,7 @@ import { createQuoteAction } from "@/action/quote-actions";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useQuotesContext } from "./quotes-context";
+import { useQuotesContext } from "../../hooks/quotes-context";
 import { QuoteWithDetails } from "@/validation/quote-schema";
 
 interface Service {

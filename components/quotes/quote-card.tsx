@@ -16,7 +16,7 @@ import { QuoteWithDetails } from "@/validation/quote-schema";
 import { deleteQuoteAction, updateQuoteStatusAction, downloadQuoteAction, sendQuoteAction } from "@/action/quote-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
-import { useQuotesContext } from "./quotes-context";
+import { useQuotesContext } from "../../hooks/quotes-context";
 import { QuotePreviewModal } from "./quote-preview-modal";
 
 interface QuoteCardProps {

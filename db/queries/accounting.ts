@@ -121,9 +121,20 @@ export async function getChartOfAccounts(companyId: string): Promise<AccountWith
 }
 
 async function calculateAccountBalance(accountId: string): Promise<number> {
+    // D'abord récupérer le type de compte
+    const account = await db
+        .select({ type: chartOfAccounts.type })
+        .from(chartOfAccounts)
+        .where(eq(chartOfAccounts.id, accountId))
+        .limit(1)
+
+    if (!account[0]) return 0
+
+    // Calculer les totaux débit et crédit
     const result = await db
         .select({
-            total: sql<number>`COALESCE(SUM(${journalEntryLine.debit}), 0)`
+            totalDebit: sql<number>`COALESCE(SUM(${journalEntryLine.debit}), 0)`,
+            totalCredit: sql<number>`COALESCE(SUM(${journalEntryLine.credit}), 0)`
         })
         .from(journalEntryLine)
         .innerJoin(journalEntry, eq(journalEntryLine.journalEntryId, journalEntry.id))
@@ -134,7 +145,23 @@ async function calculateAccountBalance(accountId: string): Promise<number> {
             )
         )
 
-    return result[0]?.total || 0
+    const totalDebit = result[0]?.totalDebit || 0
+    const totalCredit = result[0]?.totalCredit || 0
+
+    // Calculer le solde selon le type de compte
+    switch (account[0].type) {
+        case 'asset':
+        case 'expense':
+            // Actifs et charges : Débit - Crédit (solde débiteur positif)
+            return totalDebit - totalCredit
+        case 'liability':
+        case 'equity':
+        case 'revenue':
+            // Passifs, capitaux propres et produits : Crédit - Débit (solde créditeur positif)
+            return totalCredit - totalDebit
+        default:
+            return 0
+    }
 }
 
 export async function getAccountById(accountId: string, companyId: string) {
