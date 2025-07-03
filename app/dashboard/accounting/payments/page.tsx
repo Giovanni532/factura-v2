@@ -1,5 +1,6 @@
 import { PaymentsClient } from "@/components/accounting/payments-client"
-import { getPayments } from "@/db/queries/accounting"
+import { PaymentsProvider } from "@/hooks/payments-context"
+import { getExtendedPayments, getSuppliers, getExpenseCategories, getInvoicesForPayments } from "@/db/queries/extended-accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { getUserWithCompany } from "@/db/queries/company"
@@ -11,6 +12,9 @@ export default async function PaymentsPage() {
 
     const user = session?.user
     let payments: any[] = []
+    let invoices: any[] = []
+    let suppliers: any[] = []
+    let expenseCategories: any[] = []
 
     if (user) {
         try {
@@ -18,30 +22,33 @@ export default async function PaymentsPage() {
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                payments = await getPayments(companyId, {
-                    limit: 20,
-                    offset: 0,
-                    startDate: undefined,
-                    endDate: undefined,
-                    status: undefined,
-                    search: undefined
-                })
+                // Récupérer les paiements étendus
+                payments = await getExtendedPayments(companyId, { limit: 100 })
+
+                // Récupérer les factures pour le formulaire
+                invoices = await getInvoicesForPayments(companyId)
+
+                // Récupérer les fournisseurs
+                suppliers = await getSuppliers(companyId)
+
+                // Récupérer les catégories de dépenses
+                expenseCategories = await getExpenseCategories(companyId)
             }
         } catch (error) {
-            console.error("Erreur lors de la récupération des paiements:", error)
+            console.error("Error loading payments data:", error)
         }
     }
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Paiements</h1>
-                <p className="text-muted-foreground">
-                    Gérez vos paiements et vos transactions financières.
-                </p>
-            </div>
-
-            <PaymentsClient payments={payments} />
+            <PaymentsProvider initialPayments={payments}>
+                <PaymentsClient
+                    initialPayments={payments}
+                    invoices={invoices}
+                    suppliers={suppliers}
+                    expenseCategories={expenseCategories}
+                />
+            </PaymentsProvider>
         </div>
     )
 } 

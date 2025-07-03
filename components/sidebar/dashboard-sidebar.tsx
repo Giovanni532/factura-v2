@@ -31,6 +31,7 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { paths } from "@/paths"
+import Link from "next/link"
 
 interface NavItem {
     title: string
@@ -140,10 +141,10 @@ export function DashboardSidebar({ currentUser, recentDocuments = [], ...props }
                             asChild
                             className="data-[slot=sidebar-menu-button]:!p-1.5"
                         >
-                            <a href={paths.dashboard}>
+                            <Link href={paths.dashboard}>
                                 <IconInnerShadowTop className="!size-5" />
                                 <span className="text-base font-semibold">Factura</span>
-                            </a>
+                            </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

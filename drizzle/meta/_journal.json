@@ -29,6 +29,20 @@
       "when": 1750922910196,
       "tag": "0003_wealthy_quicksilver",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1751531428484,
+      "tag": "0004_military_retro_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1751532178862,
+      "tag": "0005_extended_payments",
+      "breakpoints": true
     }
   ]
 }

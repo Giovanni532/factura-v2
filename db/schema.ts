@@ -84,6 +84,37 @@ export const client = sqliteTable("client", {
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
+// Table des fournisseurs
+export const supplier = sqliteTable("supplier", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    email: text('email'),
+    phone: text('phone'),
+    address: text('address'),
+    city: text('city'),
+    postalCode: text('postal_code'),
+    country: text('country').notNull(),
+    siret: text('siret'),
+    vatNumber: text('vat_number'),
+    notes: text('notes'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull(),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
+// Table des catégories de dépenses
+export const expenseCategory = sqliteTable("expense_category", {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    description: text('description'),
+    color: text('color'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull(),
+    companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+});
+
 export const template = sqliteTable("template", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: text('name').notNull(),
@@ -242,14 +273,22 @@ export const journalEntryLine = sqliteTable("journal_entry_line", {
 
 export const payment = sqliteTable("payment", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    invoiceId: text('invoice_id').notNull().references(() => invoice.id, { onDelete: 'cascade' }),
+    type: text('type', { enum: ['incoming', 'outgoing'] }).notNull(), // Entrant (client) ou sortant (fournisseur)
     amount: real('amount').notNull(),
     paymentDate: integer('payment_date', { mode: 'timestamp' }).notNull(),
     method: text('method', { enum: ['bank_transfer', 'check', 'cash', 'card', 'other'] }).notNull(),
     reference: text('reference'), // Numéro de chèque, référence virement, etc.
+    description: text('description').notNull(), // Description du paiement
     notes: text('notes'),
+
+    // Références optionnelles selon le type
+    invoiceId: text('invoice_id').references(() => invoice.id, { onDelete: 'cascade' }), // Pour les encaissements clients
+    supplierId: text('supplier_id').references(() => supplier.id, { onDelete: 'set null' }), // Pour les décaissements fournisseurs
+    expenseCategoryId: text('expense_category_id').references(() => expenseCategory.id, { onDelete: 'set null' }), // Catégorie de dépense
+
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
-    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 export const fiscalYear = sqliteTable("fiscal_year", {
@@ -297,6 +336,8 @@ export const schema = {
     verification,
     company,
     client,
+    supplier,
+    expenseCategory,
     invoice,
     invoiceItem,
     template,

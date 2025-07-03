@@ -7,6 +7,8 @@ import {
     fiscalYear,
     company,
     client,
+    supplier,
+    expenseCategory,
     invoice,
     quote
 } from "@/db/schema"

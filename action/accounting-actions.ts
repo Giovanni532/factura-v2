@@ -9,7 +9,10 @@ import {
     payment,
     fiscalYear,
     user,
-    company
+    company,
+    invoice,
+    supplier,
+    expenseCategory
 } from "@/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { z } from "zod"
@@ -333,26 +336,40 @@ export const deleteJournalEntryAction = useMutation(
 export const createPaymentAction = useMutation(
     createPaymentSchema,
     async (input, { userId }) => {
-        const userResult = await db.select().from(user).where(eq(user.id, userId)).limit(1)
-        const currentUser = userResult[0]
+        const userWithCompany = await getUserWithCompany(userId)
+        const companyId = userWithCompany.company?.id
 
-        if (!currentUser?.companyId) {
-            throw new Error("Utilisateur non associé à une entreprise")
+        if (!companyId) {
+            throw new ActionError("Entreprise non trouvée")
         }
 
-        // Pour les paiements, on a besoin d'un invoiceId obligatoire selon le schéma
-        // On va créer un paiement factice pour l'instant ou adapter le schéma
-        const newPayment = await db.insert(payment).values({
-            invoiceId: "temp-invoice-id", // TODO: Gérer correctement l'invoiceId
+        // Vérifier que la facture existe et appartient à l'entreprise
+        const invoiceExists = await db
+            .select()
+            .from(invoice)
+            .where(
+                and(
+                    eq(invoice.id, input.invoiceId),
+                    eq(invoice.companyId, companyId)
+                )
+            )
+            .limit(1)
+
+        if (invoiceExists.length === 0) {
+            throw new ActionError("Facture non trouvée")
+        }
+
+        const [newPayment] = await db.insert(payment).values({
+            invoiceId: input.invoiceId,
             amount: input.amount,
             paymentDate: new Date(input.date),
             method: input.method,
-            reference: input.reference,
-            notes: input.description,
-            companyId: currentUser.companyId,
+            reference: input.reference || null,
+            notes: input.notes || null,
+            companyId,
         }).returning()
 
-        return { success: true, payment: newPayment[0] }
+        return { success: true, payment: newPayment }
     }
 )
 
@@ -371,7 +388,7 @@ export const updatePaymentAction = useMutation(
         if (input.date) updateData.paymentDate = new Date(input.date)
         if (input.method) updateData.method = input.method
         if (input.reference) updateData.reference = input.reference
-        if (input.description) updateData.notes = input.description
+        if (input.notes) updateData.notes = input.notes
 
         const updatedPayment = await db.update(payment)
             .set(updateData)

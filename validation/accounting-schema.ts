@@ -90,26 +90,60 @@ export const updateJournalEntrySchema = z.object({
 // Schémas pour les paiements
 export const paymentSchema = z.object({
     id: z.string().optional(),
-    number: z.string().min(1, "Le numéro de paiement est requis"),
-    date: z.string().min(1, "La date est requise"),
     type: z.enum(["incoming", "outgoing"], {
         required_error: "Le type de paiement est requis"
     }),
     amount: z.number().positive("Le montant doit être positif"),
-    status: z.enum(["pending", "completed", "cancelled"]).default("pending"),
-    method: z.enum(["bank_transfer", "check", "cash", "card"], {
+    date: z.string().min(1, "La date est requise"),
+    method: z.enum(["bank_transfer", "check", "cash", "card", "other"], {
         required_error: "La méthode de paiement est requise"
     }),
-    reference: z.string().min(1, "La référence est requise"),
+    reference: z.string().optional(),
     description: z.string().min(1, "La description est requise"),
-    clientId: z.string().optional(),
-    supplierId: z.string().optional(),
-    accountId: z.string().min(1, "Le compte est requis"),
+    notes: z.string().optional(),
+    invoiceId: z.string().optional().nullable(), // Pour les encaissements
+    supplierId: z.string().optional().nullable(), // Pour les décaissements
+    expenseCategoryId: z.string().optional().nullable(), // Catégorie de dépense
 })
 
 export const createPaymentSchema = paymentSchema.omit({ id: true })
 export const updatePaymentSchema = paymentSchema.partial().extend({
     id: z.string().min(1, "L'ID du paiement est requis")
+})
+
+// Schémas pour les fournisseurs
+export const supplierSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Le nom est requis"),
+    email: z.string().email("Email invalide").optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().min(1, "Le pays est requis"),
+    siret: z.string().optional(),
+    vatNumber: z.string().optional(),
+    notes: z.string().optional(),
+    isActive: z.boolean().default(true),
+})
+
+export const createSupplierSchema = supplierSchema.omit({ id: true })
+export const updateSupplierSchema = supplierSchema.partial().extend({
+    id: z.string().min(1, "L'ID du fournisseur est requis")
+})
+
+// Schémas pour les catégories de dépenses
+export const expenseCategorySchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Le nom est requis"),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    isActive: z.boolean().default(true),
+})
+
+export const createExpenseCategorySchema = expenseCategorySchema.omit({ id: true })
+export const updateExpenseCategorySchema = expenseCategorySchema.partial().extend({
+    id: z.string().min(1, "L'ID de la catégorie est requis")
 })
 
 // Schémas pour les exercices fiscaux
