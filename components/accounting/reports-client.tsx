@@ -677,7 +677,121 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
             {/* Modal pour afficher les rapports générés */}
             <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
                 <DialogContent className="max-w-4xl max-h-[80vh] min-w-[700px] overflow-y-auto">
-                    <DialogHeader>
+                    <style jsx global>{`
+                        @media print {
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                            }
+                            
+                            body * {
+                                visibility: hidden;
+                            }
+                            
+                            .print-only, .print-only * {
+                                visibility: visible;
+                            }
+                            
+                            .print-only {
+                                position: absolute;
+                                left: 0;
+                                top: 0;
+                                width: 100% !important;
+                                padding: 20px;
+                                font-family: Arial, sans-serif;
+                            }
+                            
+                            .print-header {
+                                text-align: center;
+                                border-bottom: 2px solid #000;
+                                padding-bottom: 10px;
+                                margin-bottom: 20px;
+                            }
+                            
+                            .print-title {
+                                font-size: 24px;
+                                font-weight: bold;
+                                margin-bottom: 5px;
+                            }
+                            
+                            .print-subtitle {
+                                font-size: 14px;
+                                color: #666;
+                                margin-bottom: 10px;
+                            }
+                            
+                            .print-date {
+                                font-size: 12px;
+                                color: #888;
+                            }
+                            
+                            .print-section {
+                                margin-bottom: 20px;
+                                page-break-inside: avoid;
+                            }
+                            
+                            .print-section-title {
+                                font-size: 18px;
+                                font-weight: bold;
+                                margin-bottom: 10px;
+                                border-bottom: 1px solid #ccc;
+                                padding-bottom: 5px;
+                            }
+                            
+                            .print-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 15px;
+                            }
+                            
+                            .print-table th,
+                            .print-table td {
+                                border: 1px solid #ddd;
+                                padding: 8px;
+                                text-align: left;
+                            }
+                            
+                            .print-table th {
+                                background-color: #f5f5f5;
+                                font-weight: bold;
+                            }
+                            
+                            .print-table .number {
+                                text-align: right;
+                            }
+                            
+                            .print-total {
+                                font-weight: bold;
+                                border-top: 2px solid #000;
+                            }
+                            
+                            .print-footer {
+                                position: fixed;
+                                bottom: 20px;
+                                left: 20px;
+                                right: 20px;
+                                text-align: center;
+                                font-size: 10px;
+                                color: #888;
+                                border-top: 1px solid #ccc;
+                                padding-top: 10px;
+                            }
+                            
+                            .no-print {
+                                display: none !important;
+                            }
+                            
+                            .print-only {
+                                display: block !important;
+                            }
+                        }
+                        
+                        .print-only {
+                            display: none;
+                        }
+                    `}</style>
+
+                    <DialogHeader className="no-print">
                         <div className="flex flex-row items-center justify-between">
                             <DialogTitle>
                                 {generatedReport?.type === 'balance_sheet' && 'Bilan comptable'}
@@ -716,18 +830,256 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         </div>
                     </DialogHeader>
 
-                    <div className="space-y-4">
+                    {/* Version pour l'impression uniquement (cachée) */}
+                    <div className="print-only">
+                        {/* En-tête pour l'impression */}
+                        <div className="print-header">
+                            <div className="print-title">
+                                {generatedReport?.type === 'balance_sheet' && 'BILAN COMPTABLE'}
+                                {generatedReport?.type === 'income_statement' && 'COMPTE DE RÉSULTAT'}
+                                {generatedReport?.type === 'cash_flow' && 'TABLEAU DES FLUX DE TRÉSORERIE'}
+                                {generatedReport?.type === 'trial_balance' && 'BALANCE DE VÉRIFICATION'}
+                            </div>
+                            <div className="print-subtitle">
+                                {generatedReport?.type === 'balance_sheet' && generatedReport?.date && (
+                                    `Au ${format(new Date(generatedReport.date), "dd MMMM yyyy", { locale: fr })}`
+                                )}
+                                {(generatedReport?.type === 'income_statement' || generatedReport?.type === 'cash_flow' || generatedReport?.type === 'trial_balance') && generatedReport?.startDate && generatedReport?.endDate && (
+                                    `Du ${format(new Date(generatedReport.startDate), "dd MMMM yyyy", { locale: fr })} au ${format(new Date(generatedReport.endDate), "dd MMMM yyyy", { locale: fr })}`
+                                )}
+                            </div>
+                            <div className="print-date">
+                                Généré le {format(new Date(), "dd MMMM yyyy à HH:mm", { locale: fr })}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {generatedReport?.type === 'balance_sheet' && (
+                                <div className="print-section">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <div className="print-section-title">ACTIFS</div>
+                                            <table className="print-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Compte</th>
+                                                        <th className="number">Montant</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {generatedReport?.assets?.current?.map((asset: any, index: number) => (
+                                                        <tr key={index}>
+                                                            <td>{asset.name}</td>
+                                                            <td className="number">{formatCurrency(asset.amount)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    <tr className="print-total">
+                                                        <td><strong>Total Actifs</strong></td>
+                                                        <td className="number"><strong>{formatCurrency(generatedReport?.assets?.totalAssets || 0)}</strong></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div>
+                                            <div className="print-section-title">PASSIFS & CAPITAUX PROPRES</div>
+                                            <table className="print-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Compte</th>
+                                                        <th className="number">Montant</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {generatedReport?.liabilities?.current?.map((liability: any, index: number) => (
+                                                        <tr key={index}>
+                                                            <td>{liability.name}</td>
+                                                            <td className="number">{formatCurrency(liability.amount)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {generatedReport?.equity?.items?.map((equity: any, index: number) => (
+                                                        <tr key={`equity-${index}`}>
+                                                            <td>{equity.name}</td>
+                                                            <td className="number">{formatCurrency(equity.amount)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    <tr className="print-total">
+                                                        <td><strong>Total Passifs & Capitaux</strong></td>
+                                                        <td className="number"><strong>{formatCurrency(generatedReport?.totalLiabilitiesAndEquity || 0)}</strong></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {generatedReport?.type === 'income_statement' && (
+                                <div className="print-section">
+                                    <div className="print-section-title">REVENUS</div>
+                                    <table className="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Compte</th>
+                                                <th className="number">Montant</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {generatedReport?.revenue?.items?.map((item: any, index: number) => (
+                                                <tr key={index}>
+                                                    <td>{item.name}</td>
+                                                    <td className="number">{formatCurrency(item.amount)}</td>
+                                                </tr>
+                                            ))}
+                                            <tr className="print-total">
+                                                <td><strong>Total Revenus</strong></td>
+                                                <td className="number"><strong>{formatCurrency(generatedReport?.revenue?.totalRevenue || 0)}</strong></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div className="print-section-title">DÉPENSES</div>
+                                    <table className="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Compte</th>
+                                                <th className="number">Montant</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {generatedReport?.expenses?.items?.map((item: any, index: number) => (
+                                                <tr key={index}>
+                                                    <td>{item.name}</td>
+                                                    <td className="number">{formatCurrency(item.amount)}</td>
+                                                </tr>
+                                            ))}
+                                            <tr className="print-total">
+                                                <td><strong>Total Dépenses</strong></td>
+                                                <td className="number"><strong>{formatCurrency(generatedReport?.expenses?.totalExpenses || 0)}</strong></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div className="print-section-title">RÉSULTAT</div>
+                                    <table className="print-table">
+                                        <tbody>
+                                            <tr className="print-total">
+                                                <td><strong>Résultat Net</strong></td>
+                                                <td className={`number ${(generatedReport?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    <strong>{formatCurrency(generatedReport?.netIncome || 0)}</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {generatedReport?.type === 'cash_flow' && (
+                                <div className="print-section">
+                                    <div className="print-section-title">FLUX D'EXPLOITATION</div>
+                                    <table className="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Opération</th>
+                                                <th className="number">Montant</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {generatedReport?.operating?.inflows?.map((item: any, index: number) => (
+                                                <tr key={index}>
+                                                    <td>{item.name} (Encaissement)</td>
+                                                    <td className="number text-green-600">+{formatCurrency(item.amount)}</td>
+                                                </tr>
+                                            ))}
+                                            {generatedReport?.operating?.outflows?.map((item: any, index: number) => (
+                                                <tr key={`outflow-${index}`}>
+                                                    <td>{item.name} (Décaissement)</td>
+                                                    <td className="number text-red-600">-{formatCurrency(item.amount)}</td>
+                                                </tr>
+                                            ))}
+                                            <tr className="print-total">
+                                                <td><strong>Flux net d'exploitation</strong></td>
+                                                <td className={`number ${(generatedReport?.operating?.netOperating || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    <strong>{formatCurrency(generatedReport?.operating?.netOperating || 0)}</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div className="print-section-title">RÉSULTAT</div>
+                                    <table className="print-table">
+                                        <tbody>
+                                            <tr className="print-total">
+                                                <td><strong>Flux de trésorerie net</strong></td>
+                                                <td className={`number ${(generatedReport?.netCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    <strong>{formatCurrency(generatedReport?.netCashFlow || 0)}</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {generatedReport?.type === 'trial_balance' && (
+                                <div className="print-section">
+                                    <div className="print-section-title">BALANCE DE VÉRIFICATION</div>
+                                    <table className="print-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Compte</th>
+                                                <th className="number">Débit</th>
+                                                <th className="number">Crédit</th>
+                                                <th className="number">Solde</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {generatedReport?.accounts?.map((account: any, index: number) => (
+                                                <tr key={index}>
+                                                    <td>{account.code}</td>
+                                                    <td>{account.name}</td>
+                                                    <td className="number">{formatCurrency(account.debit)}</td>
+                                                    <td className="number">{formatCurrency(account.credit)}</td>
+                                                    <td className="number">{formatCurrency(account.balance)}</td>
+                                                </tr>
+                                            ))}
+                                            <tr className="print-total">
+                                                <td colSpan={2}><strong>Total</strong></td>
+                                                <td className="number"><strong>{formatCurrency(generatedReport?.totalDebits || 0)}</strong></td>
+                                                <td className="number"><strong>{formatCurrency(generatedReport?.totalCredits || 0)}</strong></td>
+                                                <td className="number">
+                                                    {generatedReport?.isBalanced ? (
+                                                        <span className="text-green-600"><strong>Équilibré</strong></span>
+                                                    ) : (
+                                                        <span className="text-red-600"><strong>Non équilibré</strong></span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pied de page pour l'impression */}
+                        <div className="print-footer">
+                            Document généré automatiquement - {format(new Date(), "dd MMMM yyyy à HH:mm", { locale: fr })}
+                        </div>
+                    </div>
+
+                    {/* Version pour l'affichage dans la modal */}
+                    <div className="space-y-4 no-print">
                         {generatedReport?.type === 'balance_sheet' && (
                             <div className="space-y-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Date: {generatedReport.date && format(new Date(generatedReport.date), "dd/MM/yyyy")}
+                                    Date: {generatedReport?.date && format(new Date(generatedReport.date), "dd/MM/yyyy")}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
                                         <h4 className="font-semibold mb-2">Actifs</h4>
                                         <div className="space-y-1">
-                                            {generatedReport.assets.current.map((asset: any, index: number) => (
+                                            {generatedReport?.assets?.current?.map((asset: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{asset.name}</span>
                                                     <span>{formatCurrency(asset.amount)}</span>
@@ -735,7 +1087,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Total Actifs</span>
-                                                <span>{formatCurrency(generatedReport.assets.totalAssets)}</span>
+                                                <span>{formatCurrency(generatedReport?.assets?.totalAssets || 0)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -744,14 +1096,14 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                         <h4 className="font-semibold mb-2">Passifs & Capitaux propres</h4>
                                         <div className="space-y-1">
                                             <div className="text-sm font-medium">Passifs</div>
-                                            {generatedReport.liabilities.current.map((liability: any, index: number) => (
+                                            {generatedReport?.liabilities?.current?.map((liability: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{liability.name}</span>
                                                     <span>{formatCurrency(liability.amount)}</span>
                                                 </div>
                                             ))}
                                             <div className="text-sm font-medium mt-2">Capitaux propres</div>
-                                            {generatedReport.equity.items.map((equity: any, index: number) => (
+                                            {generatedReport?.equity?.items?.map((equity: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{equity.name}</span>
                                                     <span>{formatCurrency(equity.amount)}</span>
@@ -759,7 +1111,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Total Passifs & Capitaux</span>
-                                                <span>{formatCurrency(generatedReport.totalLiabilitiesAndEquity)}</span>
+                                                <span>{formatCurrency(generatedReport?.totalLiabilitiesAndEquity || 0)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -770,14 +1122,14 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         {generatedReport?.type === 'income_statement' && (
                             <div className="space-y-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Période: {generatedReport.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
+                                    Période: {generatedReport?.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport?.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
                                         <h4 className="font-semibold mb-2">Revenus</h4>
                                         <div className="space-y-1">
-                                            {generatedReport.revenue.items.map((item: any, index: number) => (
+                                            {generatedReport?.revenue?.items?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
                                                     <span>{formatCurrency(item.amount)}</span>
@@ -785,7 +1137,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Total Revenus</span>
-                                                <span>{formatCurrency(generatedReport.revenue.totalRevenue)}</span>
+                                                <span>{formatCurrency(generatedReport?.revenue?.totalRevenue || 0)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -793,7 +1145,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     <div>
                                         <h4 className="font-semibold mb-2">Dépenses</h4>
                                         <div className="space-y-1">
-                                            {generatedReport.expenses.items.map((item: any, index: number) => (
+                                            {generatedReport?.expenses?.items?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
                                                     <span>{formatCurrency(item.amount)}</span>
@@ -801,7 +1153,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Total Dépenses</span>
-                                                <span>{formatCurrency(generatedReport.expenses.totalExpenses)}</span>
+                                                <span>{formatCurrency(generatedReport?.expenses?.totalExpenses || 0)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -809,8 +1161,8 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     <div className="border-t pt-2">
                                         <div className="flex justify-between font-bold text-lg">
                                             <span>Résultat Net</span>
-                                            <span className={generatedReport.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                {formatCurrency(generatedReport.netIncome)}
+                                            <span className={generatedReport?.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                {formatCurrency(generatedReport?.netIncome || 0)}
                                             </span>
                                         </div>
                                     </div>
@@ -821,20 +1173,20 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         {generatedReport?.type === 'cash_flow' && (
                             <div className="space-y-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Période: {generatedReport.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
+                                    Période: {generatedReport?.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport?.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
                                         <h4 className="font-semibold mb-2">Flux d'exploitation</h4>
                                         <div className="space-y-1">
-                                            {generatedReport.operating.inflows.map((item: any, index: number) => (
+                                            {generatedReport?.operating?.inflows?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
                                                     <span className="text-green-600">+{formatCurrency(item.amount)}</span>
                                                 </div>
                                             ))}
-                                            {generatedReport.operating.outflows.map((item: any, index: number) => (
+                                            {generatedReport?.operating?.outflows?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
                                                     <span className="text-red-600">-{formatCurrency(item.amount)}</span>
@@ -842,8 +1194,8 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Flux net d'exploitation</span>
-                                                <span className={generatedReport.operating.netOperating >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                    {formatCurrency(generatedReport.operating.netOperating)}
+                                                <span className={generatedReport?.operating?.netOperating >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                    {formatCurrency(generatedReport?.operating?.netOperating || 0)}
                                                 </span>
                                             </div>
                                         </div>
@@ -852,8 +1204,8 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     <div className="border-t pt-2">
                                         <div className="flex justify-between font-bold text-lg">
                                             <span>Flux de trésorerie net</span>
-                                            <span className={generatedReport.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                {formatCurrency(generatedReport.netCashFlow)}
+                                            <span className={generatedReport?.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                {formatCurrency(generatedReport?.netCashFlow || 0)}
                                             </span>
                                         </div>
                                     </div>
@@ -864,7 +1216,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         {generatedReport?.type === 'trial_balance' && (
                             <div className="space-y-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Période: {generatedReport.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
+                                    Période: {generatedReport?.startDate && format(new Date(generatedReport.startDate), "dd/MM/yyyy")} - {generatedReport?.endDate && format(new Date(generatedReport.endDate), "dd/MM/yyyy")}
                                 </div>
 
                                 <div className="overflow-x-auto">
@@ -879,7 +1231,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {generatedReport.accounts.map((account: any, index: number) => (
+                                            {generatedReport?.accounts?.map((account: any, index: number) => (
                                                 <tr key={index} className="border-b">
                                                     <td className="p-2">{account.code}</td>
                                                     <td className="p-2">{account.name}</td>
@@ -892,10 +1244,10 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                         <tfoot>
                                             <tr className="border-t font-semibold">
                                                 <td className="p-2" colSpan={2}>Total</td>
-                                                <td className="text-right p-2">{formatCurrency(generatedReport.totalDebits)}</td>
-                                                <td className="text-right p-2">{formatCurrency(generatedReport.totalCredits)}</td>
+                                                <td className="text-right p-2">{formatCurrency(generatedReport?.totalDebits || 0)}</td>
+                                                <td className="text-right p-2">{formatCurrency(generatedReport?.totalCredits || 0)}</td>
                                                 <td className="text-right p-2">
-                                                    {generatedReport.isBalanced ? (
+                                                    {generatedReport?.isBalanced ? (
                                                         <span className="text-green-600">Équilibré</span>
                                                     ) : (
                                                         <span className="text-red-600">Non équilibré</span>
