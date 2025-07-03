@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import { fr as frCalendar } from "react-day-picker/locale"
 import { useAction } from "next-safe-action/hooks"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
@@ -286,9 +291,36 @@ export function PaymentsClient({ payments }: PaymentsClientProps) {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Date</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} />
-                                                </FormControl>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant="outline"
+                                                                className="w-full pl-3 text-left font-normal"
+                                                            >
+                                                                {field.value ? (
+                                                                    format(new Date(field.value), "PPP", { locale: fr })
+                                                                ) : (
+                                                                    <span>Sélectionner une date</span>
+                                                                )}
+                                                                <IconCalendar className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={field.value ? new Date(field.value) : undefined}
+                                                            onSelect={(date) => {
+                                                                field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                                                            }}
+                                                            disabled={(date) =>
+                                                                date > new Date() || date < new Date("1900-01-01")
+                                                            }
+                                                            locale={frCalendar}
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -323,7 +355,13 @@ export function PaymentsClient({ payments }: PaymentsClientProps) {
                                             <FormItem>
                                                 <FormLabel>Montant</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} />
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        {...field}
+                                                        value={field.value || ""}
+                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -533,9 +571,36 @@ export function PaymentsClient({ payments }: PaymentsClientProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Date</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full pl-3 text-left font-normal"
+                                                        >
+                                                            {field.value ? (
+                                                                format(new Date(field.value), "PPP", { locale: fr })
+                                                            ) : (
+                                                                <span>Sélectionner une date</span>
+                                                            )}
+                                                            <IconCalendar className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => {
+                                                            field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                                                        }}
+                                                        disabled={(date) =>
+                                                            date > new Date() || date < new Date("1900-01-01")
+                                                        }
+                                                        locale={frCalendar}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -570,7 +635,13 @@ export function PaymentsClient({ payments }: PaymentsClientProps) {
                                         <FormItem>
                                             <FormLabel>Montant</FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} />
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    {...field}
+                                                    value={field.value || ""}
+                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

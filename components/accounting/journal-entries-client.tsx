@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
+import { fr as frCalendar } from "react-day-picker/locale"
 import { fr } from "date-fns/locale"
 import {
     IconPlus,
@@ -360,7 +361,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                                                            initialFocus
+                                                            locale={frCalendar}
                                                         />
                                                     </PopoverContent>
                                                 </Popover>
