@@ -391,14 +391,9 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
 
     // Composants SupplierCard et CategoryCard refactorisés dans des fichiers séparés
 
-    // Filtrage des paiements
-    const filtered = filteredPayments.filter(payment => {
-        const matchesSearch = payment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            payment.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            payment.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-        return matchesSearch
-    })
-
+    // Les paiements sont déjà filtrés par le hook usePayments
+    // Pas besoin de refiltrer, on utilise directement filteredPayments
+    const filtered = filteredPayments
     const incomingPayments = filtered.filter(p => p.type === 'incoming')
     const outgoingPayments = filtered.filter(p => p.type === 'outgoing')
 
@@ -440,7 +435,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                     <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Rechercher..."
+                            placeholder="Rechercher un paiement ..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 w-64"
