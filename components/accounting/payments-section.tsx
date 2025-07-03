@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PaymentCard } from "./payment-card"
 import { ExtendedPaymentWithDetails } from "@/db/queries/extended-accounting"
+import { Badge } from "@/components/ui/badge"
 
 interface PaymentsSectionProps {
     filteredPayments: ExtendedPaymentWithDetails[]
@@ -23,9 +24,9 @@ export function PaymentsSection({
     return (
         <Tabs defaultValue="all" className="w-full">
             <TabsList>
-                <TabsTrigger value="all">Tous ({filteredPayments.length})</TabsTrigger>
-                <TabsTrigger value="incoming">Encaissements ({incomingPayments.length})</TabsTrigger>
-                <TabsTrigger value="outgoing">Décaissements ({outgoingPayments.length})</TabsTrigger>
+                <TabsTrigger value="all">Tous <Badge variant="secondary">{filteredPayments.length}</Badge></TabsTrigger>
+                <TabsTrigger value="incoming">Encaissements <Badge variant="secondary">{incomingPayments.length}</Badge></TabsTrigger>
+                <TabsTrigger value="outgoing">Décaissements <Badge variant="secondary">{outgoingPayments.length}</Badge></TabsTrigger>
             </TabsList>
 
             <TabsContent value="all">

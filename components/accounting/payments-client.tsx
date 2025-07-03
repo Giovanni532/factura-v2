@@ -747,13 +747,13 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
             <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="payments" className="flex items-center gap-2">
-                        💰 Paiements
+                        Paiements
                         <Badge variant="secondary" className="ml-auto">
                             {filtered.length}
                         </Badge>
                     </TabsTrigger>
                     <TabsTrigger value="reference" className="flex items-center gap-2">
-                        ⚙️ Données de référence
+                        Données de référence
                         <Badge variant="secondary" className="ml-auto">
                             {suppliers.length + expenseCategories.length}
                         </Badge>
@@ -774,11 +774,11 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                     <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
                         <TabsList>
                             <TabsTrigger value="suppliers" className="flex items-center gap-2">
-                                🏢 Fournisseurs
+                                Fournisseurs
                                 <Badge variant="secondary">{suppliers.length}</Badge>
                             </TabsTrigger>
                             <TabsTrigger value="categories" className="flex items-center gap-2">
-                                🏷️ Catégories
+                                Catégories
                                 <Badge variant="secondary">{expenseCategories.length}</Badge>
                             </TabsTrigger>
                         </TabsList>
