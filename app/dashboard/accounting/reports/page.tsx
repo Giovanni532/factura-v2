@@ -34,7 +34,7 @@ export default async function ReportsPage() {
                 </p>
             </div>
 
-            <ReportsClient stats={stats} />
+            <ReportsClient initialStats={stats} />
         </div>
     )
 } 
