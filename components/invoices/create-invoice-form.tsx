@@ -149,6 +149,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
 
                 // Appeler le callback de succès
                 onInvoiceCreated();
+                router.refresh();
             }
         },
         onError: (error) => {

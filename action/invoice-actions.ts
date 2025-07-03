@@ -9,6 +9,8 @@ import { getNextInvoiceNumber, getInvoiceById } from "@/db/queries/invoice";
 import { predefinedTemplates } from "@/lib/templates";
 import { z } from "zod";
 import puppeteer from "puppeteer";
+import { revalidatePath } from "next/cache";
+import { paths } from "@/paths";
 
 // Action pour créer une nouvelle facture
 export const createInvoiceAction = useMutation(
@@ -49,6 +51,7 @@ export const createInvoiceAction = useMutation(
         }));
 
         await db.insert(invoiceItem).values(invoiceItems);
+        revalidatePath(paths.quotes.list);
         return {
             success: true,
             message: "Facture créée avec succès",
