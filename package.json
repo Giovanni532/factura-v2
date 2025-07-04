@@ -29,6 +29,7 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@stripe/stripe-js": "^7.4.0",
     "@tabler/icons-react": "^3.34.0",
     "better-auth": "^1.2.8",
     "better-sqlite3": "^11.10.0",
@@ -52,6 +53,7 @@
     "react-phone-number-input": "^3.4.12",
     "recharts": "^3.0.2",
     "sonner": "^2.0.3",
+    "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.30"
   },
