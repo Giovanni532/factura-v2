@@ -299,6 +299,6 @@ export async function getRecentDocuments(companyId: string) {
         }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Retourner les 5 plus récents
-    return allDocuments.slice(0, 5);
+    // Retourner les 10 plus récents
+    return allDocuments.slice(0, 10);
 } 
