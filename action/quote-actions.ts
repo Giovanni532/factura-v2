@@ -9,6 +9,8 @@ import { getNextQuoteNumber, getQuoteById } from "@/db/queries/quote";
 import { predefinedTemplates } from "@/lib/templates";
 import { z } from "zod";
 import puppeteer from "puppeteer";
+import { revalidatePath } from "next/cache";
+import { paths } from "@/paths";
 
 // Action pour créer un nouveau devis
 export const createQuoteAction = useMutation(
@@ -50,6 +52,11 @@ export const createQuoteAction = useMutation(
         }));
 
         await db.insert(quoteItem).values(quoteItems);
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.quotes.list);
+        revalidatePath(paths.dashboard);
+
         return {
             success: true,
             message: "Devis créé avec succès",
@@ -108,6 +115,10 @@ export const updateQuoteAction = useMutation(
             await db.insert(quoteItem).values(quoteItems);
         }
 
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.quotes.list);
+        revalidatePath(paths.dashboard);
+
         return {
             success: true,
             message: "Devis mis à jour avec succès",
@@ -136,6 +147,10 @@ export const deleteQuoteAction = useMutation(
 
         // Supprimer le devis (les articles seront supprimés automatiquement grâce à CASCADE)
         await db.delete(quote).where(eq(quote.id, input.id));
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.quotes.list);
+        revalidatePath(paths.dashboard);
 
         return {
             success: true,
@@ -170,6 +185,10 @@ export const updateQuoteStatusAction = useMutation(
             })
             .where(eq(quote.id, input.id))
             .returning();
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.quotes.list);
+        revalidatePath(paths.dashboard);
 
         return {
             success: true,

@@ -51,7 +51,11 @@ export const createInvoiceAction = useMutation(
         }));
 
         await db.insert(invoiceItem).values(invoiceItems);
-        revalidatePath(paths.quotes.list);
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.invoices.list);
+        revalidatePath(paths.dashboard);
+
         return {
             success: true,
             message: "Facture créée avec succès",
@@ -379,6 +383,10 @@ export const updateInvoiceAction = useMutation(
 
         await db.insert(invoiceItem).values(invoiceItems);
 
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.invoices.list);
+        revalidatePath(paths.dashboard);
+
         return {
             success: true,
             message: "Facture mise à jour avec succès",
@@ -407,6 +415,10 @@ export const deleteInvoiceAction = useMutation(
 
         // Supprimer la facture (les articles seront supprimés automatiquement par CASCADE)
         await db.delete(invoice).where(eq(invoice.id, input.invoiceId));
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.invoices.list);
+        revalidatePath(paths.dashboard);
 
         return {
             success: true,
@@ -441,6 +453,10 @@ export const updateInvoiceStatusAction = useMutation(
             })
             .where(eq(invoice.id, input.invoiceId))
             .returning();
+
+        // Revalider les pages nécessaires pour mettre à jour l'interface
+        revalidatePath(paths.invoices.list);
+        revalidatePath(paths.dashboard);
 
         return {
             success: true,
