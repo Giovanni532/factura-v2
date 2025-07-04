@@ -30,9 +30,11 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Users, Crown, Shield, User, Mail, Calendar, Plus, UserPlus } from "lucide-react";
+import { Building2, Users, Crown, Shield, User, Mail, Calendar, Plus, UserPlus, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/forms/image-upload";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { paths } from "@/paths";
 
 interface CompanySettingsClientProps {
     initialCompany: CompanyWithDetails;
@@ -43,6 +45,14 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
     const [showInviteDialog, setShowInviteDialog] = useState(false);
     const router = useRouter();
     const isOwner = userRole === 'owner';
+
+    // Vérifier si on peut ajouter de nouveaux utilisateurs
+    const canInviteUsers = initialCompany.subscription.maxUsers === -1 ||
+        initialCompany.subscription.currentUsers < initialCompany.subscription.maxUsers;
+
+    // Calculer le pourcentage d'utilisation des utilisateurs
+    const userUsagePercentage = initialCompany.subscription.maxUsers === -1 ? 0 :
+        (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100;
 
     // Formulaire pour mettre à jour l'entreprise
     const companyForm = useForm({
@@ -346,9 +356,11 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
                             <div
-                                className="bg-primary h-2 rounded-full transition-all"
+                                className={`h-2 rounded-full transition-all ${userUsagePercentage >= 100 ? 'bg-red-500' :
+                                    userUsagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                    }`}
                                 style={{
-                                    width: `${Math.min(100, (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100)}%`
+                                    width: `${Math.min(100, userUsagePercentage)}%`
                                 }}
                             />
                         </div>
@@ -367,6 +379,20 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                 </div>
                             </div>
                         )}
+
+                        {/* Bouton de gestion de l'abonnement */}
+                        {isOwner && (
+                            <div className="pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="w-full gap-2"
+                                    onClick={() => router.push(paths.settings.billing)}
+                                >
+                                    <CreditCard className="h-4 w-4" />
+                                    Gérer l'abonnement
+                                </Button>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -379,91 +405,118 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                 <CardTitle className="text-lg">Membres de l'équipe</CardTitle>
                             </div>
                             {isOwner && (
-                                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-                                    <DialogTrigger asChild>
-                                        <Button size="sm" className="gap-2">
-                                            <UserPlus className="h-4 w-4" />
-                                            Inviter
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Inviter un nouveau membre</DialogTitle>
-                                            <DialogDescription>
-                                                Ajoutez un nouveau membre à votre équipe
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <Form {...inviteForm}>
-                                            <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
-                                                <FormField
-                                                    control={inviteForm.control}
-                                                    name="name"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Nom complet</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} placeholder="Jean Dupont" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={inviteForm.control}
-                                                    name="email"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Email</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} type="email" placeholder="jean@exemple.com" />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={inviteForm.control}
-                                                    name="role"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Rôle</FormLabel>
-                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Sélectionner un rôle" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    <SelectItem value="user">Utilisateur</SelectItem>
-                                                                    <SelectItem value="admin">Administrateur</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <div className="flex gap-2 justify-end">
+                                <>
+                                    {!canInviteUsers ? (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
                                                     <Button
-                                                        type="button"
+                                                        size="sm"
+                                                        className="gap-2"
+                                                        disabled
                                                         variant="outline"
-                                                        onClick={() => setShowInviteDialog(false)}
                                                     >
-                                                        Annuler
+                                                        <UserPlus className="h-4 w-4" />
+                                                        Inviter
                                                     </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        disabled={isInvitingUser}
-                                                    >
-                                                        {isInvitingUser ? "Invitation..." : "Inviter"}
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        </Form>
-                                    </DialogContent>
-                                </Dialog>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Limite d'utilisateurs atteinte pour le plan {initialCompany.subscription.plan}</p>
+                                                    <p>Maximum: {initialCompany.subscription.maxUsers} utilisateurs</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ) : (
+                                        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    size="sm"
+                                                    className="gap-2"
+                                                >
+                                                    <UserPlus className="h-4 w-4" />
+                                                    Inviter
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Inviter un nouveau membre</DialogTitle>
+                                                    <DialogDescription>
+                                                        Ajoutez un nouveau membre à votre équipe
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <Form {...inviteForm}>
+                                                    <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                                                        <FormField
+                                                            control={inviteForm.control}
+                                                            name="name"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Nom complet</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} placeholder="Jean Dupont" />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <FormField
+                                                            control={inviteForm.control}
+                                                            name="email"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Email</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} type="email" placeholder="jean@exemple.com" />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <FormField
+                                                            control={inviteForm.control}
+                                                            name="role"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Rôle</FormLabel>
+                                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Sélectionner un rôle" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="user">Utilisateur</SelectItem>
+                                                                            <SelectItem value="admin">Administrateur</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <div className="flex gap-2 justify-end">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() => setShowInviteDialog(false)}
+                                                            >
+                                                                Annuler
+                                                            </Button>
+                                                            <Button
+                                                                type="submit"
+                                                                disabled={isInvitingUser}
+                                                            >
+                                                                {isInvitingUser ? "Invitation..." : "Inviter"}
+                                                            </Button>
+                                                        </div>
+                                                    </form>
+                                                </Form>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )}
+                                </>
                             )}
                         </div>
                         <CardDescription>
