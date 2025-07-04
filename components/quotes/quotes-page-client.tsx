@@ -10,11 +10,15 @@ import { QuoteWithDetails, QuoteStats } from "@/validation/quote-schema";
 import { QuoteCard } from "@/components/quotes/quote-card";
 import { CreateQuoteButton } from "@/components/quotes/create-quote-button";
 import { QuotesContext } from "@/hooks/quotes-context";
+import { SubscriptionLimits } from "@/db/queries/subscription";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Crown } from "lucide-react";
 
 interface QuotesPageClientProps {
     quotes: QuoteWithDetails[];
     stats: QuoteStats;
     formData?: any;
+    subscriptionLimits: SubscriptionLimits;
     filters: {
         search: string;
         status: string;
@@ -24,7 +28,7 @@ interface QuotesPageClientProps {
     };
 }
 
-export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, formData, filters: initialFilters }: QuotesPageClientProps) {
+export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, formData, subscriptionLimits, filters: initialFilters }: QuotesPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -34,6 +38,18 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     const [stats, setStats] = useState(initialStats);
     const [newQuote, setNewQuote] = useState(initialFilters.new);
     const [id, setId] = useState<string | null>(initialFilters.id);
+
+    // Vérifier si on peut ajouter un nouveau devis (basé sur les documents combinés)
+    const canAddNewQuote = subscriptionLimits.maxInvoices === -1 ||
+        subscriptionLimits.currentDocuments < subscriptionLimits.maxInvoices;
+
+    // Calculer le pourcentage d'utilisation des documents (devis + factures)
+    const usagePercentage = subscriptionLimits.maxInvoices === -1 ? 0 :
+        (subscriptionLimits.currentDocuments / subscriptionLimits.maxInvoices) * 100;
+
+    // Déterminer si on doit afficher l'alerte
+    const shouldShowAlert = subscriptionLimits.maxInvoices !== -1 &&
+        (usagePercentage >= 80 || !canAddNewQuote);
 
     // Synchroniser l'ID avec les paramètres de recherche
     useEffect(() => {
@@ -125,17 +141,85 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                             Gérez vos devis et suivez vos conversions
                         </p>
                     </div>
-                    <CreateQuoteButton formData={formData} newQuote={newQuote} />
+                    <CreateQuoteButton
+                        formData={formData}
+                        newQuote={newQuote}
+                        disabled={!canAddNewQuote}
+                        limitReached={!canAddNewQuote}
+                        planName={subscriptionLimits.planName}
+                        maxDocuments={subscriptionLimits.maxInvoices}
+                        currentDocuments={subscriptionLimits.currentDocuments}
+                    />
                 </div>
+
+                {/* Alerte de limite d'abonnement */}
+                {shouldShowAlert && (
+                    <Alert className={!canAddNewQuote ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
+                        <AlertCircle className={`h-4 w-4 ${!canAddNewQuote ? "text-red-600" : "text-yellow-600"}`} />
+                        <AlertDescription className={!canAddNewQuote ? "text-red-800" : "text-yellow-800"}>
+                            {!canAddNewQuote ? (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Limite atteinte !</strong> Vous avez atteint la limite de {subscriptionLimits.maxInvoices} documents
+                                        (devis + factures) pour le plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Upgrader
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Attention !</strong> Vous utilisez {subscriptionLimits.currentDocuments}/{subscriptionLimits.maxInvoices} documents
+                                        (devis + factures) de votre plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" variant="outline" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Voir les plans
+                                    </Button>
+                                </div>
+                            )}
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {/* Statistiques */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Devis</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.totalQuotes}</div>
+                            <div className="text-2xl font-bold">
+                                {subscriptionLimits.currentDocuments}
+                                {subscriptionLimits.maxInvoices !== -1 && (
+                                    <span className="text-sm text-muted-foreground">
+                                        /{subscriptionLimits.maxInvoices}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {stats.totalQuotes} devis + {subscriptionLimits.currentInvoices} factures
+                                {subscriptionLimits.maxInvoices !== -1 && (
+                                    <span className="block">
+                                        Plan {subscriptionLimits.planName}
+                                    </span>
+                                )}
+                            </p>
+                            {/* Barre de progression */}
+                            {subscriptionLimits.maxInvoices !== -1 && (
+                                <div className="mt-2">
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
+                                                usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, usagePercentage)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>

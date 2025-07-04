@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Filter, Users, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Search, Filter, Users, TrendingUp, Calendar, AlertCircle, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ClientWithStats } from "@/validation/client-schema";
 import { ClientCard } from "@/components/clients/client-card";
 import { CreateClientButton } from "@/components/clients/create-client-button";
@@ -27,6 +28,14 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
     // Vérifier si on peut ajouter un nouveau client
     const canAddNewClient = subscriptionLimits.maxClients === -1 ||
         clients.length < subscriptionLimits.maxClients;
+
+    // Calculer le pourcentage d'utilisation
+    const usagePercentage = subscriptionLimits.maxClients === -1 ? 0 :
+        (clients.length / subscriptionLimits.maxClients) * 100;
+
+    // Déterminer si on doit afficher l'alerte
+    const shouldShowAlert = subscriptionLimits.maxClients !== -1 &&
+        (usagePercentage >= 80 || !canAddNewClient);
 
     useEffect(() => {
         setNewClientUrl(newClient);
@@ -75,6 +84,38 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
             onClientDeleted: handleClientDeleted,
         }}>
             <div className="space-y-6">
+                {/* Alerte de limite d'abonnement */}
+                {shouldShowAlert && (
+                    <Alert className={!canAddNewClient ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
+                        <AlertCircle className={`h-4 w-4 ${!canAddNewClient ? "text-red-600" : "text-yellow-600"}`} />
+                        <AlertDescription className={!canAddNewClient ? "text-red-800" : "text-yellow-800"}>
+                            {!canAddNewClient ? (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Limite atteinte !</strong> Vous avez atteint la limite de {subscriptionLimits.maxClients} clients
+                                        pour le plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Upgrader
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Attention !</strong> Vous utilisez {clients.length}/{subscriptionLimits.maxClients} clients
+                                        de votre plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" variant="outline" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Voir les plans
+                                    </Button>
+                                </div>
+                            )}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 {/* Statistiques */}
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
@@ -99,6 +140,19 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
                                     </span>
                                 )}
                             </p>
+                            {/* Barre de progression */}
+                            {subscriptionLimits.maxClients !== -1 && (
+                                <div className="mt-2">
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
+                                                    usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, usagePercentage)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>

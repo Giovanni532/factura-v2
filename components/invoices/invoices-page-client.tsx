@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Crown } from "lucide-react";
 import { InvoiceWithDetails, InvoiceStats } from "@/validation/invoice-schema";
 import { InvoiceCard } from "./invoice-card";
 import { CreateInvoiceButton } from "./create-invoice-button";
@@ -36,9 +38,17 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
     const [newInvoice, setNewInvoice] = useState(initialFilters.new);
     const [id, setId] = useState<string | null>(initialFilters.id);
 
-    // Vérifier si on peut ajouter une nouvelle facture
+    // Vérifier si on peut ajouter une nouvelle facture (basé sur les documents combinés)
     const canAddNewInvoice = subscriptionLimits.maxInvoices === -1 ||
-        invoices.length < subscriptionLimits.maxInvoices;
+        subscriptionLimits.currentDocuments < subscriptionLimits.maxInvoices;
+
+    // Calculer le pourcentage d'utilisation des documents (devis + factures)
+    const usagePercentage = subscriptionLimits.maxInvoices === -1 ? 0 :
+        (subscriptionLimits.currentDocuments / subscriptionLimits.maxInvoices) * 100;
+
+    // Déterminer si on doit afficher l'alerte
+    const shouldShowAlert = subscriptionLimits.maxInvoices !== -1 &&
+        (usagePercentage >= 80 || !canAddNewInvoice);
 
     // Synchroniser l'ID avec les paramètres de recherche
     useEffect(() => {
@@ -149,25 +159,73 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                     />
                 </div>
 
+                {/* Alerte de limite d'abonnement */}
+                {shouldShowAlert && (
+                    <Alert className={!canAddNewInvoice ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
+                        <AlertCircle className={`h-4 w-4 ${!canAddNewInvoice ? "text-red-600" : "text-yellow-600"}`} />
+                        <AlertDescription className={!canAddNewInvoice ? "text-red-800" : "text-yellow-800"}>
+                            {!canAddNewInvoice ? (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Limite atteinte !</strong> Vous avez atteint la limite de {subscriptionLimits.maxInvoices} documents
+                                        (devis + factures) pour le plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Upgrader
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <span>
+                                        <strong>Attention !</strong> Vous utilisez {subscriptionLimits.currentDocuments}/{subscriptionLimits.maxInvoices} documents
+                                        (devis + factures) de votre plan {subscriptionLimits.planName}.
+                                    </span>
+                                    <Button size="sm" variant="outline" className="ml-4">
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Voir les plans
+                                    </Button>
+                                </div>
+                            )}
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 {/* Statistiques */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Factures</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stats.totalInvoices}
+                                {subscriptionLimits.currentDocuments}
                                 {subscriptionLimits.maxInvoices !== -1 && (
                                     <span className="text-sm text-muted-foreground">
                                         /{subscriptionLimits.maxInvoices}
                                     </span>
                                 )}
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                                {stats.totalInvoices} factures + {subscriptionLimits.currentQuotes} devis
+                                {subscriptionLimits.maxInvoices !== -1 && (
+                                    <span className="block">
+                                        Plan {subscriptionLimits.planName}
+                                    </span>
+                                )}
+                            </p>
+                            {/* Barre de progression */}
                             {subscriptionLimits.maxInvoices !== -1 && (
-                                <p className="text-xs text-muted-foreground">
-                                    Plan {subscriptionLimits.planName}
-                                </p>
+                                <div className="mt-2">
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
+                                                usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, usagePercentage)}%` }}
+                                        />
+                                    </div>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -224,45 +282,42 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                                     <SelectItem value="cancelled">Annulée</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" onClick={clearFilters}>
-                                Effacer
+                            <Button
+                                variant="outline"
+                                onClick={clearFilters}
+                                className="w-full md:w-auto"
+                            >
+                                Réinitialiser
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Liste des factures */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            Factures ({filteredInvoices.length})
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {filteredInvoices.length === 0 ? (
-                            <div className="text-center py-8">
-                                <p className="text-muted-foreground pb-4">
-                                    {search || statusFilter !== 'all'
-                                        ? "Aucune facture ne correspond aux filtres"
-                                        : "Aucune facture trouvée"}
-                                </p>
-                                {search || statusFilter !== 'all' ? (
-                                    <Button variant="outline" onClick={clearFilters} className="mt-2">
-                                        Effacer les filtres
-                                    </Button>
-                                ) : (
-                                    <CreateInvoiceButton formData={formData} newInvoice={newInvoice} />
-                                )}
+                {filteredInvoices.length === 0 ? (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <div className="text-muted-foreground mb-4">
+                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
                             </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {filteredInvoices.map((invoice) => (
-                                    <InvoiceCard key={invoice.id} invoice={invoice} idToOpen={id} />
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <h3 className="text-lg font-semibold mb-2">Aucune facture trouvée</h3>
+                            <p className="text-muted-foreground text-center">
+                                {search || statusFilter !== 'all'
+                                    ? "Aucune facture ne correspond à vos critères de recherche."
+                                    : "Commencez par créer votre première facture."
+                                }
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-4">
+                        {filteredInvoices.map((invoice) => (
+                            <InvoiceCard key={invoice.id} invoice={invoice} idToOpen={id} />
+                        ))}
+                    </div>
+                )}
             </div>
         </InvoicesContext.Provider>
     );

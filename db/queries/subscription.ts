@@ -1,5 +1,5 @@
 import { db } from "@/lib/drizzle";
-import { user, client, invoice, subscription, billingPlan } from "@/db/schema";
+import { user, client, invoice, quote, subscription, billingPlan } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 
 export interface SubscriptionLimits {
@@ -9,6 +9,8 @@ export interface SubscriptionLimits {
     currentUsers: number;
     currentClients: number;
     currentInvoices: number;
+    currentQuotes: number;
+    currentDocuments: number; // devis + factures combinés
     planName: string;
 }
 
@@ -78,6 +80,13 @@ export async function getSubscriptionLimits(companyId: string): Promise<Subscrip
         .from(invoice)
         .where(eq(invoice.companyId, companyId));
 
+    const [currentQuotes] = await db
+        .select({ count: count() })
+        .from(quote)
+        .where(eq(quote.companyId, companyId));
+
+    const currentDocuments = currentInvoices.count + currentQuotes.count;
+
     return {
         maxUsers,
         maxClients,
@@ -85,6 +94,8 @@ export async function getSubscriptionLimits(companyId: string): Promise<Subscrip
         currentUsers: currentUsers.count,
         currentClients: currentClients.count,
         currentInvoices: currentInvoices.count,
+        currentQuotes: currentQuotes.count,
+        currentDocuments,
         planName,
     };
 }
@@ -112,6 +123,7 @@ export async function canAddClient(companyId: string): Promise<{ canAdd: boolean
 
 /**
  * Vérifie si une entreprise peut ajouter une nouvelle facture
+ * Note: Les devis et factures partagent la même limite
  */
 export async function canAddInvoice(companyId: string): Promise<{ canAdd: boolean; reason?: string }> {
     const limits = await getSubscriptionLimits(companyId);
@@ -121,10 +133,32 @@ export async function canAddInvoice(companyId: string): Promise<{ canAdd: boolea
         return { canAdd: true };
     }
 
-    if (limits.currentInvoices >= limits.maxInvoices) {
+    if (limits.currentDocuments >= limits.maxInvoices) {
         return {
             canAdd: false,
-            reason: `Limite de factures atteinte pour le plan ${limits.planName} (${limits.maxInvoices} maximum)`
+            reason: `Limite de documents atteinte pour le plan ${limits.planName} (${limits.maxInvoices} maximum pour devis + factures)`
+        };
+    }
+
+    return { canAdd: true };
+}
+
+/**
+ * Vérifie si une entreprise peut ajouter un nouveau devis
+ * Note: Les devis et factures partagent la même limite
+ */
+export async function canAddQuote(companyId: string): Promise<{ canAdd: boolean; reason?: string }> {
+    const limits = await getSubscriptionLimits(companyId);
+
+    // Si maxInvoices est -1, c'est illimité
+    if (limits.maxInvoices === -1) {
+        return { canAdd: true };
+    }
+
+    if (limits.currentDocuments >= limits.maxInvoices) {
+        return {
+            canAdd: false,
+            reason: `Limite de documents atteinte pour le plan ${limits.planName} (${limits.maxInvoices} maximum pour devis + factures)`
         };
     }
 

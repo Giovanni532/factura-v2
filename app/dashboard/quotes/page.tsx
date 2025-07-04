@@ -7,6 +7,7 @@ import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getQuotesByCompany, getQuoteStats } from "@/db/queries/quote";
 import { QuotesPageClient } from "@/components/quotes/quotes-page-client";
+import { getSubscriptionLimits } from "@/db/queries/subscription";
 import { headers } from "next/headers";
 import { paths } from "@/paths";
 
@@ -43,6 +44,9 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
     // Récupérer les statistiques
     const stats = await getQuoteStats(companyId, searchParamsResult.client);
 
+    // Récupérer les limites d'abonnement
+    const subscriptionLimits = await getSubscriptionLimits(companyId);
+
     // Récupérer les données du formulaire
     let formData = null;
     try {
@@ -65,6 +69,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
             quotes={quotes}
             stats={stats}
             formData={formData}
+            subscriptionLimits={subscriptionLimits}
             filters={{
                 search: searchParamsResult.search || "",
                 status: searchParamsResult.status || "all",

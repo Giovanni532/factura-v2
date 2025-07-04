@@ -11,6 +11,8 @@ import { z } from "zod";
 import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
+import { canAddQuote } from "@/db/queries/subscription";
+import { ActionError } from "@/lib/safe-action";
 
 // Action pour créer un nouveau devis
 export const createQuoteAction = useMutation(
@@ -20,7 +22,13 @@ export const createQuoteAction = useMutation(
         const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
 
         if (!userData.length || !userData[0].companyId) {
-            throw new Error("Utilisateur non associé à une entreprise");
+            throw new ActionError("Utilisateur non associé à une entreprise");
+        }
+
+        // Vérifier les limites d'abonnement
+        const { canAdd, reason } = await canAddQuote(userData[0].companyId);
+        if (!canAdd) {
+            throw new ActionError(reason || "Limite de documents atteinte");
         }
 
         // Générer le numéro de devis si non fourni
