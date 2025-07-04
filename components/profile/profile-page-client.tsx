@@ -21,7 +21,7 @@ import {
     FormMessage
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { User, Mail, Calendar, Shield, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Calendar, Shield, Eye, EyeOff, Building2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
@@ -119,6 +119,14 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
         }
     };
 
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
     return (
         <div className="space-y-8">
             {/* Informations générales */}
@@ -155,9 +163,15 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <Calendar className="h-4 w-4" />
-                                    Membre depuis {new Date(initialUser.createdAt).toLocaleDateString('fr-FR')}
+                                    Membre depuis le {formatDate(new Date(initialUser.createdAt))}
                                 </div>
                             </div>
+                            {initialUser.companyName && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
+                                    <Building2 className="h-4 w-4" />
+                                    {initialUser.companyName}
+                                </div>
+                            )}
                         </div>
                     </div>
 

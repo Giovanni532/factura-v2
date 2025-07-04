@@ -26,4 +26,5 @@ export type UserProfile = {
     createdAt: Date;
     updatedAt: Date;
     companyId: string | null;
+    companyName: string | null;
 }; 
