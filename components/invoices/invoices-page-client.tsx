@@ -10,11 +10,13 @@ import { InvoiceWithDetails, InvoiceStats } from "@/validation/invoice-schema";
 import { InvoiceCard } from "./invoice-card";
 import { CreateInvoiceButton } from "./create-invoice-button";
 import { InvoicesContext } from "../../hooks/invoices-context";
+import { SubscriptionLimits } from "@/db/queries/subscription";
 
 interface InvoicesPageClientProps {
     invoices: InvoiceWithDetails[];
     stats: InvoiceStats;
     formData?: any;
+    subscriptionLimits: SubscriptionLimits;
     filters: {
         search: string;
         status: string;
@@ -24,7 +26,7 @@ interface InvoicesPageClientProps {
     };
 }
 
-export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, formData, filters: initialFilters }: InvoicesPageClientProps) {
+export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, formData, subscriptionLimits, filters: initialFilters }: InvoicesPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [search, setSearch] = useState(initialFilters.search);
@@ -33,6 +35,10 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
     const [stats, setStats] = useState(initialStats);
     const [newInvoice, setNewInvoice] = useState(initialFilters.new);
     const [id, setId] = useState<string | null>(initialFilters.id);
+
+    // Vérifier si on peut ajouter une nouvelle facture
+    const canAddNewInvoice = subscriptionLimits.maxInvoices === -1 ||
+        invoices.length < subscriptionLimits.maxInvoices;
 
     // Synchroniser l'ID avec les paramètres de recherche
     useEffect(() => {
@@ -133,7 +139,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                             Gérez vos factures et suivez vos paiements
                         </p>
                     </div>
-                    <CreateInvoiceButton formData={formData} newInvoice={newInvoice} />
+                    <CreateInvoiceButton
+                        formData={formData}
+                        newInvoice={newInvoice}
+                        disabled={!canAddNewInvoice}
+                        limitReached={!canAddNewInvoice}
+                        planName={subscriptionLimits.planName}
+                        maxInvoices={subscriptionLimits.maxInvoices}
+                    />
                 </div>
 
                 {/* Statistiques */}
@@ -143,7 +156,19 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                             <CardTitle className="text-sm font-medium">Total Factures</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.totalInvoices}</div>
+                            <div className="text-2xl font-bold">
+                                {stats.totalInvoices}
+                                {subscriptionLimits.maxInvoices !== -1 && (
+                                    <span className="text-sm text-muted-foreground">
+                                        /{subscriptionLimits.maxInvoices}
+                                    </span>
+                                )}
+                            </div>
+                            {subscriptionLimits.maxInvoices !== -1 && (
+                                <p className="text-xs text-muted-foreground">
+                                    Plan {subscriptionLimits.planName}
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                     <Card>

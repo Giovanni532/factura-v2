@@ -7,6 +7,7 @@ import { user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getInvoicesByCompany, getInvoiceStats } from "@/db/queries/invoice";
 import { InvoicesPageClient } from "@/components/invoices/invoices-page-client";
+import { getSubscriptionLimits } from "@/db/queries/subscription";
 import { headers } from "next/headers";
 import { paths } from "@/paths";
 
@@ -43,6 +44,9 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
     // Récupérer les statistiques
     const stats = await getInvoiceStats(companyId, searchParamsResult.client);
 
+    // Récupérer les limites d'abonnement
+    const subscriptionLimits = await getSubscriptionLimits(companyId);
+
     // Récupérer les données du formulaire
     let formData = null;
     try {
@@ -65,6 +69,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
             invoices={invoices}
             stats={stats}
             formData={formData}
+            subscriptionLimits={subscriptionLimits}
             filters={{
                 search: searchParamsResult.search || "",
                 status: searchParamsResult.status || "all",

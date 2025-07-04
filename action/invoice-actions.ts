@@ -11,6 +11,8 @@ import { z } from "zod";
 import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
+import { canAddInvoice } from "@/db/queries/subscription";
+import { ActionError } from "@/lib/safe-action";
 
 // Action pour créer une nouvelle facture
 export const createInvoiceAction = useMutation(
@@ -20,7 +22,13 @@ export const createInvoiceAction = useMutation(
         const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
 
         if (!userData.length || !userData[0].companyId) {
-            throw new Error("Utilisateur non associé à une entreprise");
+            throw new ActionError("Utilisateur non associé à une entreprise");
+        }
+
+        // Vérifier les limites d'abonnement
+        const { canAdd, reason } = await canAddInvoice(userData[0].companyId);
+        if (!canAdd) {
+            throw new ActionError(reason || "Limite de factures atteinte");
         }
 
         // Générer le numéro de facture si non fourni

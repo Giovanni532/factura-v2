@@ -4,15 +4,27 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus } from "lucide-react";
 import { CreateInvoiceForm } from "@/components/invoices/create-invoice-form";
 
 interface CreateInvoiceButtonProps {
     formData?: any;
     newInvoice: boolean;
+    disabled?: boolean;
+    limitReached?: boolean;
+    planName?: string;
+    maxInvoices?: number;
 }
 
-export function CreateInvoiceButton({ formData, newInvoice }: CreateInvoiceButtonProps) {
+export function CreateInvoiceButton({
+    formData,
+    newInvoice,
+    disabled = false,
+    limitReached = false,
+    planName = "",
+    maxInvoices = 0
+}: CreateInvoiceButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const searchParams = useSearchParams();
     const clientId = searchParams.get('client');
@@ -29,12 +41,40 @@ export function CreateInvoiceButton({ formData, newInvoice }: CreateInvoiceButto
         setIsOpen(false);
     };
 
+    const handleClick = () => {
+        if (!disabled) {
+            setIsOpen(true);
+        }
+    };
+
+    const buttonContent = (
+        <Button
+            onClick={handleClick}
+            disabled={disabled}
+            variant={disabled ? "outline" : "default"}
+        >
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvelle facture
+        </Button>
+    );
+
     return (
         <>
-            <Button onClick={() => setIsOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvelle facture
-            </Button>
+            {limitReached ? (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            {buttonContent}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Limite atteinte pour le plan {planName}</p>
+                            <p>Maximum: {maxInvoices} factures</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            ) : (
+                buttonContent
+            )}
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] min-w-[50vw] overflow-y-auto">

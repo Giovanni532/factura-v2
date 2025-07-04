@@ -10,17 +10,23 @@ import { ClientWithStats } from "@/validation/client-schema";
 import { ClientCard } from "@/components/clients/client-card";
 import { CreateClientButton } from "@/components/clients/create-client-button";
 import { ClientsContext } from "@/hooks/clients-context";
+import { SubscriptionLimits } from "@/db/queries/subscription";
 
 interface ClientsPageClientProps {
     initialClients: ClientWithStats[];
     newClient: boolean;
+    subscriptionLimits: SubscriptionLimits;
 }
 
-export function ClientsPageClient({ initialClients, newClient }: ClientsPageClientProps) {
+export function ClientsPageClient({ initialClients, newClient, subscriptionLimits }: ClientsPageClientProps) {
     const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
     const [newClientUrl, setNewClientUrl] = useState(newClient);
+
+    // Vérifier si on peut ajouter un nouveau client
+    const canAddNewClient = subscriptionLimits.maxClients === -1 ||
+        clients.length < subscriptionLimits.maxClients;
 
     useEffect(() => {
         setNewClientUrl(newClient);
@@ -77,9 +83,21 @@ export function ClientsPageClient({ initialClients, newClient }: ClientsPageClie
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{totalClients}</div>
+                            <div className="text-2xl font-bold">
+                                {totalClients}
+                                {subscriptionLimits.maxClients !== -1 && (
+                                    <span className="text-sm text-muted-foreground">
+                                        /{subscriptionLimits.maxClients}
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-xs text-muted-foreground">
                                 {activeClients} clients actifs
+                                {subscriptionLimits.maxClients !== -1 && (
+                                    <span className="block">
+                                        Plan {subscriptionLimits.planName}
+                                    </span>
+                                )}
                             </p>
                         </CardContent>
                     </Card>
@@ -149,7 +167,13 @@ export function ClientsPageClient({ initialClients, newClient }: ClientsPageClie
                                 Inactifs
                             </Button>
                         </div>
-                        <CreateClientButton newClient={newClientUrl} />
+                        <CreateClientButton
+                            newClient={newClientUrl}
+                            disabled={!canAddNewClient}
+                            limitReached={!canAddNewClient}
+                            planName={subscriptionLimits.planName}
+                            maxClients={subscriptionLimits.maxClients}
+                        />
                     </div>
                 </div>
 
@@ -167,7 +191,15 @@ export function ClientsPageClient({ initialClients, newClient }: ClientsPageClie
                                     : "Commencez par ajouter votre premier client."
                                 }
                             </p>
-                            {!searchTerm && <CreateClientButton newClient={newClientUrl} />}
+                            {!searchTerm && (
+                                <CreateClientButton
+                                    newClient={newClientUrl}
+                                    disabled={!canAddNewClient}
+                                    limitReached={!canAddNewClient}
+                                    planName={subscriptionLimits.planName}
+                                    maxClients={subscriptionLimits.maxClients}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 ) : (

@@ -11,6 +11,9 @@ import {
 } from "@/validation/client-schema";
 import { ActionError } from "@/lib/safe-action";
 import { checkClientEmailExists } from "@/db/queries/client";
+import { canAddClient } from "@/db/queries/subscription";
+import { revalidatePath } from "next/cache";
+import { paths } from "@/paths";
 
 // Action pour créer un nouveau client
 export const createClientAction = useMutation(
@@ -27,6 +30,12 @@ export const createClientAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier les limites d'abonnement
+        const { canAdd, reason } = await canAddClient(companyId);
+        if (!canAdd) {
+            throw new ActionError(reason || "Limite de clients atteinte");
+        }
 
         // Vérifier si l'email existe déjà
         const emailExists = await checkClientEmailExists(input.email, companyId);
@@ -47,6 +56,10 @@ export const createClientAction = useMutation(
             vatNumber: input.vatNumber || null,
             companyId: companyId,
         }).returning();
+
+        // Revalider les pages nécessaires
+        revalidatePath(paths.clients.list);
+        revalidatePath(paths.dashboard);
 
         return {
             success: true,
