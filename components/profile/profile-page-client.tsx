@@ -153,7 +153,7 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                             <div className="flex items-center gap-2">
                                 <h3 className="text-lg font-semibold">{initialUser.name}</h3>
                                 <Badge className={getRoleColor(initialUser.role)}>
-                                    {getRoleLabel(initialUser.role)}
+                                    {getRoleLabel(initialUser.role) + " de  " + initialUser.companyName}
                                 </Badge>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -166,12 +166,6 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                                     Membre depuis le {formatDate(new Date(initialUser.createdAt))}
                                 </div>
                             </div>
-                            {initialUser.companyName && (
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
-                                    <Building2 className="h-4 w-4" />
-                                    {initialUser.companyName}
-                                </div>
-                            )}
                         </div>
                     </div>
 
