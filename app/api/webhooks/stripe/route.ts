@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/drizzle";
 import { subscription, company, billingPlan } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import Stripe from "stripe";
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -38,27 +38,27 @@ export async function POST(request: NextRequest) {
                 break;
 
             case "customer.subscription.created":
-                console.log("Abonnement créé:", event.data.object);
+                // Abonnement créé - géré par checkout.session.completed
                 break;
 
             case "customer.subscription.updated":
-                console.log("Abonnement mis à jour:", event.data.object);
+                // Abonnement mis à jour
                 break;
 
             case "customer.subscription.deleted":
-                console.log("Abonnement supprimé:", event.data.object);
+                // Abonnement supprimé
                 break;
 
             case "invoice.payment_succeeded":
-                console.log("Paiement réussi:", event.data.object);
+                // Paiement réussi
                 break;
 
             case "invoice.payment_failed":
-                console.log("Paiement échoué:", event.data.object);
+                // Paiement échoué
                 break;
 
             default:
-                console.log(`Événement Stripe non géré: ${event.type}`);
+            // Événement non géré
         }
 
         return NextResponse.json({ received: true });
@@ -77,7 +77,36 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     const billingPlanId = session.metadata?.billingPlanId;
 
     if (!companyId || !billingPlanId) {
-        console.error("Métadonnées manquantes dans la session de checkout");
+        // Métadonnées manquantes - événement ignoré
+        return;
+    }
+
+    // Vérification de sécurité : l'entreprise doit exister
+    const companyExists = await db
+        .select({ id: company.id })
+        .from(company)
+        .where(eq(company.id, companyId))
+        .limit(1);
+
+    if (!companyExists.length) {
+        // Entreprise non trouvée - événement ignoré
+        return;
+    }
+
+    // Vérification de sécurité : le plan de facturation doit exister et être actif
+    const planExists = await db
+        .select({ id: billingPlan.id })
+        .from(billingPlan)
+        .where(
+            and(
+                eq(billingPlan.id, billingPlanId),
+                eq(billingPlan.isActive, true)
+            )
+        )
+        .limit(1);
+
+    if (!planExists.length) {
+        // Plan non trouvé ou inactif - événement ignoré
         return;
     }
 
@@ -88,8 +117,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
             // Créer ou mettre à jour l'abonnement dans la base de données
             await createOrUpdateSubscription(companyId, billingPlanId, stripeSubscription, session.customer as string);
-
-            console.log(`Abonnement créé pour l'entreprise ${companyId}`);
         }
     } catch (error) {
         console.error("Erreur lors de la création de l'abonnement:", error);

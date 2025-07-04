@@ -45,19 +45,6 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
         },
     });
 
-    const { execute: createBillingPortal, isPending: isCreatingPortal } = useAction(createBillingPortalAction, {
-        onSuccess: (data) => {
-            if (data.data?.portalUrl) {
-                window.location.href = data.data.portalUrl;
-            } else {
-                toast.error("Erreur lors de l'ouverture du portail de facturation");
-            }
-        },
-        onError: (error) => {
-            toast.error(error.error.serverError?.message || "Erreur lors de l'ouverture du portail de facturation");
-        },
-    });
-
     const { execute: switchToFreePlan, isPending: isSwitchingToFree } = useAction(switchToFreePlanAction, {
         onSuccess: (data) => {
             toast.success(data.data?.message || "Votre abonnement sera annulé à la fin de la période de facturation");
@@ -85,10 +72,7 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
 
         setLoadingPlanId(planId);
         try {
-            const stripePriceId = getStripePriceId(planId);
-
             createCheckoutSession({
-                priceId: stripePriceId,
                 billingPlanId: planId,
             });
             // Pas d'await car la redirection va se faire automatiquement
@@ -111,33 +95,7 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
         });
     };
 
-    // Ouvrir le portail de facturation Stripe
-    const handleManageBilling = async () => {
-        if (!isOwner) {
-            toast.error("Seul le propriétaire peut gérer l'abonnement");
-            return;
-        }
 
-        if (!currentSubscription.subscription?.stripeCustomerId) {
-            toast.error("Aucun abonnement trouvé");
-            return;
-        }
-
-        await createBillingPortal({
-            customerId: currentSubscription.subscription.stripeCustomerId,
-        });
-    };
-
-    // Mapper les plans aux price IDs Stripe
-    const getStripePriceId = (planId: string): string => {
-        const priceMapping: Record<string, string> = {
-            'free-plan': 'price_1Rh8ekRrDpYwkYbVAwrCFG5F', // Plan Gratuit
-            'small-business-plan': 'price_1Rh8fORrDpYwkYbVwPqeqMhf', // Plan Petite Entreprise  
-            'enterprise-plan': 'price_1Rh8fmRrDpYwkYbVRdP0WQzg', // Plan Grande Entreprise
-        };
-
-        return priceMapping[planId] || 'price_1Rh8ekRrDpYwkYbVAwrCFG5F';
-    };
 
     const formatPrice = (price: number, currency: string) => {
         return new Intl.NumberFormat('fr-FR', {
@@ -155,19 +113,41 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
         });
     };
 
+    // Obtenir la date de fin de période la plus récente (Stripe en priorité)
+    const getCurrentPeriodEnd = () => {
+        // Priorité aux données Stripe si disponibles
+        if (currentSubscription.stripeSubscription?.current_period_end) {
+            const timestamp = currentSubscription.stripeSubscription.current_period_end;
+            const date = new Date(timestamp * 1000);
+            date.setMonth(date.getMonth() + 1);
+            return date;
+        }
+        // Sinon utiliser les données de la base
+        const dbDate = currentSubscription.subscription?.currentPeriodEnd;
+        if (dbDate) {
+            const adjustedDate = new Date(dbDate);
+            adjustedDate.setMonth(adjustedDate.getMonth() + 1);
+            return adjustedDate;
+        }
+        return dbDate;
+    };
+
+    // Obtenir le statut d'annulation le plus récent
+    const getCancelAtPeriodEnd = () => {
+        // Priorité aux données Stripe si disponibles
+        if (currentSubscription.stripeSubscription) {
+            return currentSubscription.stripeSubscription.cancel_at_period_end;
+        }
+        // Sinon utiliser les données de la base
+        return currentSubscription.subscription?.cancelAtPeriodEnd || false;
+    };
+
     const getCurrentPlanId = () => {
         return currentSubscription.plan?.id || 'free-plan';
     };
 
     const isCurrentPlan = (planId: string) => {
         return getCurrentPlanId() === planId;
-    };
-
-    const getFeatureIcon = (feature: string) => {
-        if (feature.includes('utilisateur')) return <Users className="h-4 w-4" />;
-        if (feature.includes('client')) return <Building2 className="h-4 w-4" />;
-        if (feature.includes('facture') || feature.includes('document')) return <FileText className="h-4 w-4" />;
-        return <Check className="h-4 w-4" />;
     };
 
     return (
@@ -225,30 +205,19 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                                     / {currentSubscription.plan?.interval === 'monthly' ? 'mois' : 'an'}
                                 </p>
                             </div>
-                            {isOwner && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleManageBilling}
-                                    disabled={isCreatingPortal}
-                                    className="gap-2"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                    {isCreatingPortal ? "Ouverture..." : "Gérer l'abonnement"}
-                                </Button>
-                            )}
                         </div>
 
-                        {currentSubscription.subscription.currentPeriodEnd && (
+                        {getCurrentPeriodEnd() && (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
-                                {currentSubscription.subscription.cancelAtPeriodEnd
-                                    ? `Expire le ${formatDate(currentSubscription.subscription.currentPeriodEnd)}`
-                                    : `Renouvelé le ${formatDate(currentSubscription.subscription.currentPeriodEnd)}`
+                                {getCancelAtPeriodEnd()
+                                    ? `Expire le ${formatDate(getCurrentPeriodEnd()!)}`
+                                    : `Renouvelé le ${formatDate(getCurrentPeriodEnd()!)}`
                                 }
                             </div>
                         )}
 
-                        {currentSubscription.subscription.cancelAtPeriodEnd && (
+                        {getCancelAtPeriodEnd() && (
                             <Alert className="border-yellow-200 bg-yellow-50">
                                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                                 <AlertDescription className="text-yellow-800">
@@ -390,9 +359,9 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                                     <p className="text-sm text-yellow-700">
                                         Votre abonnement actuel restera actif jusqu'à la fin de votre période de facturation.
                                     </p>
-                                    {currentSubscription.subscription?.currentPeriodEnd && (
+                                    {getCurrentPeriodEnd() && (
                                         <p className="text-sm text-yellow-700">
-                                            <strong>Date d'expiration :</strong> {formatDate(currentSubscription.subscription.currentPeriodEnd)}
+                                            <strong>Date d'expiration :</strong> {formatDate(getCurrentPeriodEnd()!)}
                                         </p>
                                     )}
                                     <p className="text-sm text-yellow-700">

@@ -10,7 +10,6 @@ import { headers } from "next/headers";
 
 // Schéma pour créer une session de checkout
 const createCheckoutSessionSchema = z.object({
-    priceId: z.string().min(1, "Price ID requis"),
     billingPlanId: z.string().min(1, "Plan de facturation requis"),
 });
 
@@ -23,6 +22,22 @@ const createBillingPortalSchema = z.object({
 const switchToFreePlanSchema = z.object({
     companyId: z.string().min(1, "Company ID requis"),
 });
+
+// Fonction pour récupérer le price ID de manière sécurisée
+function getStripePriceId(planId: string): string {
+    const priceMapping: Record<string, string> = {
+        'free-plan': process.env.STRIPE_PRICE_FREE || 'price_1Rh8ekRrDpYwkYbVAwrCFG5F',
+        'small-business-plan': process.env.STRIPE_PRICE_BUSINESS || 'price_1Rh8fORrDpYwkYbVwPqeqMhf',
+        'enterprise-plan': process.env.STRIPE_PRICE_ENTERPRISE || 'price_1Rh8fmRrDpYwkYbVRdP0WQzg',
+    };
+
+    const priceId = priceMapping[planId];
+    if (!priceId) {
+        throw new Error("Plan de facturation invalide");
+    }
+
+    return priceId;
+}
 
 // Schéma pour gérer les webhooks Stripe
 const stripeWebhookSchema = z.object({
@@ -77,15 +92,31 @@ export const createCheckoutSessionAction = useMutation(
                 throw new Error("Seul le propriétaire peut gérer l'abonnement");
             }
 
-            // Vérifier que le plan de facturation existe
+            // Vérifier que le plan de facturation existe et est actif
             const plan = await db
                 .select()
                 .from(billingPlan)
-                .where(eq(billingPlan.id, input.billingPlanId))
+                .where(
+                    and(
+                        eq(billingPlan.id, input.billingPlanId),
+                        eq(billingPlan.isActive, true)
+                    )
+                )
                 .limit(1);
 
             if (!plan.length) {
-                throw new Error("Plan de facturation non trouvé");
+                throw new Error("Plan de facturation non trouvé ou inactif");
+            }
+
+            // Sécurité : vérifier que l'utilisateur a bien accès à cette entreprise
+            const userCompanyCheck = await db
+                .select({ companyId: user.companyId })
+                .from(user)
+                .where(eq(user.id, userId))
+                .limit(1);
+
+            if (!userCompanyCheck.length || userCompanyCheck[0].companyId !== currentCompany.id) {
+                throw new Error("Accès non autorisé à cette entreprise");
             }
 
             // Vérifier s'il y a un abonnement existant à annuler
@@ -99,10 +130,11 @@ export const createCheckoutSessionAction = useMutation(
                 // Annuler l'abonnement existant immédiatement
                 try {
                     await stripe.subscriptions.cancel(existingSubscription[0].stripeSubscriptionId);
-                    console.log(`Abonnement existant ${existingSubscription[0].stripeSubscriptionId} annulé`);
                 } catch (error) {
-                    console.error("Erreur lors de l'annulation de l'abonnement existant:", error);
-                    // Continue quand même avec le nouveau checkout
+                    // Log uniquement les erreurs importantes, continue quand même
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error("Erreur lors de l'annulation de l'abonnement existant:", error);
+                    }
                 }
             }
 
@@ -130,13 +162,16 @@ export const createCheckoutSessionAction = useMutation(
                 stripeCustomerId = customer.id;
             }
 
+            // Récupérer le price ID de manière sécurisée
+            const stripePriceId = getStripePriceId(input.billingPlanId);
+
             // Créer la session de checkout
             const checkoutSession = await stripe.checkout.sessions.create({
                 customer: stripeCustomerId,
                 mode: 'subscription',
                 line_items: [
                     {
-                        price: input.priceId,
+                        price: stripePriceId,
                         quantity: 1,
                     },
                 ],
@@ -155,7 +190,10 @@ export const createCheckoutSessionAction = useMutation(
             };
 
         } catch (error) {
-            console.error("Erreur lors de la création de la session de checkout:", error);
+            // Log uniquement en développement
+            if (process.env.NODE_ENV === 'development') {
+                console.error("Erreur lors de la création de la session de checkout:", error);
+            }
             throw new Error(error instanceof Error ? error.message : "Erreur lors de la création de la session de checkout");
         }
     }
@@ -234,7 +272,10 @@ export const switchToFreePlanAction = useMutation(
             };
 
         } catch (error) {
-            console.error("Erreur lors du passage au plan gratuit:", error);
+            // Log uniquement en développement  
+            if (process.env.NODE_ENV === 'development') {
+                console.error("Erreur lors du passage au plan gratuit:", error);
+            }
             throw new Error(error instanceof Error ? error.message : "Erreur lors du passage au plan gratuit");
         }
     }
@@ -280,7 +321,10 @@ export const createBillingPortalAction = useMutation(
             };
 
         } catch (error) {
-            console.error("Erreur lors de la création du portail de facturation:", error);
+            // Log uniquement en développement
+            if (process.env.NODE_ENV === 'development') {
+                console.error("Erreur lors de la création du portail de facturation:", error);
+            }
             throw new Error(error instanceof Error ? error.message : "Erreur lors de la création du portail de facturation");
         }
     }
