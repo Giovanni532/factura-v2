@@ -67,6 +67,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel" | "csv">("pdf")
     const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([])
     const [stats, setStats] = useState(initialStats)
+    const [periodMode, setPeriodMode] = useState<"fiscal_year" | "custom">("fiscal_year")
     const [customDateRange, setCustomDateRange] = useState<{
         startDate: Date | undefined
         endDate: Date | undefined
@@ -156,11 +157,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
         onSuccess: (result: any) => {
             if (result?.data?.data) {
                 setFiscalYears(result.data.data);
-                // Sélectionner l'exercice en cours par défaut
-                const currentYear = result.data.data.find((fy: any) => !fy.isClosed);
-                if (currentYear) {
-                    setSelectedFiscalYear(currentYear.id);
-                }
+                // Ne pas sélectionner automatiquement - laisser l'utilisateur choisir
             }
         },
         onError: (error) => {
@@ -182,17 +179,15 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     // Charger les données initiales
     useEffect(() => {
         executeGetFiscalYears({});
-        if (!initialStats) {
-            executeGetStats({});
-        }
+        // Ne pas charger les stats automatiquement - attendre qu'un exercice soit sélectionné
     }, []);
 
     // Mettre à jour les stats quand l'exercice change
     useEffect(() => {
-        if (selectedFiscalYear) {
+        if (periodMode === "fiscal_year" && selectedFiscalYear) {
             executeGetStats({ fiscalYearId: selectedFiscalYear });
         }
-    }, [selectedFiscalYear]);
+    }, [selectedFiscalYear, periodMode]);
 
     const handleGenerateReport = (reportType: "balance_sheet" | "income_statement" | "cash_flow" | "trial_balance") => {
         const params: any = {
@@ -200,10 +195,10 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
             format: selectedFormat
         };
 
-        if (customDateRange.startDate && customDateRange.endDate) {
+        if (periodMode === "custom" && customDateRange.startDate && customDateRange.endDate) {
             params.startDate = format(customDateRange.startDate, "yyyy-MM-dd");
             params.endDate = format(customDateRange.endDate, "yyyy-MM-dd");
-        } else if (selectedFiscalYear) {
+        } else if (periodMode === "fiscal_year" && selectedFiscalYear) {
             params.fiscalYearId = selectedFiscalYear;
         }
 
@@ -218,10 +213,10 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
             format: "pdf"
         };
 
-        if (customDateRange.startDate && customDateRange.endDate) {
+        if (periodMode === "custom" && customDateRange.startDate && customDateRange.endDate) {
             params.startDate = format(customDateRange.startDate, "yyyy-MM-dd");
             params.endDate = format(customDateRange.endDate, "yyyy-MM-dd");
-        } else if (selectedFiscalYear) {
+        } else if (periodMode === "fiscal_year" && selectedFiscalYear) {
             params.fiscalYearId = selectedFiscalYear;
         }
 
@@ -368,103 +363,137 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                 </div>
 
                 <div className="flex flex-col space-y-4 lg:flex-row lg:items-end lg:space-y-0 lg:space-x-3">
-                    {/* Sélection de l'exercice comptable */}
+                    {/* Sélecteur de mode de période */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Exercice comptable</Label>
+                        <Label className="text-xs text-muted-foreground">Mode de période</Label>
                         <Select
-                            value={selectedFiscalYear}
-                            onValueChange={setSelectedFiscalYear}
-                            disabled={isLoadingFiscalYears}
+                            value={periodMode}
+                            onValueChange={(value: "fiscal_year" | "custom") => {
+                                setPeriodMode(value)
+                                // Reset les valeurs selon le mode
+                                if (value === "fiscal_year") {
+                                    setCustomDateRange({ startDate: undefined, endDate: undefined })
+                                } else {
+                                    setSelectedFiscalYear("")
+                                }
+                            }}
                         >
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder="Sélectionner..." />
+                            <SelectTrigger className="w-[140px]">
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {fiscalYears.map((fy) => (
-                                    <SelectItem key={fy.id} value={fy.id}>
-                                        <div className="flex items-center space-x-2">
-                                            <span>{fy.name}</span>
-                                            {fy.isClosed && (
-                                                <Badge variant="secondary" className="ml-1 text-xs">
-                                                    Clôturé
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </SelectItem>
-                                ))}
+                                <SelectItem value="fiscal_year">Exercice fiscal</SelectItem>
+                                <SelectItem value="custom">Période libre</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* 
-                     personnalisée */}
-                    <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Ou période personnalisée</Label>
-                        <Dialog open={showCustomDateDialog} onOpenChange={setShowCustomDateDialog}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="default" className="w-[200px]">
-                                    <CalendarIcon className="h-4 w-4 mr-2" />
-                                    Période personnalisée
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle>Sélectionner une période</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Date de début</Label>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {customDateRange.startDate ? format(customDateRange.startDate, "dd/MM/yyyy") : "Sélectionner"}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={customDateRange.startDate}
-                                                        onSelect={(date) => setCustomDateRange(prev => ({ ...prev, startDate: date }))}
-                                                        locale={fr}
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Date de fin</Label>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {customDateRange.endDate ? format(customDateRange.endDate, "dd/MM/yyyy") : "Sélectionner"}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={customDateRange.endDate}
-                                                        onSelect={(date) => setCustomDateRange(prev => ({ ...prev, endDate: date }))}
-                                                        locale={fr}
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => setShowCustomDateDialog(false)}
-                                        disabled={!customDateRange.startDate || !customDateRange.endDate}
-                                    >
-                                        Appliquer la période
+                    {/* Sélection de l'exercice comptable (seulement si mode exercice) */}
+                    {periodMode === "fiscal_year" && (
+                        <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Exercice comptable</Label>
+                            <Select
+                                value={selectedFiscalYear}
+                                onValueChange={setSelectedFiscalYear}
+                                disabled={isLoadingFiscalYears}
+                            >
+                                <SelectTrigger className="w-[160px]">
+                                    <SelectValue placeholder="Sélectionner..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {fiscalYears.map((fy) => (
+                                        <SelectItem key={fy.id} value={fy.id}>
+                                            <div className="flex items-center space-x-2">
+                                                <span>{fy.name}</span>
+                                                {fy.isClosed && (
+                                                    <Badge variant="secondary" className="ml-1 text-xs">
+                                                        Clôturé
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    {/* Période personnalisée (seulement si mode personnalisé) */}
+                    {periodMode === "custom" && (
+                        <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Période personnalisée</Label>
+                            <Dialog open={showCustomDateDialog} onOpenChange={setShowCustomDateDialog}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="default" className="w-[200px]">
+                                        <CalendarIcon className="h-4 w-4 mr-2" />
+                                        {customDateRange.startDate && customDateRange.endDate ? (
+                                            <span>
+                                                {format(customDateRange.startDate, "dd/MM/yy")} - {format(customDateRange.endDate, "dd/MM/yy")}
+                                            </span>
+                                        ) : (
+                                            "Sélectionner les dates"
+                                        )}
                                     </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Sélectionner une période</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Date de début</Label>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {customDateRange.startDate ? format(customDateRange.startDate, "dd/MM/yyyy") : "Sélectionner"}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={customDateRange.startDate}
+                                                            onSelect={(date) => setCustomDateRange(prev => ({ ...prev, startDate: date }))}
+                                                            locale={fr}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Date de fin</Label>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {customDateRange.endDate ? format(customDateRange.endDate, "dd/MM/yyyy") : "Sélectionner"}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={customDateRange.endDate}
+                                                            onSelect={(date) => setCustomDateRange(prev => ({ ...prev, endDate: date }))}
+                                                            locale={fr}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            className="w-full"
+                                            onClick={() => setShowCustomDateDialog(false)}
+                                            disabled={!customDateRange.startDate || !customDateRange.endDate}
+                                        >
+                                            Appliquer la période
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
 
                     {/* Format d'export */}
                     <div className="space-y-1">
@@ -487,7 +516,9 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                         size="default"
                         onClick={() => {
                             executeGetFiscalYears({});
-                            executeGetStats({ fiscalYearId: selectedFiscalYear });
+                            if (periodMode === "fiscal_year" && selectedFiscalYear) {
+                                executeGetStats({ fiscalYearId: selectedFiscalYear });
+                            }
                         }}
                         disabled={isLoadingFiscalYears || isLoadingStats}
                         className="w-[40px]"
@@ -551,15 +582,19 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                 </div>
             )}
 
-            {/* Alerte si aucun exercice sélectionné */}
-            {!selectedFiscalYear && !customDateRange.startDate && (
-                <Alert>
-                    <IconAlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                        Sélectionnez un exercice comptable ou une période personnalisée pour générer des rapports.
-                    </AlertDescription>
-                </Alert>
-            )}
+            {/* Alerte si aucune période sélectionnée */}
+            {((periodMode === "fiscal_year" && !selectedFiscalYear) ||
+                (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))) && (
+                    <Alert>
+                        <IconAlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                            {periodMode === "fiscal_year"
+                                ? "Sélectionnez un exercice comptable pour générer des rapports."
+                                : "Sélectionnez une période personnalisée (date de début et fin) pour générer des rapports."
+                            }
+                        </AlertDescription>
+                    </Alert>
+                )}
 
             {/* Grille des rapports */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -596,7 +631,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     size="sm"
                                     className="flex-1"
                                     onClick={() => handleViewReport(report.type)}
-                                    disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                                    disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                                 >
                                     <IconEye className="h-4 w-4 mr-2" />
                                     Voir
@@ -605,7 +640,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleGenerateReport(report.type)}
-                                    disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                                    disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                                 >
                                     <IconDownload className="h-4 w-4" />
                                 </Button>
@@ -629,7 +664,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                             variant="outline"
                             className="h-20 flex-col space-y-2"
                             onClick={() => handleViewReport('cash_flow')}
-                            disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                            disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                         >
                             <IconTrendingUp className="h-6 w-6" />
                             <span className="text-sm">Flux de trésorerie</span>
@@ -638,7 +673,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                             variant="outline"
                             className="h-20 flex-col space-y-2"
                             onClick={() => handleViewReport('income_statement')}
-                            disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                            disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                         >
                             <IconCalculator className="h-6 w-6" />
                             <span className="text-sm">Résultats</span>
@@ -647,7 +682,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                             variant="outline"
                             className="h-20 flex-col space-y-2"
                             onClick={() => handleViewReport('trial_balance')}
-                            disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                            disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                         >
                             <IconChartBar className="h-6 w-6" />
                             <span className="text-sm">Balance</span>
@@ -656,7 +691,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                             variant="outline"
                             className="h-20 flex-col space-y-2"
                             onClick={() => handleViewReport('balance_sheet')}
-                            disabled={isGeneratingReport || (!selectedFiscalYear && !customDateRange.startDate)}
+                            disabled={isGeneratingReport || (periodMode === "fiscal_year" && !selectedFiscalYear) || (periodMode === "custom" && (!customDateRange.startDate || !customDateRange.endDate))}
                         >
                             <IconReportMoney className="h-6 w-6" />
                             <span className="text-sm">Bilan</span>
