@@ -51,10 +51,12 @@ export type CompanyWithDetails = {
     logo: string | null;
     createdAt: Date;
     updatedAt: Date;
-    subscription?: {
+    subscription: {
         plan: string;
         maxUsers: number;
         currentUsers: number;
+        status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
+        features: string[];
     };
     members: Array<{
         id: string;

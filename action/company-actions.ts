@@ -3,7 +3,7 @@
 import { useMutation } from "@/lib/safe-action";
 import { createCompanySchema, updateCompanySchema, updateCompanyLogoSchema, inviteUserSchema } from "@/validation/company-schema";
 import { db } from "@/lib/drizzle";
-import { company, user } from "@/db/schema";
+import { company, user, subscription, billingPlan } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
@@ -163,12 +163,41 @@ export const inviteUserAction = useMutation(
                 throw new ActionError("Un utilisateur avec cet email existe déjà");
             }
 
-            // Vérifier le nombre d'utilisateurs actuels (limitation fictive pour l'exemple)
+            // Vérifier le nombre d'utilisateurs actuels selon l'abonnement
             const currentUsers = await db.select().from(user).where(eq(user.companyId, existingUser[0].companyId));
-            const maxUsers = 10; // Limitation fictive - à adapter selon l'abonnement
+
+            // Récupérer les limites d'abonnement
+            const subscriptionData = await db
+                .select({
+                    maxUsers: billingPlan.maxUsers,
+                    planName: billingPlan.name,
+                })
+                .from(subscription)
+                .leftJoin(billingPlan, eq(subscription.billingPlanId, billingPlan.id))
+                .where(eq(subscription.companyId, existingUser[0].companyId))
+                .limit(1);
+
+            // Si pas d'abonnement, utiliser les limites du plan gratuit
+            let maxUsers = 1;
+            let planName = "Gratuit";
+
+            if (subscriptionData.length === 0) {
+                // Récupérer le plan gratuit par défaut
+                const freePlan = await db
+                    .select({ maxUsers: billingPlan.maxUsers, name: billingPlan.name })
+                    .from(billingPlan)
+                    .where(eq(billingPlan.id, 'free-plan'))
+                    .limit(1);
+
+                maxUsers = freePlan[0]?.maxUsers || 1;
+                planName = freePlan[0]?.name || "Gratuit";
+            } else {
+                maxUsers = subscriptionData[0].maxUsers || 1;
+                planName = subscriptionData[0].planName || "Gratuit";
+            }
 
             if (currentUsers.length >= maxUsers) {
-                throw new ActionError(`Limite d'utilisateurs atteinte (${maxUsers} maximum)`);
+                throw new ActionError(`Limite d'utilisateurs atteinte pour le plan ${planName} (${maxUsers} maximum)`);
             }
 
             // Créer le nouvel utilisateur (mot de passe temporaire - dans un vrai cas, on enverrait un email d'invitation)

@@ -1,5 +1,5 @@
 import { db } from "@/lib/drizzle";
-import { user, company } from "@/db/schema";
+import { user, company, subscription, billingPlan } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function getUserWithCompany(userId: string) {
@@ -73,13 +73,65 @@ export async function getCompanyWithMembers(companyId: string) {
         .where(eq(user.companyId, companyId))
         .orderBy(user.role, user.name); // Owner en premier, puis par nom
 
+    // Récupérer les informations d'abonnement
+    const subscriptionData = await db
+        .select({
+            subscription: {
+                id: subscription.id,
+                status: subscription.status,
+                currentPeriodStart: subscription.currentPeriodStart,
+                currentPeriodEnd: subscription.currentPeriodEnd,
+                cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+            },
+            plan: {
+                id: billingPlan.id,
+                name: billingPlan.name,
+                description: billingPlan.description,
+                price: billingPlan.price,
+                currency: billingPlan.currency,
+                interval: billingPlan.interval,
+                maxUsers: billingPlan.maxUsers,
+                maxClients: billingPlan.maxClients,
+                maxInvoices: billingPlan.maxInvoices,
+                features: billingPlan.features,
+            }
+        })
+        .from(subscription)
+        .leftJoin(billingPlan, eq(subscription.billingPlanId, billingPlan.id))
+        .where(eq(subscription.companyId, companyId))
+        .limit(1);
+
+    // Si pas d'abonnement, utiliser le plan gratuit par défaut
+    let subscriptionInfo;
+    if (subscriptionData.length === 0) {
+        // Récupérer le plan gratuit par défaut
+        const freePlan = await db
+            .select()
+            .from(billingPlan)
+            .where(eq(billingPlan.id, 'free-plan'))
+            .limit(1);
+
+        subscriptionInfo = {
+            plan: freePlan[0]?.name || "Gratuit",
+            maxUsers: freePlan[0]?.maxUsers || 1,
+            currentUsers: members.length,
+            status: 'active' as const,
+            features: freePlan[0]?.features ? JSON.parse(freePlan[0].features) : [],
+        };
+    } else {
+        const { subscription: sub, plan } = subscriptionData[0];
+        subscriptionInfo = {
+            plan: plan?.name || "Gratuit",
+            maxUsers: plan?.maxUsers || 1,
+            currentUsers: members.length,
+            status: sub?.status || 'active' as const,
+            features: plan?.features ? JSON.parse(plan.features) : [],
+        };
+    }
+
     return {
         ...companyData[0],
-        subscription: {
-            plan: "Pro", // Exemple statique
-            maxUsers: 10,
-            currentUsers: members.length,
-        },
+        subscription: subscriptionInfo,
         members,
     };
 } 

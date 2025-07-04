@@ -336,22 +336,37 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="font-medium">Plan actuel</span>
-                            <Badge variant="default">{initialCompany.subscription?.plan || "Gratuit"}</Badge>
+                            <Badge variant="default">{initialCompany.subscription.plan}</Badge>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Utilisateurs</span>
                             <span className="text-sm">
-                                {initialCompany.subscription?.currentUsers || 0} / {initialCompany.subscription?.maxUsers || 1}
+                                {initialCompany.subscription.currentUsers} / {initialCompany.subscription.maxUsers}
                             </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
                             <div
                                 className="bg-primary h-2 rounded-full transition-all"
                                 style={{
-                                    width: `${Math.min(100, ((initialCompany.subscription?.currentUsers || 0) / (initialCompany.subscription?.maxUsers || 1)) * 100)}%`
+                                    width: `${Math.min(100, (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100)}%`
                                 }}
                             />
                         </div>
+
+                        {/* Fonctionnalités du plan */}
+                        {initialCompany.subscription.features.length > 0 && (
+                            <div className="space-y-2">
+                                <span className="text-sm font-medium">Fonctionnalités incluses :</span>
+                                <div className="space-y-1">
+                                    {initialCompany.subscription.features.map((feature, index) => (
+                                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                            {feature}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
