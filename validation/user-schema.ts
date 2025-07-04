@@ -5,6 +5,11 @@ export const updateProfileSchema = z.object({
     name: z.string().min(2, "Le prénom et nom doivent contenir au moins 2 caractères").max(100, "Le prénom et nom sont trop longs"),
 });
 
+// Schéma pour mettre à jour l'avatar utilisateur
+export const updateAvatarSchema = z.object({
+    image: z.string().min(1, "L'avatar est requis"),
+});
+
 // Schéma pour changer le mot de passe
 export const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, "Le mot de passe actuel est requis"),

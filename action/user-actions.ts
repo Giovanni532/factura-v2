@@ -1,7 +1,7 @@
 "use server"
 
 import { useMutation } from "@/lib/safe-action";
-import { updateProfileSchema, changePasswordSchema } from "@/validation/user-schema";
+import { updateProfileSchema, changePasswordSchema, updateAvatarSchema } from "@/validation/user-schema";
 import { ActionError } from "@/lib/safe-action";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -57,6 +57,31 @@ export const changePasswordAction = useMutation(
                 throw new ActionError("Mot de passe actuel incorrect");
             }
             throw new ActionError("Erreur lors du changement de mot de passe");
+        }
+    }
+);
+
+// Action pour mettre à jour l'avatar utilisateur
+export const updateAvatarAction = useMutation(
+    updateAvatarSchema,
+    async (input, { userId }) => {
+        try {
+            // Utiliser l'API Better Auth pour mettre à jour l'image de l'utilisateur
+            const result = await auth.api.updateUser({
+                body: {
+                    image: input.image,
+                },
+                headers: await headers()
+            });
+
+            return {
+                success: true,
+                user: result,
+                message: "Avatar mis à jour avec succès"
+            };
+        } catch (error: any) {
+            console.error("Erreur lors de la mise à jour de l'avatar:", error);
+            throw new ActionError("Erreur lors de la mise à jour de l'avatar");
         }
     }
 ); 
