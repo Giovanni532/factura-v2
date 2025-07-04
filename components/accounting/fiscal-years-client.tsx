@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,8 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { useAction } from "next-safe-action/hooks"
-import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -23,8 +23,13 @@ import {
     IconCheck,
     IconX
 } from "@tabler/icons-react"
-import { createFiscalYearAction, updateFiscalYearAction, deleteFiscalYearAction } from "@/action/accounting-actions"
 import { createFiscalYearSchema, updateFiscalYearSchema } from "@/validation/accounting-schema"
+import { useFiscalYears } from "@/hooks/use-fiscal-years"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Edit, Trash2, Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface FiscalYearWithStats {
     id: string
@@ -41,8 +46,17 @@ interface FiscalYearsClientProps {
     fiscalYears: FiscalYearWithStats[]
 }
 
-export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
-    const [localFiscalYears, setLocalFiscalYears] = useState(fiscalYears)
+export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYearsClientProps) {
+    const {
+        fiscalYears,
+        createFiscalYear,
+        updateFiscalYear,
+        deleteFiscalYear,
+        isCreating,
+        isUpdating,
+        isDeleting
+    } = useFiscalYears(initialFiscalYears)
+
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [editingFiscalYear, setEditingFiscalYear] = useState<FiscalYearWithStats | null>(null)
 
@@ -70,71 +84,21 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
         }
     })
 
-    // Actions
-    const { execute: executeCreate, isPending: isCreating } = useAction(createFiscalYearAction, {
-        onSuccess: (data) => {
-            toast.success("Exercice fiscal créé avec succès")
-            if (data.data?.fiscalYear) {
-                const newFiscalYear: FiscalYearWithStats = {
-                    ...data.data.fiscalYear,
-                    totalRevenue: 0,
-                    totalExpenses: 0,
-                    netIncome: 0
-                }
-                setLocalFiscalYears((prev) => [...prev, newFiscalYear])
-            }
-            setIsCreateDialogOpen(false)
-            createForm.reset()
-        },
-        onError: () => {
-            toast.error("Erreur lors de la création de l'exercice fiscal")
-        }
-    })
-
-    const { execute: executeUpdate, isPending: isUpdating } = useAction(updateFiscalYearAction, {
-        onSuccess: (data) => {
-            toast.success("Exercice fiscal mis à jour avec succès")
-            if (data.data?.fiscalYear) {
-                const updatedFiscalYear: FiscalYearWithStats = {
-                    ...data.data.fiscalYear,
-                    totalRevenue: editingFiscalYear?.totalRevenue || 0,
-                    totalExpenses: editingFiscalYear?.totalExpenses || 0,
-                    netIncome: editingFiscalYear?.netIncome || 0
-                }
-                setLocalFiscalYears((prev) => prev.map(fy => fy.id === updatedFiscalYear.id ? updatedFiscalYear : fy))
-            }
-            setEditingFiscalYear(null)
-            updateForm.reset()
-        },
-        onError: () => {
-            toast.error("Erreur lors de la mise à jour de l'exercice fiscal")
-        }
-    })
-
-    const { execute: executeDelete, isPending: isDeleting } = useAction(deleteFiscalYearAction, {
-        onSuccess: () => {
-            toast.success("Exercice fiscal supprimé avec succès")
-            if (editingFiscalYear) {
-                setLocalFiscalYears((prev) => prev.filter(fy => fy.id !== editingFiscalYear.id))
-            }
-            setEditingFiscalYear(null)
-        },
-        onError: () => {
-            toast.error("Erreur lors de la suppression de l'exercice fiscal")
-        }
-    })
-
-    const handleCreate = (data: any) => {
-        executeCreate(data)
+    const handleCreate = async (data: any) => {
+        await createFiscalYear(data)
+        setIsCreateDialogOpen(false)
+        createForm.reset()
     }
 
-    const handleUpdate = (data: any) => {
-        executeUpdate(data)
+    const handleUpdate = async (data: any) => {
+        await updateFiscalYear(data)
+        setEditingFiscalYear(null)
+        updateForm.reset()
     }
 
-    const handleDelete = (fiscalYear: FiscalYearWithStats) => {
-        setEditingFiscalYear(fiscalYear)
-        executeDelete({ id: fiscalYear.id })
+    const handleDelete = async (fiscalYear: FiscalYearWithStats) => {
+        await deleteFiscalYear(fiscalYear.id)
+        setEditingFiscalYear(null)
     }
 
     const openEditDialog = (fiscalYear: FiscalYearWithStats) => {
@@ -219,11 +183,37 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                                     control={createForm.control}
                                     name="startDate"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="flex flex-col">
                                             <FormLabel>Date de début</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "w-full pl-3 text-left font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {field.value ? (
+                                                                format(new Date(field.value), "PPP", { locale: fr })
+                                                            ) : (
+                                                                <span>Sélectionner une date</span>
+                                                            )}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                                        locale={fr}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -232,11 +222,37 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                                     control={createForm.control}
                                     name="endDate"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="flex flex-col">
                                             <FormLabel>Date de fin</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "w-full pl-3 text-left font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {field.value ? (
+                                                                format(new Date(field.value), "PPP", { locale: fr })
+                                                            ) : (
+                                                                <span>Sélectionner une date</span>
+                                                            )}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                                        locale={fr}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -278,7 +294,7 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
 
             {/* Liste des exercices */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {localFiscalYears.map((year) => {
+                {fiscalYears.map((year) => {
                     const StatusIcon = getStatusIcon(year.isClosed)
                     return (
                         <Card key={year.id} className={`hover:shadow-md transition-shadow ${year.isClosed ? 'ring-2 ring-red-500' : ''}`}>
@@ -381,19 +397,19 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="text-center">
                             <div className="text-2xl font-bold text-green-600">
-                                {localFiscalYears.filter(y => !y.isClosed).length}
+                                {fiscalYears.filter((y: FiscalYearWithStats) => !y.isClosed).length}
                             </div>
                             <div className="text-sm text-muted-foreground">Exercices ouverts</div>
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-red-600">
-                                {localFiscalYears.filter(y => y.isClosed).length}
+                                {fiscalYears.filter((y: FiscalYearWithStats) => y.isClosed).length}
                             </div>
                             <div className="text-sm text-muted-foreground">Exercices clôturés</div>
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold">
-                                {localFiscalYears.reduce((sum, y) => sum + y.netIncome, 0).toLocaleString('fr-FR', {
+                                {fiscalYears.reduce((sum: number, y: FiscalYearWithStats) => sum + y.netIncome, 0).toLocaleString('fr-FR', {
                                     style: 'currency',
                                     currency: 'EUR'
                                 })}
@@ -429,11 +445,37 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                                 control={updateForm.control}
                                 name="startDate"
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                         <FormLabel>Date de début</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "w-full pl-3 text-left font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {field.value ? (
+                                                            format(new Date(field.value), "PPP", { locale: fr })
+                                                        ) : (
+                                                            <span>Sélectionner une date</span>
+                                                        )}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value ? new Date(field.value) : undefined}
+                                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                                    locale={fr}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -442,11 +484,37 @@ export function FiscalYearsClient({ fiscalYears }: FiscalYearsClientProps) {
                                 control={updateForm.control}
                                 name="endDate"
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                         <FormLabel>Date de fin</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "w-full pl-3 text-left font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {field.value ? (
+                                                            format(new Date(field.value), "PPP", { locale: fr })
+                                                        ) : (
+                                                            <span>Sélectionner une date</span>
+                                                        )}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value ? new Date(field.value) : undefined}
+                                                    onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                                                    locale={fr}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}

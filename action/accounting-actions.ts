@@ -513,6 +513,28 @@ export const deleteFiscalYearAction = useMutation(
                 )
             )
 
-        return { success: true }
+        return { success: true, id: input.id }
+    }
+)
+
+// Action pour récupérer les exercices fiscaux avec leurs statistiques
+export const getFiscalYearsWithStatsAction = useMutation(
+    z.object({}),
+    async (input, { userId }) => {
+        const userWithCompany = await getUserWithCompany(userId)
+        const companyId = userWithCompany.company?.id
+
+        if (!companyId) {
+            throw new ActionError("Entreprise non trouvée")
+        }
+
+        // Utiliser la fonction existante de queries/accounting.ts
+        const { getFiscalYears } = await import("@/db/queries/accounting")
+        const fiscalYears = await getFiscalYears(companyId)
+
+        return {
+            success: true,
+            data: fiscalYears
+        }
     }
 ) 
