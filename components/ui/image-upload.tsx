@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
@@ -66,26 +66,58 @@ export function ImageUpload({
     };
 
     return (
-        <div className={cn("space-y-4", className)}>
+        <div className={cn("space-y-6", className)}>
             {value ? (
-                <div className="relative">
-                    <div className="relative aspect-square w-32 h-32 rounded-lg overflow-hidden border border-border bg-muted">
-                        <img
-                            src={value}
-                            alt="Logo de l'entreprise"
-                            className="w-full h-full object-cover"
-                        />
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Image actuelle</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div
+                                {...getRootProps()}
+                                className="cursor-pointer"
+                            >
+                                <input {...getInputProps()} />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={disabled || isUploading}
+                                    className="h-8 w-8 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"
+                                >
+                                    <Upload className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={removeImage}
+                                variant="ghost"
+                                size="sm"
+                                disabled={disabled}
+                                className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-full"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                    <Button
-                        type="button"
-                        onClick={removeImage}
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                        disabled={disabled}
-                    >
-                        <X className="h-3 w-3" />
-                    </Button>
+
+                    <div className="relative mx-auto w-fit">
+                        <div className="aspect-square w-24 h-24 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm">
+                            <img
+                                src={value}
+                                alt="Image uploadée"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="text-center mt-4">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            Cliquez sur les icônes pour modifier ou supprimer
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div
