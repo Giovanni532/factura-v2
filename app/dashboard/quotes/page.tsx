@@ -74,7 +74,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
                 search: searchParamsResult.search || "",
                 status: searchParamsResult.status || "all",
                 clientId: searchParamsResult.client || "",
-                new: searchParamsResult.new === "true" ? true : false,
+                new: searchParamsResult.new === "true" ? true : false || searchParamsResult.create === "true" ? true : false,
                 id: searchParamsResult.id || "",
             }}
         />

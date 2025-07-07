@@ -66,11 +66,11 @@ export function ClientCard({ client }: ClientCardProps) {
     };
 
     const handleCreateInvoice = () => {
-        router.push(`/dashboard/invoices/create?client=${client.id}`);
+        router.push(`/dashboard/invoices?create=true&client=${client.id}`);
     };
 
     const handleCreateQuote = () => {
-        router.push(`/dashboard/quotes/create?client=${client.id}`);
+        router.push(`/dashboard/quotes?create=true&client=${client.id}`);
     };
 
     const isActive = client.totalInvoices > 0 || client.totalQuotes > 0;
