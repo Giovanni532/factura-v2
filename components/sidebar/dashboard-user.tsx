@@ -50,6 +50,7 @@ export function DashboardUser({
     const handleSignOut = () => {
         authClient.signOut()
         router.push(paths.login)
+        router.refresh()
     }
 
     return (
