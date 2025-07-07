@@ -20,6 +20,13 @@ const protectedRoutes = [
     paths.settings.company,
     paths.settings.billing,
     '/settings/', // Pour toutes les autres sous-routes des paramètres
+    paths.accounting.dashboard,
+    paths.accounting.chartOfAccounts,
+    paths.accounting.journalEntries,
+    paths.accounting.payments,
+    paths.accounting.reports,
+    paths.accounting.fiscalYears,
+    '/accounting/', // Pour toutes les sous-routes dynamiques de la comptabilité
 ];
 
 export async function middleware(request: NextRequest) {

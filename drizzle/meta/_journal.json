@@ -43,6 +43,13 @@
       "when": 1751532178862,
       "tag": "0005_extended_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1751872198228,
+      "tag": "0006_productive_moon_knight",
+      "breakpoints": true
     }
   ]
 }
