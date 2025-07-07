@@ -427,7 +427,7 @@ function CTASection({ handleAuthAction }: { handleAuthAction: (action: 'login' |
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto"
         >
-          Rejoignez des milliers d'entreprises qui font confiance à Factura
+          Rejoignez des milliers d&apos;entreprises qui font confiance à Factura
           pour gérer leur facturation et leur comptabilité.
         </motion.p>
         <motion.div

@@ -91,7 +91,7 @@ export function Footer() {
                     </p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
                         <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                            Conditions d'utilisation
+                            Conditions d&apos;utilisation
                         </a>
                         <a href="#" className="text-gray-400 hover:text-white transition-colors">
                             Politique de confidentialité
