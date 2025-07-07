@@ -363,7 +363,7 @@ export function LoginForm() {
                                 href={paths.signup}
                                 className="text-primary hover:underline font-medium transition-colors duration-200"
                             >
-                                S'inscrire
+                                S&apos;inscrire
                             </Link>
                         </motion.div>
                     </CardFooter>

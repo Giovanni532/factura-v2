@@ -42,7 +42,7 @@ export function RevenueQuoteAndInvoiceChart({ charts }: { charts: any }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Chiffre d'affaires mensuel</CardTitle>
+                <CardTitle>Chiffre d&apos;affaires mensuel</CardTitle>
                 <CardDescription>Évolution du CA sur les 6 derniers mois</CardDescription>
             </CardHeader>
             <CardContent>
@@ -80,7 +80,7 @@ export function RevenueQuoteAndInvoiceChart({ charts }: { charts: any }) {
             </CardContent>
             <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 leading-none font-medium">
-                    Chiffre d'affaires en hausse ce mois <TrendingUp className="h-4 w-4" />
+                    Chiffre d&apos;affaires en hausse ce mois <TrendingUp className="h-4 w-4" />
                 </div>
                 <div className="text-muted-foreground leading-none">
                     Affichage du CA des 6 derniers mois
@@ -94,7 +94,7 @@ export function RevenueChart({ charts }: { charts: any }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Volume d'activité</CardTitle>
+                <CardTitle>Volume d&apos;activité</CardTitle>
                 <CardDescription>Nombre de factures et devis par mois</CardDescription>
             </CardHeader>
             <CardContent>

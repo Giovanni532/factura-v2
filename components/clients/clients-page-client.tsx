@@ -146,7 +146,7 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
                                     <div className="w-full bg-muted rounded-full h-2">
                                         <div
                                             className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
-                                                    usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                                usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
                                                 }`}
                                             style={{ width: `${Math.min(100, usagePercentage)}%` }}
                                         />
@@ -157,7 +157,7 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d'Affaires</CardTitle>
+                            <CardTitle className="text-sm font-medium">Chiffre d&apos;Affaires</CardTitle>
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>

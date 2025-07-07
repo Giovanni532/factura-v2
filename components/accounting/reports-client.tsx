@@ -179,7 +179,6 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     // Charger les données initiales
     useEffect(() => {
         executeGetFiscalYears({});
-        // Ne pas charger les stats automatiquement - attendre qu'un exercice soit sélectionné
     }, []);
 
     // Mettre à jour les stats quand l'exercice change
@@ -533,7 +532,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d'affaires</CardTitle>
+                            <CardTitle className="text-sm font-medium">Chiffre d&apos;affaires</CardTitle>
                             <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -1011,7 +1010,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
 
                             {generatedReport?.type === 'cash_flow' && (
                                 <div className="print-section">
-                                    <div className="print-section-title">FLUX D'EXPLOITATION</div>
+                                    <div className="print-section-title">FLUX D&apos;EXPLOITATION</div>
                                     <table className="print-table">
                                         <thead>
                                             <tr>
@@ -1033,7 +1032,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                                 </tr>
                                             ))}
                                             <tr className="print-total">
-                                                <td><strong>Flux net d'exploitation</strong></td>
+                                                <td><strong>Flux net d&apos;exploitation</strong></td>
                                                 <td className={`number ${(generatedReport?.operating?.netOperating || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     <strong>{formatCurrency(generatedReport?.operating?.netOperating || 0)}</strong>
                                                 </td>
@@ -1213,7 +1212,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
 
                                 <div className="space-y-4">
                                     <div>
-                                        <h4 className="font-semibold mb-2">Flux d'exploitation</h4>
+                                        <h4 className="font-semibold mb-2">Flux d&apos;exploitation</h4>
                                         <div className="space-y-1">
                                             {generatedReport?.operating?.inflows?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
@@ -1228,7 +1227,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                                 </div>
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
-                                                <span>Flux net d'exploitation</span>
+                                                <span>Flux net d&apos;exploitation</span>
                                                 <span className={generatedReport?.operating?.netOperating >= 0 ? 'text-green-600' : 'text-red-600'}>
                                                     {formatCurrency(generatedReport?.operating?.netOperating || 0)}
                                                 </span>

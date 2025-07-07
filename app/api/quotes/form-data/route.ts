@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { getClientsForQuote, getNextQuoteNumber } from "@/db/queries/quote";
 import { db } from "@/lib/drizzle";
 import { user, service, companyDefaultTemplate, template, userFavoriteTemplate } from "@/db/schema";
-import { eq, and, or, isNull } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
     try {

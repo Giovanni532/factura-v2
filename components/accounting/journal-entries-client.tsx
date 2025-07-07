@@ -377,7 +377,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                         <FormItem>
                                             <FormLabel>Description</FormLabel>
                                             <FormControl>
-                                                <Textarea placeholder="Description de l'écriture" {...field} />
+                                                <Textarea placeholder="Description de l&apos;écriture" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -408,7 +408,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                 {/* Lignes d'écriture */}
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between mb-2">
-                                        <FormLabel className="text-base font-semibold">Lignes d'écriture</FormLabel>
+                                        <FormLabel className="text-base font-semibold">Lignes d&apos;écriture</FormLabel>
                                         <Button type="button" variant="outline" size="sm" onClick={addLine}>
                                             <IconPlus className="h-4 w-4 mr-2" />
                                             Ajouter une ligne
@@ -665,7 +665,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
             <Dialog open={!!editingEntry} onOpenChange={() => setEditingEntry(null)}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Modifier l'écriture comptable</DialogTitle>
+                        <DialogTitle>Modifier l&apos;écriture comptable</DialogTitle>
                     </DialogHeader>
                     <Form {...updateForm}>
                         <form onSubmit={updateForm.handleSubmit(handleUpdate)} className="space-y-4">
@@ -770,7 +770,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
             <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
                 <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                        <DialogTitle>Détails de l'écriture comptable</DialogTitle>
+                        <DialogTitle>Détails de l&apos;écriture comptable</DialogTitle>
                     </DialogHeader>
                     {viewingEntry && (
                         <div className="space-y-4">
@@ -801,7 +801,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                 <p className="text-sm text-muted-foreground">{viewingEntry.type}</p>
                             </div>
                             <div>
-                                <label className="text-sm font-medium">Lignes d'écriture</label>
+                                <label className="text-sm font-medium">Lignes d&apos;écriture</label>
                                 <div className="mt-2 border rounded-lg">
                                     <div className="grid grid-cols-4 gap-4 p-3 bg-muted/20 text-sm font-medium">
                                         <div>Compte</div>
@@ -853,11 +853,11 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
             <Dialog open={!!deleteConfirmEntry} onOpenChange={() => setDeleteConfirmEntry(null)}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Confirmer la suppression de l'écriture comptable</DialogTitle>
+                        <DialogTitle>Confirmer la suppression de l&apos;écriture comptable</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Êtes-vous sûr de vouloir supprimer l'écriture {deleteConfirmEntry?.number} ?
+                            Êtes-vous sûr de vouloir supprimer l&apos;écriture {deleteConfirmEntry?.number} ?
                         </p>
                         <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => setDeleteConfirmEntry(null)}>

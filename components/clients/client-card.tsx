@@ -174,7 +174,7 @@ export function ClientCard({ client }: ClientCardProps) {
                         <div className="text-lg font-bold text-green-600">
                             {client.totalRevenue.toLocaleString('fr-FR')} €
                         </div>
-                        <div className="text-xs text-muted-foreground">Chiffre d'affaires</div>
+                        <div className="text-xs text-muted-foreground">Chiffre d&apos;affaires</div>
                     </div>
                 )}
 

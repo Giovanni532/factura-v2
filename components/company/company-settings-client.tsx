@@ -165,7 +165,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
         <div className="space-y-6">
             {/* En-tête de la page */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Paramètres de l'entreprise</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h1>
                 <p className="text-muted-foreground">
                     Gérez les informations de votre entreprise et votre équipe
                 </p>
@@ -211,10 +211,10 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Building2 className="h-5 w-5" />
-                                Informations de l'entreprise
+                                Informations de l&apos;entreprise
                             </CardTitle>
                             <CardDescription>
-                                {isOwner ? "Gérez les informations de votre entreprise" : "Informations de l'entreprise (lecture seule)"}
+                                {isOwner ? "Gérez les informations de votre entreprise" : "Informations de l&apos;entreprise (lecture seule)"}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -226,7 +226,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                             name="name"
                                             render={({ field }) => (
                                                 <FormItem className="md:col-span-2">
-                                                    <FormLabel>Nom de l'entreprise</FormLabel>
+                                                    <FormLabel>Nom de l&apos;entreprise</FormLabel>
                                                     <FormControl>
                                                         <Input {...field} placeholder="Mon Entreprise" disabled={!isOwner} />
                                                     </FormControl>
@@ -386,7 +386,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                         Équipe
                                     </CardTitle>
                                     <CardDescription>
-                                        {initialCompany.members.length} membre{initialCompany.members.length > 1 ? 's' : ''} dans l'équipe
+                                        {initialCompany.members.length} membre{initialCompany.members.length > 1 ? 's' : ''} dans l&apos;équipe
                                         {initialCompany.subscription.maxUsers !== -1 && (
                                             <span className="ml-2">
                                                 • {initialCompany.subscription.currentUsers}/{initialCompany.subscription.maxUsers} utilisateurs
@@ -422,7 +422,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>Limite d'utilisateurs atteinte pour le plan {initialCompany.subscription.plan}</p>
+                                                        <p>Limite d&apos;utilisateurs atteinte pour le plan {initialCompany.subscription.plan}</p>
                                                         <p>Maximum: {initialCompany.subscription.maxUsers} utilisateurs</p>
                                                     </TooltipContent>
                                                 </Tooltip>
@@ -527,7 +527,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                 {initialCompany.members.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground">
                                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                        <p className="text-sm">Aucun membre dans l'équipe</p>
+                                        <p className="text-sm">Aucun membre dans l&apos;équipe</p>
                                         <p className="text-xs mt-1">Commencez par inviter votre premier membre</p>
                                     </div>
                                 ) : (
@@ -647,7 +647,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                         onClick={() => router.push(paths.settings.billing)}
                                     >
                                         <CreditCard className="h-4 w-4" />
-                                        Gérer l'abonnement
+                                        Gérer l&apos;abonnement
                                     </Button>
                                 </div>
                             )}

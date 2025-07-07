@@ -528,7 +528,7 @@ Votre équipe`);
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="email-subject">Objet de l'email</Label>
+                            <Label htmlFor="email-subject">Objet de l&apos;email</Label>
                             <Input
                                 id="email-subject"
                                 value={emailSubject}
@@ -572,7 +572,7 @@ Votre équipe`);
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="reminder-subject">Objet de l'email</Label>
+                            <Label htmlFor="reminder-subject">Objet de l&apos;email</Label>
                             <Input
                                 id="reminder-subject"
                                 value={reminderSubject}

@@ -414,7 +414,7 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                                     name="issueDate"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
-                                            <FormLabel>Date d'émission *</FormLabel>
+                                            <FormLabel>Date d&apos;émission *</FormLabel>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>

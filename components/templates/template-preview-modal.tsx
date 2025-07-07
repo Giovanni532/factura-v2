@@ -155,7 +155,7 @@ export function TemplatePreviewModal({ template, isOpen, onClose }: TemplatePrev
                         </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Ceci est un aperçu avec des données d'exemple
+                        Ceci est un aperçu avec des données d&apos;exemple
                     </p>
                 </DialogHeader>
 

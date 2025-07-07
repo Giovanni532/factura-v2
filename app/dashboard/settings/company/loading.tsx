@@ -6,7 +6,7 @@ export default function CompanySettingsLoading() {
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Paramètres de l'entreprise</h2>
+                <h2 className="text-3xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h2>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -17,7 +17,7 @@ export default function CompanySettingsLoading() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Building2 className="h-5 w-5" />
-                                Informations de l'entreprise
+                                Informations de l&apos;entreprise
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -73,7 +73,7 @@ export default function CompanySettingsLoading() {
                     {/* Logo de l'entreprise */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Logo de l'entreprise</CardTitle>
+                            <CardTitle className="text-lg">Logo de l&apos;entreprise</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center space-y-4">
                             <Skeleton className="h-24 w-24 rounded-full" />
@@ -111,7 +111,7 @@ export default function CompanySettingsLoading() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Users className="h-5 w-5" />
-                                    <CardTitle className="text-lg">Membres de l'équipe</CardTitle>
+                                    <CardTitle className="text-lg">Membres de l&apos;équipe</CardTitle>
                                 </div>
                                 <Skeleton className="h-9 w-20" />
                             </div>

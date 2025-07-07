@@ -174,7 +174,7 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                 <Alert className="border-yellow-200 bg-yellow-50">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                     <AlertDescription className="text-yellow-800">
-                        <strong>Paiement annulé.</strong> Votre abonnement n'a pas été modifié.
+                        <strong>Paiement annulé.</strong> Votre abonnement n&apos;a pas été modifié.
                     </AlertDescription>
                 </Alert>
             )}
@@ -335,7 +335,7 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                     <p>• Vous pouvez changer de plan à tout moment</p>
                     <p>• Les changements prennent effet immédiatement</p>
                     <p>• Vous pouvez annuler votre abonnement à tout moment</p>
-                    <p>• Seul le propriétaire de l'entreprise peut modifier l'abonnement</p>
+                    <p>• Seul le propriétaire de l&apos;entreprise peut modifier l&apos;abonnement</p>
                     <p>• Tous les paiements sont sécurisés par Stripe</p>
                 </CardContent>
             </Card>
@@ -357,11 +357,11 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                                 <div className="space-y-2">
                                     <h4 className="font-medium text-yellow-800">Important</h4>
                                     <p className="text-sm text-yellow-700">
-                                        Votre abonnement actuel restera actif jusqu'à la fin de votre période de facturation.
+                                        Votre abonnement actuel restera actif jusqu&apos;à la fin de votre période de facturation.
                                     </p>
                                     {getCurrentPeriodEnd() && (
                                         <p className="text-sm text-yellow-700">
-                                            <strong>Date d'expiration :</strong> {formatDate(getCurrentPeriodEnd()!)}
+                                            <strong>Date d&apos;expiration :</strong> {formatDate(getCurrentPeriodEnd()!)}
                                         </p>
                                     )}
                                     <p className="text-sm text-yellow-700">

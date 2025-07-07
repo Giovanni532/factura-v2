@@ -247,7 +247,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d'affaires</CardTitle>
+                            <CardTitle className="text-sm font-medium">Chiffre d&apos;affaires</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>

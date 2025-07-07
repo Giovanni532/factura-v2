@@ -171,7 +171,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nom de l'exercice</FormLabel>
+                                            <FormLabel>Nom de l&apos;exercice</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Exercice 2024" {...field} />
                                             </FormControl>
@@ -328,7 +328,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                     {/* Statistiques */}
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Chiffre d'affaires:</span>
+                                            <span className="text-muted-foreground">Chiffre d&apos;affaires:</span>
                                             <span className="font-medium text-green-600">
                                                 {year.totalRevenue.toLocaleString('fr-FR', {
                                                     style: 'currency',
@@ -424,7 +424,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
             <Dialog open={!!editingFiscalYear} onOpenChange={() => setEditingFiscalYear(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Modifier l'exercice fiscal</DialogTitle>
+                        <DialogTitle>Modifier l&apos;exercice fiscal</DialogTitle>
                     </DialogHeader>
                     <Form {...updateForm}>
                         <form onSubmit={updateForm.handleSubmit(handleUpdate)} className="space-y-4">
@@ -433,7 +433,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nom de l'exercice</FormLabel>
+                                        <FormLabel>Nom de l&apos;exercice</FormLabel>
                                         <FormControl>
                                             <Input {...field} />
                                         </FormControl>

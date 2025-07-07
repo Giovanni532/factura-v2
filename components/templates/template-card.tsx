@@ -319,7 +319,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                            <div className="text-gray-400 text-sm">Génération de l'aperçu...</div>
+                            <div className="text-gray-400 text-sm">Génération de l&apos;aperçu...</div>
                         </div>
                     )}
                     {/* Overlay pour éviter les interactions avec l'iframe */}

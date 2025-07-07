@@ -200,7 +200,7 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                                             className="bg-muted text-muted-foreground"
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            L'email ne peut pas être modifié pour des raisons de sécurité
+                                            L&apos;email ne peut pas être modifié pour des raisons de sécurité
                                         </p>
                                     </div>
                                 </div>

@@ -399,7 +399,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="issueDate">Date d'émission</Label>
+                                    <Label htmlFor="issueDate">Date d&apos;émission</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
@@ -425,7 +425,7 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
                                     </Popover>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="dueDate">Date d'échéance</Label>
+                                    <Label htmlFor="dueDate">Date d&apos;échéance</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button

@@ -48,7 +48,7 @@ export interface JournalEntryWithLines {
 
 export interface PaymentWithDetails {
     id: string
-    invoiceId: string
+    invoiceId: string | null
     amount: number
     paymentDate: Date
     method: 'bank_transfer' | 'check' | 'cash' | 'card' | 'other'
@@ -197,12 +197,14 @@ export async function getJournalEntries(
     }
     if (typeof filters.search === 'string' && filters.search.length > 0) {
         const search = `%${filters.search}%`
-        const orConditions = [
+        const searchCondition = or(
             sql`COALESCE(${journalEntry.number}, '') LIKE ${search}`,
             sql`COALESCE(${journalEntry.description}, '') LIKE ${search}`,
-            sql`COALESCE(${journalEntry.reference}, '') LIKE ${search}`,
-        ]
-        whereConditions.push(or(...orConditions))
+            sql`COALESCE(${journalEntry.reference}, '') LIKE ${search}`
+        )
+        if (searchCondition) {
+            whereConditions.push(searchCondition)
+        }
     }
 
     const entries = await db
@@ -311,11 +313,13 @@ export async function getPayments(
     }
     if (typeof filters.search === 'string' && filters.search.length > 0) {
         const search = `%${filters.search}%`
-        const orConditions = [
+        const searchCondition = or(
             sql`COALESCE(${payment.reference}, '') LIKE ${search}`,
-            sql`COALESCE(${payment.notes}, '') LIKE ${search}`,
-        ]
-        whereConditions.push(or(...orConditions))
+            sql`COALESCE(${payment.notes}, '') LIKE ${search}`
+        )
+        if (searchCondition) {
+            whereConditions.push(searchCondition)
+        }
     }
 
     const payments = await db

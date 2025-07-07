@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface ImageUploadProps {
     value?: string;
@@ -105,10 +106,12 @@ export function ImageUpload({
 
                     <div className="relative mx-auto w-fit">
                         <div className="aspect-square w-24 h-24 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm">
-                            <img
+                            <Image
                                 src={value}
                                 alt="Image uploadée"
                                 className="w-full h-full object-cover"
+                                width={96}
+                                height={96}
                             />
                         </div>
                     </div>
@@ -140,7 +143,7 @@ export function ImageUpload({
                         <div className="space-y-2">
                             <p className="text-sm font-medium">
                                 {isUploading ? 'Téléchargement en cours...' :
-                                    isDragActive ? 'Déposez l\'image ici' : 'Glissez une image ou cliquez pour parcourir'}
+                                    isDragActive ? 'Déposez l&apos;image ici' : 'Glissez une image ou cliquez pour parcourir'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                                 PNG, JPG, JPEG, WebP ou SVG (max. 5MB)

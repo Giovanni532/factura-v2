@@ -49,7 +49,7 @@ export default async function AccountingPage() {
             <AccountingOverview
                 stats={stats}
                 revenueHistory={revenueHistory}
-                recentActivities={recentActivities}
+                recentActivities={recentActivities as any}
             />
         </div>
     )

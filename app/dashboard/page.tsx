@@ -255,7 +255,7 @@ export default async function DashboardPage() {
                                 Bienvenue, {session.user.name} !
                             </h1>
                             <p className="text-lg text-muted-foreground">
-                                Pour commencer à utiliser l'application de facturation,
+                                Pour commencer à utiliser l&apos;application de facturation,
                                 veuillez créer votre entreprise en remplissant le formulaire ci-dessous.
                             </p>
                         </div>

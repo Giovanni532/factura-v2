@@ -349,7 +349,7 @@ export const createPaymentAction = useMutation(
             .from(invoice)
             .where(
                 and(
-                    eq(invoice.id, input.invoiceId),
+                    eq(invoice.id, input.invoiceId!),
                     eq(invoice.companyId, companyId)
                 )
             )
@@ -360,6 +360,8 @@ export const createPaymentAction = useMutation(
         }
 
         const [newPayment] = await db.insert(payment).values({
+            description: `Paiement pour la facture ${input.invoiceId}`,
+            type: "incoming",
             invoiceId: input.invoiceId,
             amount: input.amount,
             paymentDate: new Date(input.date),

@@ -59,7 +59,7 @@ export function DashboardMain({
                                             className="data-[state=open]:bg-accent rounded-sm"
                                         >
                                             <IconDots />
-                                            <span className="sr-only">Plus d'options</span>
+                                            <span className="sr-only">Plus d&apos;options</span>
                                         </SidebarMenuAction>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent

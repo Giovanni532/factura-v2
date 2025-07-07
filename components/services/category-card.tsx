@@ -169,7 +169,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                                     <span className="text-sm font-medium">Attention</span>
                                 </div>
                                 <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                                    Vous devez d'abord supprimer ou déplacer toutes les prestations de cette catégorie.
+                                    Vous devez d&apos;abord supprimer ou déplacer toutes les prestations de cette catégorie.
                                 </p>
                             </div>
                         )}
