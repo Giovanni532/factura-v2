@@ -33,6 +33,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@stripe/stripe-js": "^7.4.0",
     "@tabler/icons-react": "^3.34.0",
+    "@tanstack/react-table": "^8.21.3",
     "@types/pg": "^8.15.4",
     "better-auth": "^1.2.8",
     "better-sqlite3": "^11.10.0",

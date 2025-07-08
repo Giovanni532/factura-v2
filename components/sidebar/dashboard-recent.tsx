@@ -101,7 +101,7 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
                     <SidebarMenuItem
                         key={`${document.type}-${document.id}`}
                         onClick={() => handleDocumentClick(document)}
-                        className="cursor-pointer hover:bg-accent"
+                        className="cursor-pointer hover:bg-accent p-2 rounded-md"
                     >
                         <div className="flex items-center gap-2 w-full">
                             {document.type === 'invoice' ? (
