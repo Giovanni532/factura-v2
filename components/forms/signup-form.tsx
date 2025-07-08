@@ -298,8 +298,25 @@ export function SignupForm() {
         }
     };
 
-    const handleSocialLogin = (provider: 'google' | 'facebook') => {
-        toast.info(`Inscription ${provider} bientôt disponible`);
+    const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+        if (provider === 'google') {
+            const { data, error } = await authClient.signIn.social({
+                provider: 'google',
+                callbackURL: paths.dashboard,
+            });
+
+            if (error) {
+                toast.error(error.message || "Erreur lors de la connexion");
+            }
+
+            if (data) {
+                toast.success("Connexion réussie !");
+                router.push(paths.dashboard);
+                router.refresh();
+            } else {
+                toast.error("Erreur lors de la connexion");
+            }
+        }
     };
 
     return (
@@ -553,7 +570,7 @@ export function SignupForm() {
                                     <GoogleIcon />
                                 </Button>
                             </motion.div>
-                            <motion.div
+                            {/* <motion.div
                                 variants={socialButtonVariants}
                                 initial="idle"
                                 whileHover="hover"
@@ -569,7 +586,7 @@ export function SignupForm() {
                                 >
                                     <FacebookIcon />
                                 </Button>
-                            </motion.div>
+                            </motion.div> */}
                         </motion.div>
 
                         <motion.div

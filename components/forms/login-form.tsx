@@ -195,8 +195,25 @@ export function LoginForm() {
         }
     };
 
-    const handleSocialLogin = (provider: 'google' | 'facebook') => {
-        toast.info(`Connexion ${provider} bientôt disponible`);
+    const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+        if (provider === 'google') {
+            const { data, error } = await authClient.signIn.social({
+                provider: 'google',
+                callbackURL: callbackUrl,
+            });
+
+            if (error) {
+                toast.error(error.message || "Erreur lors de la connexion");
+            }
+
+            if (data) {
+                toast.success("Connexion réussie !");
+                router.push(callbackUrl);
+                router.refresh();
+            } else {
+                toast.error("Erreur lors de la connexion");
+            }
+        }
     };
 
     return (
@@ -335,7 +352,7 @@ export function LoginForm() {
                                     <GoogleIcon />
                                 </Button>
                             </motion.div>
-                            <motion.div
+                            {/* <motion.div
                                 variants={socialButtonVariants}
                                 initial="idle"
                                 whileHover="hover"
@@ -351,7 +368,7 @@ export function LoginForm() {
                                 >
                                     <FacebookIcon />
                                 </Button>
-                            </motion.div>
+                            </motion.div> */}
                         </motion.div>
 
                         <motion.div

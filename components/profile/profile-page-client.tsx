@@ -156,7 +156,11 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                     <h3 className="text-lg font-semibold">{initialUser.name}</h3>
                                     <Badge className={getRoleColor(initialUser.role)}>
-                                        {getRoleLabel(initialUser.role) + " de  " + initialUser.companyName}
+                                        {initialUser.companyName ?
+                                            getRoleLabel(initialUser.role) + " de  " + initialUser.companyName
+                                            :
+                                            getRoleLabel(initialUser.role)
+                                        }
                                     </Badge>
                                 </div>
                                 <div className="flex flex-col gap-1 text-sm text-muted-foreground">
