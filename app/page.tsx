@@ -64,7 +64,7 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-slate-900 dark:via-background dark:to-blue-950"
     >
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8">
@@ -74,7 +74,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6"
+              className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6"
             >
               Simplifiez votre{" "}
               <motion.span
@@ -90,7 +90,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto"
+              className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto"
             >
               La solution complète pour gérer vos factures, devis, clients et comptabilité.
               Factura vous fait gagner du temps et optimise votre gestion administrative.
@@ -122,7 +122,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-sm text-gray-500 mt-4"
+              className="text-sm text-muted-foreground/70 mt-4"
             >
               Gratuit pour toujours • Pas de carte de crédit requise
             </motion.p>
@@ -188,7 +188,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+    <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         <motion.div
           ref={ref}
@@ -197,10 +197,10 @@ function FeaturesSection() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Tout ce dont vous avez besoin
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Des fonctionnalités complètes pour gérer votre entreprise efficacement
           </p>
         </motion.div>
@@ -222,15 +222,15 @@ function FeaturesSection() {
               }}
               className="group"
             >
-              <Card className="h-full hover:shadow-xl transition-all duration-300 border-gray-200 group-hover:border-blue-200">
+              <Card className="h-full hover:shadow-xl transition-all duration-300 border-border group-hover:border-primary/50">
                 <CardHeader>
                   <feature.icon className={`h-10 w-10 ${feature.color} mb-2`} />
-                  <CardTitle className="group-hover:text-blue-600 transition-colors duration-300">
+                  <CardTitle className="group-hover:text-primary transition-colors duration-300">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     {feature.description}
                   </p>
                 </CardContent>
@@ -296,7 +296,7 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
   ];
 
   return (
-    <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/50">
       <div className="max-w-7xl mx-auto">
         <motion.div
           ref={ref}
@@ -305,10 +305,10 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Plans adaptés à vos besoins
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Commencez gratuitement et évoluez selon la croissance de votre entreprise
           </p>
         </motion.div>
@@ -331,8 +331,8 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
               className="group"
             >
               <Card className={`h-full border-2 hover:shadow-xl transition-all duration-300 relative ${plan.isPopular
-                ? 'border-blue-300 shadow-lg bg-gradient-to-b from-blue-50 to-white'
-                : 'border-gray-200 group-hover:border-blue-200'
+                ? 'border-primary/50 shadow-lg bg-gradient-to-b from-primary/10 to-background'
+                : 'border-border group-hover:border-primary/50'
                 }`}>
                 {plan.isPopular && (
                   <motion.div
@@ -341,7 +341,7 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
                     transition={{ duration: 0.4, delay: 0.5 }}
                     className="absolute -top-3 left-1/2 transform -translate-x-1/2"
                   >
-                    <Badge className="bg-blue-600 text-white shadow-lg">Recommandé</Badge>
+                    <Badge className="bg-primary text-primary-foreground shadow-lg">Recommandé</Badge>
                   </motion.div>
                 )}
                 <CardHeader className="text-center">
@@ -350,11 +350,11 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
                     initial={{ opacity: 0, y: 10 }}
                     animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
-                    className="text-4xl font-bold text-gray-900 mt-2"
+                    className="text-4xl font-bold text-foreground mt-2"
                   >
-                    {plan.price}<span className="text-lg font-normal text-gray-600">/mois</span>
+                    {plan.price}<span className="text-lg font-normal text-muted-foreground">/mois</span>
                   </motion.div>
-                  <p className="text-gray-600 mt-2">{plan.description}</p>
+                  <p className="text-muted-foreground mt-2">{plan.description}</p>
                 </CardHeader>
                 <CardContent className="space-y-4 flex-1 flex flex-col">
                   <div className="space-y-3 flex-1">
@@ -370,8 +370,8 @@ function PricingSection({ handleAuthAction }: { handleAuthAction: (action: 'logi
                         }}
                         className="flex items-center gap-2 text-sm"
                       >
-                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        <span>{feature}</span>
+                        <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                        <span className="text-foreground">{feature}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -405,7 +405,7 @@ function CTASection({ handleAuthAction }: { handleAuthAction: (action: 'login' |
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary via-blue-600 to-purple-600 dark:from-primary dark:via-blue-700 dark:to-purple-700">
       <motion.div
         ref={ref}
         initial={{ opacity: 0, y: 50 }}
@@ -425,7 +425,7 @@ function CTASection({ handleAuthAction }: { handleAuthAction: (action: 'login' |
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto"
+          className="text-xl text-blue-100 dark:text-blue-200 mb-8 max-w-2xl mx-auto"
         >
           Rejoignez des milliers d&apos;entreprises qui font confiance à Factura
           pour gérer leur facturation et leur comptabilité.
