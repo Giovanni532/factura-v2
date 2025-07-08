@@ -45,7 +45,7 @@ export function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50"
+            className="bg-background/80 backdrop-blur-sm border-b border-border sticky top-0 z-50"
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
@@ -55,13 +55,8 @@ export function Navbar() {
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                         >
-                            <motion.div
-                                whileHover={{ rotate: 360 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <FileText className="h-8 w-8 text-primary" />
-                            </motion.div>
-                            <Link href={paths.home} className="ml-2 text-xl font-bold text-gray-900">Factura</Link>
+                            <FileText className="h-8 w-8 text-primary" />
+                            <Link href={paths.home} className="ml-2 text-xl font-bold text-foreground">Factura</Link>
                         </motion.div>
                     </div>
 
@@ -69,7 +64,7 @@ export function Navbar() {
                     <div className="hidden md:flex items-center space-x-8">
                         <motion.a
                             href="#features"
-                            className="text-gray-600 hover:text-blue-600 transition-colors"
+                            className="text-muted-foreground hover:text-primary transition-colors"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                         >
@@ -77,7 +72,7 @@ export function Navbar() {
                         </motion.a>
                         <motion.a
                             href="#pricing"
-                            className="text-gray-600 hover:text-blue-600 transition-colors"
+                            className="text-muted-foreground hover:text-primary transition-colors"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                         >
@@ -85,7 +80,7 @@ export function Navbar() {
                         </motion.a>
                         <motion.a
                             href="#contact"
-                            className="text-gray-600 hover:text-blue-600 transition-colors"
+                            className="text-muted-foreground hover:text-primary transition-colors"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                         >
@@ -158,10 +153,10 @@ export function Navbar() {
                             transition={{ duration: 0.3 }}
                             className="md:hidden overflow-hidden"
                         >
-                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background border-t border-border">
                                 <motion.a
                                     href="#features"
-                                    className="block px-3 py-2 text-gray-600 hover:text-blue-600"
+                                    className="block px-3 py-2 text-muted-foreground hover:text-primary"
                                     whileHover={{ x: 10 }}
                                     transition={{ duration: 0.2 }}
                                 >
@@ -169,7 +164,7 @@ export function Navbar() {
                                 </motion.a>
                                 <motion.a
                                     href="#pricing"
-                                    className="block px-3 py-2 text-gray-600 hover:text-blue-600"
+                                    className="block px-3 py-2 text-muted-foreground hover:text-primary"
                                     whileHover={{ x: 10 }}
                                     transition={{ duration: 0.2 }}
                                 >
@@ -177,7 +172,7 @@ export function Navbar() {
                                 </motion.a>
                                 <motion.a
                                     href="#contact"
-                                    className="block px-3 py-2 text-gray-600 hover:text-blue-600"
+                                    className="block px-3 py-2 text-muted-foreground hover:text-primary"
                                     whileHover={{ x: 10 }}
                                     transition={{ duration: 0.2 }}
                                 >

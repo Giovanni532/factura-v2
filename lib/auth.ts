@@ -17,5 +17,5 @@ export const auth = betterAuth({
         updateAge: 60 * 60 * 24, // 1 jour
     },
     secret: process.env.BETTER_AUTH_SECRET!,
-    baseURL: process.env.BETTER_AUTH_URL!,
+    baseURL: process.env.BETTER_AUTH_URL,
 });

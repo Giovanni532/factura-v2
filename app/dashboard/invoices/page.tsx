@@ -51,7 +51,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
     let formData = null;
     try {
         const headersList = await headers();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/invoices/form-data`, {
+        const response = await fetch(`${process.env.BETTER_AUTH_URL}/api/invoices/form-data`, {
             headers: {
                 'Cookie': headersList.get('cookie') || '',
             },
