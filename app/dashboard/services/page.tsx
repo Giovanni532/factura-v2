@@ -20,7 +20,11 @@ export default async function ServicesPage() {
 
     // Récupérer l'utilisateur avec son entreprise
     const user = await getUserWithCompany(session.user.id);
-    const companyId = user.company?.id ?? "";
+    const companyId = user.company?.id;
+
+    if (!companyId) {
+        redirect(paths.dashboard);
+    }
 
     // Récupérer les services et catégories avec leurs statistiques
     const [services, categories] = await Promise.all([

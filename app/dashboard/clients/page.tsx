@@ -25,10 +25,16 @@ export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
 
     // Récupérer les clients avec leurs statistiques
     const user = await getUserWithCompany(session.user.id);
-    const clients = await getClientsWithStats(user.company?.id ?? "");
+    const companyId = user.company?.id;
+
+    if (!companyId) {
+        redirect(paths.dashboard);
+    }
+
+    const clients = await getClientsWithStats(companyId);
 
     // Récupérer les limites d'abonnement
-    const subscriptionLimits = await getSubscriptionLimits(user.company?.id ?? "");
+    const subscriptionLimits = await getSubscriptionLimits(companyId);
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

@@ -8,8 +8,6 @@ import { user } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { eq } from "drizzle-orm";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateTemplateButton } from "@/components/templates/create-template-button";
 import { paths } from "@/paths";
 
 export default async function TemplatesPage() {
