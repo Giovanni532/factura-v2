@@ -12,7 +12,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "auth:generate": "npx @better-auth/cli@latest generate",
-    "templates:init": "tsx scripts/seed-templates.ts"
+    "templates:init": "tsx scripts/seed-templates.ts",
+    "subscriptions:init": "tsx scripts/seed-subscriptions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
