@@ -45,6 +45,7 @@ export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
                 initialClients={clients}
                 newClient={searchParamsResult.new === "true" ? true : false}
                 subscriptionLimits={subscriptionLimits}
+                searchParams={searchParamsResult}
             />
         </div>
     );

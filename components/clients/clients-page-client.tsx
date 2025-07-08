@@ -17,14 +17,15 @@ interface ClientsPageClientProps {
     initialClients: ClientWithStats[];
     newClient: boolean;
     subscriptionLimits: SubscriptionLimits;
+    searchParams: { [key: string]: string };
 }
 
-export function ClientsPageClient({ initialClients, newClient, subscriptionLimits }: ClientsPageClientProps) {
+export function ClientsPageClient({ initialClients, newClient, subscriptionLimits, searchParams }: ClientsPageClientProps) {
     const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
     const [newClientUrl, setNewClientUrl] = useState(newClient);
-
+    const search = searchParams.search;
     // Vérifier si on peut ajouter un nouveau client
     const canAddNewClient = subscriptionLimits.maxClients === -1 ||
         clients.length < subscriptionLimits.maxClients;
@@ -43,8 +44,8 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
 
     // Filtrer les clients
     const filteredClients = clients.filter(client => {
-        const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = client.name.toLowerCase().includes(search?.toLowerCase() || searchTerm.toLowerCase()) ||
+            client.email.toLowerCase().includes(search?.toLowerCase() || searchTerm.toLowerCase());
 
         let matchesFilter = true;
         if (filter === "active") {
@@ -190,7 +191,7 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Rechercher un client..."
-                                value={searchTerm}
+                                value={searchTerm || search}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-8"
                             />

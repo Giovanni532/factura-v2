@@ -32,4 +32,17 @@ export type UserProfile = {
     updatedAt: Date;
     companyId: string | null;
     companyName: string | null;
-}; 
+};
+
+export const searchFiltersSchema = z.object({
+    query: z.string().min(1, "La recherche doit contenir au moins 1 caractère"),
+});
+
+// Type pour les résultats de recherche
+export type SearchResult = {
+    id: string;
+    type: 'invoice' | 'quote' | 'client' | 'service';
+    title: string;
+    description: string;
+    url: string;
+};

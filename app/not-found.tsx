@@ -89,8 +89,8 @@ export default function NotFound() {
                             Oups ! Page introuvable
                         </h2>
                         <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                            La page que vous cherchez n&apos;existe pas ou a été déplacée.
-                            Pas de panique, retournons à l&apos;essentiel !
+                            La page que vous cherchez n'existe pas ou a été déplacée.
+                            Pas de panique, retournons à l'essentiel !
                         </p>
                     </motion.div>
 
@@ -108,9 +108,9 @@ export default function NotFound() {
                                     <h3 className="font-semibold text-foreground">Suggestions :</h3>
                                 </div>
                                 <ul className="text-sm text-muted-foreground space-y-1 text-left">
-                                    <li>• Vérifiez l&apos;URL dans la barre d&apos;adresse</li>
+                                    <li>• Vérifiez l'URL dans la barre d'adresse</li>
                                     <li>• Utilisez le bouton retour de votre navigateur</li>
-                                    <li>• Retournez à l&apos;accueil et naviguez depuis là</li>
+                                    <li>• Retournez à l'accueil et naviguez depuis là</li>
                                     {isAuthenticated && <li>• Consultez votre tableau de bord</li>}
                                 </ul>
                             </CardContent>
