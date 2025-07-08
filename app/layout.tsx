@@ -47,9 +47,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {user ? <Navbar /> : null}
+          <Navbar />
           {children}
-          {user ? <Footer /> : null}
+          <Footer />
           <Toaster />
         </ThemeProvider>
       </body>

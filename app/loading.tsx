@@ -5,7 +5,7 @@ import { FileText } from "lucide-react";
 
 export default function Loading() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-slate-900 dark:via-background dark:to-blue-950">
             <div className="flex flex-col items-center space-y-8">
                 {/* Logo animé */}
                 <motion.div
@@ -25,12 +25,12 @@ export default function Loading() {
                         }}
                         className="flex items-center justify-center mb-4"
                     >
-                        <FileText className="h-16 w-16 text-blue-600" />
+                        <FileText className="h-16 w-16 text-primary" />
                     </motion.div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-foreground">
                         Factura
                     </h1>
-                    <p className="text-gray-600 mt-2">
+                    <p className="text-muted-foreground mt-2">
                         Simplifiez votre facturation
                     </p>
                 </motion.div>
@@ -40,7 +40,7 @@ export default function Loading() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
-                    className="relative w-64 h-2 bg-gray-200 rounded-full overflow-hidden"
+                    className="relative w-64 h-2 bg-muted rounded-full overflow-hidden"
                 >
                     <motion.div
                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"
@@ -64,7 +64,7 @@ export default function Loading() {
                     className="text-center"
                 >
                     <motion.p
-                        className="text-gray-600 font-medium"
+                        className="text-muted-foreground font-medium"
                         animate={{ opacity: [0.5, 1, 0.5] }}
                         transition={{
                             duration: 1.5,
@@ -81,7 +81,7 @@ export default function Loading() {
                     {[0, 1, 2].map((index) => (
                         <motion.div
                             key={index}
-                            className="w-2 h-2 bg-blue-600 rounded-full"
+                            className="w-2 h-2 bg-primary rounded-full"
                             animate={{
                                 scale: [1, 1.2, 1],
                                 opacity: [0.5, 1, 0.5]

@@ -9,8 +9,6 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 import {
   FileText,
   Users,
