@@ -8,11 +8,13 @@ import { authClient } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { paths } from "@/paths";
+
 export function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const router = useRouter();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
     useEffect(() => {
         const checkAuth = async () => {
             try {

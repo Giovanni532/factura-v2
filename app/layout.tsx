@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,11 +23,20 @@ export const metadata: Metadata = {
   description: "Gestion de factures et devis",
 };
 
-export default function RootLayout({
+
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  const user = session?.user
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -36,9 +47,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
+          {user ? <Navbar /> : null}
           {children}
-          <Footer />
+          {user ? <Footer /> : null}
           <Toaster />
         </ThemeProvider>
       </body>
