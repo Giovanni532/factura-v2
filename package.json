@@ -13,7 +13,7 @@
     "db:studio": "drizzle-kit studio",
     "auth:generate": "npx @better-auth/cli@latest generate",
     "templates:init": "tsx scripts/seed-templates.ts",
-    "subscriptions:init": "tsx scripts/seed-subscriptions.ts"
+    "subscriptions:init": "tsx scripts/seed-subscription-plans.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
