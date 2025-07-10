@@ -135,4 +135,75 @@ export async function getCompanyWithMembers(companyId: string) {
         subscription: subscriptionInfo,
         members,
     };
+}
+
+export async function getTeamMembers(companyId: string) {
+    // Récupérer tous les membres de l'entreprise
+    const members = await db
+        .select({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: user.role,
+            createdAt: user.createdAt,
+        })
+        .from(user)
+        .where(eq(user.companyId, companyId))
+        .orderBy(user.createdAt);
+
+    // Récupérer les informations d'abonnement
+    const subscriptionData = await db
+        .select({
+            plan: billingPlan.name,
+            maxUsers: billingPlan.maxUsers,
+            status: subscription.status,
+            features: billingPlan.features,
+        })
+        .from(subscription)
+        .leftJoin(billingPlan, eq(subscription.billingPlanId, billingPlan.id))
+        .where(eq(subscription.companyId, companyId))
+        .limit(1);
+
+    // Si pas d'abonnement, utiliser les limites du plan gratuit
+    let subscriptionInfo: {
+        plan: string;
+        maxUsers: number;
+        currentUsers: number;
+        status: "active" | "cancelled" | "past_due" | "unpaid";
+        features: string[];
+    } = {
+        plan: "Gratuit",
+        maxUsers: 1,
+        currentUsers: members.length,
+        status: "active",
+        features: [],
+    };
+
+    if (subscriptionData.length > 0) {
+        subscriptionInfo = {
+            plan: subscriptionData[0].plan || "Gratuit",
+            maxUsers: subscriptionData[0].maxUsers || 1,
+            currentUsers: members.length,
+            status: subscriptionData[0].status || "active",
+            features: Array.isArray(subscriptionData[0].features) ? subscriptionData[0].features : [],
+        };
+    } else {
+        // Récupérer le plan gratuit par défaut
+        const freePlan = await db
+            .select({ maxUsers: billingPlan.maxUsers, features: billingPlan.features })
+            .from(billingPlan)
+            .where(eq(billingPlan.id, 'free-plan'))
+            .limit(1);
+
+        if (freePlan.length > 0) {
+            subscriptionInfo.maxUsers = freePlan[0].maxUsers || 1;
+            subscriptionInfo.features = Array.isArray(freePlan[0].features) ? freePlan[0].features : [];
+        }
+    }
+
+    return {
+        members,
+        subscription: subscriptionInfo,
+    };
 } 

@@ -105,6 +105,14 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
         },
     });
 
+    // Formulaire pour changer le rôle
+    const roleForm = useForm({
+        resolver: zodResolver(inviteUserSchema.pick({ role: true })),
+        defaultValues: {
+            role: "user" as const,
+        },
+    });
+
     // Actions
     const { execute: inviteUser, isPending: isInvitingUser } = useAction(inviteUserAction, {
         onSuccess: (data) => {
@@ -153,6 +161,12 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
                 role: data.role
             });
         }
+    };
+
+    const handleChangeRole = (member: TeamMember) => {
+        setSelectedMember(member);
+        roleForm.reset({ role: member.role === 'owner' ? 'admin' : member.role });
+        setShowRoleDialog(true);
     };
 
     const getRoleLabel = (role: string) => {
@@ -205,11 +219,6 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
     const handleDeleteMember = (member: TeamMember) => {
         setSelectedMember(member);
         setShowDeleteDialog(true);
-    };
-
-    const handleChangeRole = (member: TeamMember) => {
-        setSelectedMember(member);
-        setShowRoleDialog(true);
     };
 
     const handleConfirmDelete = () => {
@@ -488,15 +497,15 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
                             Sélectionnez le nouveau rôle pour ce membre de l&apos;équipe.
                         </DialogDescription>
                     </DialogHeader>
-                    <Form {...inviteForm}>
-                        <form onSubmit={inviteForm.handleSubmit(onRoleSubmit)} className="space-y-4">
+                    <Form {...roleForm}>
+                        <form onSubmit={roleForm.handleSubmit(onRoleSubmit)} className="space-y-4">
                             <FormField
-                                control={inviteForm.control}
+                                control={roleForm.control}
                                 name="role"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Nouveau rôle</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={selectedMember?.role === 'owner' ? 'admin' : selectedMember?.role}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Sélectionner un rôle" />
