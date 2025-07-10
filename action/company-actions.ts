@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 import { ActionError } from "@/lib/safe-action";
 import { sendInvitationEmail } from "@/lib/email";
+import { z } from "zod";
 
 export const createCompanyAction = useMutation(
     createCompanySchema,
@@ -249,6 +250,126 @@ export const inviteUserAction = useMutation(
                 throw error;
             }
             throw new ActionError("Erreur lors de l'invitation de l'utilisateur");
+        }
+    }
+);
+
+// Action pour supprimer un utilisateur de l'équipe
+export const removeUserAction = useMutation(
+    z.object({
+        userId: z.string().min(1, "L'ID de l'utilisateur est requis"),
+    }),
+    async (input, { userId: currentUserId }) => {
+        try {
+            // Récupérer l'utilisateur actuel et vérifier qu'il est owner
+            const currentUser = await db.select().from(user).where(eq(user.id, currentUserId)).limit(1);
+
+            if (!currentUser[0]?.companyId) {
+                throw new ActionError("Aucune entreprise associée à votre compte");
+            }
+
+            if (currentUser[0].role !== 'owner') {
+                throw new ActionError("Seul le propriétaire peut supprimer des membres");
+            }
+
+            // Vérifier que l'utilisateur à supprimer existe et appartient à la même entreprise
+            const userToRemove = await db.select().from(user).where(eq(user.id, input.userId)).limit(1);
+
+            if (!userToRemove[0] || userToRemove[0].companyId !== currentUser[0].companyId) {
+                throw new ActionError("Utilisateur non trouvé");
+            }
+
+            // Empêcher de supprimer le propriétaire
+            if (userToRemove[0].role === 'owner') {
+                throw new ActionError("Impossible de supprimer le propriétaire de l'entreprise");
+            }
+
+            // Empêcher de se supprimer soi-même
+            if (userToRemove[0].id === currentUserId) {
+                throw new ActionError("Impossible de vous supprimer vous-même");
+            }
+
+            // Supprimer l'utilisateur
+            await db.delete(user).where(eq(user.id, input.userId));
+
+            // Revalider les pages nécessaires
+            revalidatePath(paths.dashboard);
+            revalidatePath(paths.settings.teams);
+
+            return {
+                success: true,
+                message: `Utilisateur ${userToRemove[0].name} supprimé avec succès`
+            };
+        } catch (error) {
+            console.error("Erreur lors de la suppression de l'utilisateur:", error);
+            if (error instanceof ActionError) {
+                throw error;
+            }
+            throw new ActionError("Erreur lors de la suppression de l'utilisateur");
+        }
+    }
+);
+
+// Action pour changer le rôle d'un utilisateur
+export const changeUserRoleAction = useMutation(
+    z.object({
+        userId: z.string().min(1, "L'ID de l'utilisateur est requis"),
+        role: z.enum(['admin', 'user']),
+    }),
+    async (input, { userId: currentUserId }) => {
+        try {
+            // Récupérer l'utilisateur actuel et vérifier qu'il est owner
+            const currentUser = await db.select().from(user).where(eq(user.id, currentUserId)).limit(1);
+
+            if (!currentUser[0]?.companyId) {
+                throw new ActionError("Aucune entreprise associée à votre compte");
+            }
+
+            if (currentUser[0].role !== 'owner') {
+                throw new ActionError("Seul le propriétaire peut changer les rôles");
+            }
+
+            // Vérifier que l'utilisateur à modifier existe et appartient à la même entreprise
+            const userToModify = await db.select().from(user).where(eq(user.id, input.userId)).limit(1);
+
+            if (!userToModify[0] || userToModify[0].companyId !== currentUser[0].companyId) {
+                throw new ActionError("Utilisateur non trouvé");
+            }
+
+            // Empêcher de modifier le rôle du propriétaire
+            if (userToModify[0].role === 'owner') {
+                throw new ActionError("Impossible de modifier le rôle du propriétaire");
+            }
+
+            // Empêcher de se modifier soi-même
+            if (userToModify[0].id === currentUserId) {
+                throw new ActionError("Impossible de modifier votre propre rôle");
+            }
+
+            // Mettre à jour le rôle
+            const updatedUser = await db.update(user)
+                .set({
+                    role: input.role,
+                    updatedAt: new Date()
+                })
+                .where(eq(user.id, input.userId))
+                .returning();
+
+            // Revalider les pages nécessaires
+            revalidatePath(paths.dashboard);
+            revalidatePath(paths.settings.teams);
+
+            return {
+                success: true,
+                user: updatedUser[0],
+                message: `Rôle de ${userToModify[0].name} changé en ${input.role === 'admin' ? 'Administrateur' : 'Utilisateur'}`
+            };
+        } catch (error) {
+            console.error("Erreur lors du changement de rôle:", error);
+            if (error instanceof ActionError) {
+                throw error;
+            }
+            throw new ActionError("Erreur lors du changement de rôle");
         }
     }
 ); 
