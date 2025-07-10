@@ -58,5 +58,6 @@ export const paths = {
         profile: "/dashboard/settings/profile",
         company: "/dashboard/settings/company",
         billing: "/dashboard/settings/billing",
+        teams: "/dashboard/settings/teams",
     },
 }

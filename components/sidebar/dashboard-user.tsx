@@ -7,6 +7,7 @@ import {
     IconNotification,
     IconUserCircle,
     IconBuilding,
+    IconUsers,
 } from "@tabler/icons-react"
 
 import {
@@ -42,6 +43,7 @@ export function DashboardUser({
         name: string
         email: string
         avatar: string
+        role: string
     }
 }) {
     const { isMobile } = useSidebar()
@@ -104,17 +106,27 @@ export function DashboardUser({
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href={paths.settings.company} className="cursor-pointer flex items-center">
-                                    <IconBuilding className="mr-2" />
-                                    Mon entreprise
+                                <Link href={paths.settings.teams} className="cursor-pointer flex items-center">
+                                    <IconUsers className="mr-2" />
+                                    Equipes
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href={paths.settings.billing} className="cursor-pointer flex items-center">
-                                    <IconCreditCard className="mr-2" />
-                                    Facturation
-                                </Link>
-                            </DropdownMenuItem>
+                            {currentUser.role === "owner" && (
+                                <DropdownMenuItem asChild>
+                                    <Link href={paths.settings.company} className="cursor-pointer flex items-center">
+                                        <IconBuilding className="mr-2" />
+                                        Mon entreprise
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
+                            {currentUser.role === "owner" && (
+                                <DropdownMenuItem asChild>
+                                    <Link href={paths.settings.billing} className="cursor-pointer flex items-center">
+                                        <IconCreditCard className="mr-2" />
+                                        Facturation
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild className="cursor-pointer">

@@ -127,6 +127,7 @@ interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
         name: string
         email: string
         avatar: string
+        role: string
     }
     recentDocuments?: RecentDocument[]
 }

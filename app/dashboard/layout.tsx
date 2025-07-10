@@ -26,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     })
 
     const user = session?.user
+    let role = "user"
 
     // Récupérer les documents récents côté serveur
     let recentDocuments: RecentDocument[] = []
@@ -33,7 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         try {
             const userWithCompany = await getUserWithCompany(user.id)
             const companyId = userWithCompany.company?.id
-
+            role = userWithCompany.user.role
             if (companyId) {
                 recentDocuments = await getRecentDocuments(companyId)
             }
@@ -56,7 +57,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 currentUser={{
                     name: user?.name || "User",
                     email: user?.email || "",
-                    avatar: user?.image || "/avatars/default.jpg"
+                    avatar: user?.image || "/avatars/default.jpg",
+                    role: role || "user"
                 }}
                 recentDocuments={recentDocuments}
             />
