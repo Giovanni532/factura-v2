@@ -21,7 +21,7 @@ interface BillingSettingsClientProps {
 }
 
 export function BillingSettingsClient({ plans, currentSubscription, userRole }: BillingSettingsClientProps) {
-    const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+    const [loadingPlanId, setLoadingPlanId] = useState<string | null>();
     const [showFreePlanModal, setShowFreePlanModal] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -126,9 +126,10 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
         const dbDate = currentSubscription.subscription?.currentPeriodEnd;
         if (dbDate) {
             const adjustedDate = new Date(dbDate);
-            adjustedDate.setMonth(adjustedDate.getMonth() + 1);
+            adjustedDate.setMonth(adjustedDate.getMonth());
             return adjustedDate;
         }
+
         return dbDate;
     };
 

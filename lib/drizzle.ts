@@ -1,6 +1,10 @@
 import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 import * as schema from '@/db/schema';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+config({ path: resolve(process.cwd(), '.env') });
 
 // Configuration Drizzle avec Turso
 const client = createClient({
