@@ -56,6 +56,13 @@ export const updateInvoiceStatusSchema = z.object({
     status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
 });
 
+// Schéma pour envoyer un rappel de facture
+export const remindInvoiceSchema = z.object({
+    invoiceId: z.string().min(1, "ID de la facture requis"),
+    subject: z.string().min(1, "Objet requis"),
+    message: z.string().min(1, "Message requis"),
+});
+
 // Type pour les factures avec informations complètes
 export type InvoiceWithDetails = {
     id: string;

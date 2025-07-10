@@ -8,6 +8,7 @@ import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 import { ActionError } from "@/lib/safe-action";
+import { sendInvitationEmail } from "@/lib/email";
 
 export const createCompanyAction = useMutation(
     createCompanySchema,
@@ -200,7 +201,10 @@ export const inviteUserAction = useMutation(
                 throw new ActionError(`Limite d'utilisateurs atteinte pour le plan ${planName} (${maxUsers} maximum)`);
             }
 
-            // Créer le nouvel utilisateur (mot de passe temporaire - dans un vrai cas, on enverrait un email d'invitation)
+            // Récupérer les informations de la compagnie
+            const companyData = await db.select().from(company).where(eq(company.id, existingUser[0].companyId)).limit(1);
+
+            // Créer le nouvel utilisateur
             const newUser = await db.insert(user).values({
                 id: crypto.randomUUID(),
                 name: input.name,
@@ -212,13 +216,32 @@ export const inviteUserAction = useMutation(
                 updatedAt: new Date(),
             }).returning();
 
+            // Générer un lien d'invitation (dans un vrai cas, ce serait un token sécurisé)
+            const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/invitation?token=${newUser[0].id}&email=${encodeURIComponent(input.email)}`;
+
+            // Envoyer l'email d'invitation
+            const emailResult = await sendInvitationEmail({
+                to: input.email,
+                companyName: companyData[0].name,
+                inviterName: existingUser[0].name,
+                inviteeName: input.name,
+                inviteeEmail: input.email,
+                role: input.role,
+                invitationLink,
+            });
+
+            if (!emailResult.success) {
+                console.error('Erreur lors de l\'envoi de l\'email d\'invitation:', emailResult.error);
+                // On continue même si l'email échoue, mais on le note
+            }
+
             // Revalider les pages nécessaires
             revalidatePath(paths.dashboard);
 
             return {
                 success: true,
                 user: newUser[0],
-                message: `Utilisateur ${input.name} invité avec succès`
+                message: `Utilisateur ${input.name} invité avec succès${emailResult.success ? '' : ' (email non envoyé)'}`
             };
         } catch (error) {
             console.error("Erreur lors de l'invitation de l'utilisateur:", error);

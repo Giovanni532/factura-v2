@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send, Bell } from "lucide-react";
 import { QuoteWithDetails } from "@/validation/quote-schema";
-import { deleteQuoteAction, updateQuoteStatusAction, downloadQuoteAction, sendQuoteAction } from "@/action/quote-actions";
+import { deleteQuoteAction, updateQuoteStatusAction, downloadQuoteAction, sendQuoteAction, remindQuoteAction } from "@/action/quote-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useQuotesContext } from "../../hooks/quotes-context";
@@ -202,11 +202,10 @@ Votre équipe`);
         }
     });
 
-    // TODO: Créer une action spécifique pour les rappels de devis (remindQuoteAction)
-    const { execute: executeReminder, isPending: isReminding } = useAction(sendQuoteAction, {
+    const { execute: executeReminder, isPending: isReminding } = useAction(remindQuoteAction, {
         onSuccess: (result) => {
             if (result?.data) {
-                toast.success("Rappel envoyé avec succès");
+                toast.success(result.data.message);
                 setShowReminderDialog(false);
             }
         },

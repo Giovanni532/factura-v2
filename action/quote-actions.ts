@@ -1,7 +1,7 @@
 "use server"
 
 import { useMutation } from "@/lib/safe-action";
-import { createQuoteSchema, updateQuoteSchema, deleteQuoteSchema, updateQuoteStatusSchema, sendQuoteSchema } from "@/validation/quote-schema";
+import { createQuoteSchema, updateQuoteSchema, deleteQuoteSchema, updateQuoteStatusSchema, sendQuoteSchema, remindQuoteSchema } from "@/validation/quote-schema";
 import { db } from "@/lib/drizzle";
 import { quote, quoteItem, user, company, client, template } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 import { canAddQuote } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
+import { sendQuoteEmail } from "@/lib/email";
 
 // Action pour créer un nouveau devis
 export const createQuoteAction = useMutation(
@@ -507,14 +508,29 @@ export const sendQuoteAction = useMutation(
             throw new Error("Client non trouvé");
         }
 
-        // TODO: Implémenter l'envoi d'email réel
-        // Pour l'instant, on simule l'envoi
-        console.log('Envoi du devis par email:', {
+        // Récupérer les données de l'entreprise
+        const companyData = await db.select().from(company).where(eq(company.id, userData[0].companyId)).limit(1);
+        if (!companyData.length) {
+            throw new Error("Entreprise non trouvée");
+        }
+
+        // Envoi réel de l'email de devis
+        const emailResult = await sendQuoteEmail({
             to: clientData[0].email,
+            clientName: clientData[0].name,
+            companyName: companyData[0].name,
+            quoteNumber: quoteData[0].number,
+            quoteAmount: quoteData[0].total.toFixed(2),
+            quoteDate: quoteData[0].issueDate.toLocaleDateString('fr-FR'),
+            validUntil: quoteData[0].validUntil.toLocaleDateString('fr-FR'),
             subject: input.subject,
             message: input.message,
-            quoteId: input.quoteId
+            quoteLink: `${process.env.NEXT_PUBLIC_APP_URL}/quotes/${quoteData[0].id}`,
+            // pdfUrl: 'URL_PDF_SI_DISPONIBLE',
         });
+        if (!emailResult.success) {
+            console.error('Erreur lors de l\'envoi de l\'email de devis:', emailResult.error);
+        }
 
         // Mettre à jour le statut du devis
         const [updatedQuote] = await db.update(quote)
@@ -779,6 +795,63 @@ export const getQuotePreviewAction = useMutation(
         return {
             success: true,
             html: html
+        };
+    }
+);
+
+// Action pour envoyer un rappel de devis
+export const remindQuoteAction = useMutation(
+    remindQuoteSchema,
+    async (input, { userId }) => {
+        // Vérifier que l'utilisateur appartient à une entreprise
+        const userData = await db.select().from(user).where(eq(user.id, userId)).limit(1);
+
+        if (!userData.length || !userData[0].companyId) {
+            throw new Error("Utilisateur non associé à une entreprise");
+        }
+
+        // Récupérer le devis avec tous les détails
+        const quoteData = await getQuoteById(input.quoteId, userData[0].companyId);
+
+        if (!quoteData) {
+            throw new Error("Devis non trouvé");
+        }
+
+        // Vérifier que le devis est en statut "sent"
+        if (quoteData.status !== 'sent') {
+            throw new Error("Seuls les devis envoyés peuvent faire l'objet d'un rappel");
+        }
+
+        // Récupérer les données de l'entreprise
+        const companyData = await db.select().from(company).where(eq(company.id, userData[0].companyId)).limit(1);
+
+        if (!companyData.length) {
+            throw new Error("Entreprise non trouvée");
+        }
+
+        // Envoi du rappel de devis
+        const emailResult = await sendQuoteEmail({
+            to: quoteData.client.email,
+            clientName: quoteData.client.name,
+            companyName: companyData[0].name,
+            quoteNumber: quoteData.quoteNumber,
+            quoteAmount: quoteData.total.toFixed(2),
+            quoteDate: quoteData.issueDate.toLocaleDateString('fr-FR'),
+            validUntil: quoteData.validUntil.toLocaleDateString('fr-FR'),
+            subject: input.subject,
+            message: input.message,
+            quoteLink: `${process.env.NEXT_PUBLIC_APP_URL}/quotes/${quoteData.id}`,
+        });
+
+        if (!emailResult.success) {
+            console.error('Erreur lors de l\'envoi du rappel de devis:', emailResult.error);
+            throw new Error('Erreur lors de l\'envoi du rappel');
+        }
+
+        return {
+            success: true,
+            message: `Rappel de devis envoyé avec succès à ${quoteData.client.email}`,
+            email: quoteData.client.email
         };
     }
 ); 

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Eye, Edit, Trash2, Download, Send, Bell } from "lucide-react";
 import { InvoiceWithDetails } from "@/validation/invoice-schema";
-import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction } from "@/action/invoice-actions";
+import { deleteInvoiceAction, updateInvoiceStatusAction, downloadInvoiceAction, sendInvoiceAction, remindInvoiceAction } from "@/action/invoice-actions";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useInvoicesContext } from "../../hooks/invoices-context";
@@ -204,11 +204,10 @@ Votre équipe`);
         }
     });
 
-    // TODO: Créer une action spécifique pour les rappels (remindInvoiceAction)
-    const { execute: executeReminder, isPending: isReminding } = useAction(sendInvoiceAction, {
+    const { execute: executeReminder, isPending: isReminding } = useAction(remindInvoiceAction, {
         onSuccess: (result) => {
             if (result?.data) {
-                toast.success("Rappel envoyé avec succès");
+                toast.success(result.data.message);
                 setShowReminderDialog(false);
             }
         },

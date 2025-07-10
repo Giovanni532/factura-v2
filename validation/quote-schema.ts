@@ -61,6 +61,13 @@ export const sendQuoteSchema = z.object({
     message: z.string().min(1, "Message requis"),
 });
 
+// Schéma pour envoyer un rappel de devis
+export const remindQuoteSchema = z.object({
+    quoteId: z.string().min(1, "ID du devis requis"),
+    subject: z.string().min(1, "Objet requis"),
+    message: z.string().min(1, "Message requis"),
+});
+
 // Types TypeScript
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
