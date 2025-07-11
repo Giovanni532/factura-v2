@@ -18,11 +18,19 @@ export default function ClientsLoading() {
                         </div>
                         <Skeleton className="h-8 w-16 mb-2" />
                         <Skeleton className="h-3 w-20" />
+                        {/* Barre de progression pour le premier card */}
+                        {index === 0 && (
+                            <div className="mt-2">
+                                <div className="w-full bg-muted rounded-full h-2">
+                                    <Skeleton className="h-2 w-3/4 rounded-full" />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
 
-            {/* Barre d'outils */}
+            {/* Barre d'outils de la datagrid */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div className="flex flex-1 items-center space-x-2 max-w-sm">
                     <div className="relative flex-1">
@@ -36,73 +44,57 @@ export default function ClientsLoading() {
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-8 w-20" />
                     </div>
+                    <Skeleton className="h-8 w-20" />
                     <Skeleton className="h-10 w-40" />
                 </div>
             </div>
 
-            {/* Liste des clients */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="border rounded-lg p-6">
-                        {/* Header de la carte */}
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Skeleton className="h-5 w-32" />
-                                    <Skeleton className="h-5 w-16 rounded-full" />
-                                </div>
-                                <Skeleton className="h-4 w-40" />
-                            </div>
+            {/* Table de la datagrid */}
+            <div className="bg-background overflow-hidden rounded-md border">
+                <div className="border-b">
+                    <div className="flex h-11 items-center px-4">
+                        <Skeleton className="h-4 w-16 mr-4" />
+                        <Skeleton className="h-4 w-20 mr-4" />
+                        <Skeleton className="h-4 w-24 mr-4" />
+                        <Skeleton className="h-4 w-16 mr-4" />
+                        <Skeleton className="h-4 w-20 mr-4" />
+                        <Skeleton className="h-4 w-16 mr-4" />
+                        <Skeleton className="h-4 w-24 mr-4" />
+                        <Skeleton className="h-4 w-16" />
+                    </div>
+                </div>
+
+                {/* Lignes de la table */}
+                <div className="divide-y">
+                    {Array.from({ length: 10 }).map((_, index) => (
+                        <div key={index} className="flex h-16 items-center px-4">
+                            <Skeleton className="h-4 w-32 mr-4" />
+                            <Skeleton className="h-4 w-40 mr-4" />
+                            <Skeleton className="h-4 w-28 mr-4" />
+                            <Skeleton className="h-5 w-16 rounded-full mr-4" />
+                            <Skeleton className="h-4 w-8 mr-4" />
+                            <Skeleton className="h-4 w-8 mr-4" />
+                            <Skeleton className="h-4 w-20 mr-4" />
                             <Skeleton className="h-8 w-8" />
                         </div>
+                    ))}
+                </div>
+            </div>
 
-                        {/* Informations de contact */}
-                        <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-3 w-3" />
-                                <Skeleton className="h-3 w-24" />
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <Skeleton className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                <div className="space-y-1">
-                                    <Skeleton className="h-3 w-32" />
-                                    <Skeleton className="h-3 w-20" />
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-3 w-3" />
-                                <Skeleton className="h-3 w-28" />
-                            </div>
-                        </div>
+            {/* Pagination */}
+            <div className="flex items-center justify-between gap-3 max-sm:flex-col">
+                <Skeleton className="h-4 w-32" />
 
-                        {/* Statistiques */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                                <Skeleton className="h-5 w-8 mx-auto mb-1" />
-                                <Skeleton className="h-3 w-16 mx-auto" />
-                            </div>
-                            <div className="text-center p-3 bg-muted/50 rounded-lg">
-                                <Skeleton className="h-5 w-8 mx-auto mb-1" />
-                                <Skeleton className="h-3 w-12 mx-auto" />
-                            </div>
-                        </div>
+                <div className="flex items-center gap-1">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                </div>
 
-                        {/* Chiffre d'affaires */}
-                        <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg mb-4">
-                            <Skeleton className="h-5 w-20 mx-auto mb-1" />
-                            <Skeleton className="h-3 w-24 mx-auto" />
-                        </div>
-
-                        {/* Actions principales */}
-                        <div className="flex gap-2 mb-3">
-                            <Skeleton className="h-8 flex-1" />
-                            <Skeleton className="h-8 w-16" />
-                        </div>
-
-                        {/* Date de création */}
-                        <Skeleton className="h-3 w-32" />
-                    </div>
-                ))}
+                <Skeleton className="h-10 w-32" />
             </div>
         </div>
     );
