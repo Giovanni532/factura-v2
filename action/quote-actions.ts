@@ -11,7 +11,7 @@ import { z } from "zod";
 import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
-import { canAddQuote } from "@/db/queries/subscription";
+import { canAddQuote, canUserPerformAction } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
 import { sendQuoteEmail } from "@/lib/email";
 
@@ -85,6 +85,12 @@ export const updateQuoteAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise");
         }
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Préparer les données de mise à jour
         const updateData: any = {
             updatedAt: new Date(),
@@ -147,6 +153,12 @@ export const deleteQuoteAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise");
         }
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier que le devis appartient à l'entreprise
         const quoteData = await db.select().from(quote).where(eq(quote.id, input.id)).limit(1);
 
@@ -177,6 +189,12 @@ export const updateQuoteStatusAction = useMutation(
 
         if (!userData.length || !userData[0].companyId) {
             throw new Error("Utilisateur non associé à une entreprise");
+        }
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
         }
 
         // Vérifier que le devis appartient à l'entreprise

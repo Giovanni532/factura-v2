@@ -14,6 +14,7 @@ import {
 } from "@/validation/service-schema";
 import { ActionError } from "@/lib/safe-action";
 import { checkServiceNameExists, checkCategoryNameExists } from "@/db/queries/service";
+import { canUserPerformAction } from "@/db/queries/subscription";
 
 // ===== ACTIONS POUR LES SERVICES =====
 
@@ -32,6 +33,12 @@ export const createServiceAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier si le nom existe déjà
         const nameExists = await checkServiceNameExists(input.name, companyId);
@@ -76,6 +83,12 @@ export const updateServiceAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que le service existe et appartient à l'entreprise
         const serviceExists = await db.select()
@@ -131,6 +144,12 @@ export const deleteServiceAction = useMutation(
 
         const companyId = currentUser[0].companyId;
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier que le service existe et appartient à l'entreprise
         const serviceExists = await db.select()
             .from(service)
@@ -173,6 +192,12 @@ export const createServiceCategoryAction = useMutation(
 
         const companyId = currentUser[0].companyId;
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier si le nom existe déjà
         const nameExists = await checkCategoryNameExists(input.name, companyId);
         if (nameExists) {
@@ -212,6 +237,12 @@ export const updateServiceCategoryAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que la catégorie existe et appartient à l'entreprise
         const categoryExists = await db.select()
@@ -266,6 +297,12 @@ export const deleteServiceCategoryAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que la catégorie existe et appartient à l'entreprise
         const categoryExists = await db.select()

@@ -184,4 +184,55 @@ export async function canAddUser(companyId: string): Promise<{ canAdd: boolean; 
     }
 
     return { canAdd: true };
+}
+
+/**
+ * Vérifie si une entreprise a un abonnement actif et si l'utilisateur peut effectuer des actions
+ * selon son rôle (owner peut toujours agir, autres utilisateurs seulement si abonnement actif)
+ */
+export async function canUserPerformAction(companyId: string, userRole: string): Promise<{ canPerform: boolean; reason?: string }> {
+    // L'owner peut toujours effectuer des actions
+    if (userRole === 'owner') {
+        return { canPerform: true };
+    }
+
+    // Vérifier si l'entreprise a un abonnement actif
+    const subscriptionData = await db
+        .select({
+            status: subscription.status,
+            currentPeriodEnd: subscription.currentPeriodEnd,
+            planName: billingPlan.name,
+        })
+        .from(subscription)
+        .leftJoin(billingPlan, eq(subscription.billingPlanId, billingPlan.id))
+        .where(eq(subscription.companyId, companyId))
+        .limit(1);
+
+    // Si pas d'abonnement ou abonnement expiré
+    if (subscriptionData.length === 0) {
+        return {
+            canPerform: false,
+            reason: "Aucun abonnement actif. Seul le propriétaire peut effectuer des actions."
+        };
+    }
+
+    const sub = subscriptionData[0];
+
+    // Vérifier si l'abonnement est actif
+    if (sub.status !== 'active') {
+        return {
+            canPerform: false,
+            reason: `Abonnement ${sub.planName} non actif. Seul le propriétaire peut effectuer des actions.`
+        };
+    }
+
+    // Vérifier si l'abonnement n'est pas expiré
+    if (sub.currentPeriodEnd && new Date() > new Date(sub.currentPeriodEnd)) {
+        return {
+            canPerform: false,
+            reason: `Abonnement ${sub.planName} expiré. Seul le propriétaire peut effectuer des actions.`
+        };
+    }
+
+    return { canPerform: true };
 } 

@@ -11,7 +11,7 @@ import { z } from "zod";
 import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
-import { canAddInvoice } from "@/db/queries/subscription";
+import { canAddInvoice, canUserPerformAction } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
 import { sendInvoiceEmail } from "@/lib/email";
 
@@ -353,6 +353,12 @@ export const updateInvoiceAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise");
         }
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier que la facture appartient à l'entreprise
         const existingInvoice = await db.select().from(invoice).where(eq(invoice.id, input.id)).limit(1);
 
@@ -415,6 +421,12 @@ export const deleteInvoiceAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise");
         }
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier que la facture appartient à l'entreprise
         const existingInvoice = await db.select().from(invoice).where(eq(invoice.id, input.invoiceId)).limit(1);
 
@@ -445,6 +457,12 @@ export const updateInvoiceStatusAction = useMutation(
 
         if (!userData.length || !userData[0].companyId) {
             throw new Error("Utilisateur non associé à une entreprise");
+        }
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(userData[0].companyId, userData[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
         }
 
         // Vérifier que la facture appartient à l'entreprise

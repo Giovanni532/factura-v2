@@ -11,7 +11,7 @@ import {
 } from "@/validation/client-schema";
 import { ActionError } from "@/lib/safe-action";
 import { checkClientEmailExists } from "@/db/queries/client";
-import { canAddClient } from "@/db/queries/subscription";
+import { canAddClient, canUserPerformAction } from "@/db/queries/subscription";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 
@@ -87,6 +87,12 @@ export const updateClientAction = useMutation(
 
         const companyId = currentUser[0].companyId;
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Vérifier que le client existe et appartient à l'entreprise
         const clientExists = await db.select()
             .from(client)
@@ -140,6 +146,12 @@ export const deleteClientAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que le client existe et appartient à l'entreprise
         const clientExists = await db.select()

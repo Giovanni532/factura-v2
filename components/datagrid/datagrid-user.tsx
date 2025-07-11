@@ -275,7 +275,7 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
                                                 name="name"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Nom complet</FormLabel>
+                                                        <FormLabel>Prénom et nom</FormLabel>
                                                         <FormControl>
                                                             <Input {...field} placeholder="Jean Dupont" />
                                                         </FormControl>

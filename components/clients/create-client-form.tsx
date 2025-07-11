@@ -75,7 +75,7 @@ export function CreateClientForm({ onClose }: CreateClientFormProps) {
                         name="name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nom *</FormLabel>
+                                <FormLabel>Prénom et nom *</FormLabel>
                                 <FormControl>
                                     <Input placeholder="Nom du client" {...field} />
                                 </FormControl>

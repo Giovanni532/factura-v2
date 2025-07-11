@@ -13,6 +13,7 @@ import {
 } from "@/validation/template-schema";
 import { z } from "zod";
 import { ActionError } from "@/lib/safe-action";
+import { canUserPerformAction } from "@/db/queries/subscription";
 
 // Action pour ajouter/retirer un template des favoris
 export const toggleFavoriteAction = useMutation(
@@ -148,6 +149,12 @@ export const createTemplateAction = useMutation(
 
         const companyId = currentUser[0].companyId;
 
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
+
         // Créer le template
         const newTemplate = await db.insert(template).values({
             name: input.name,
@@ -186,6 +193,12 @@ export const updateTemplateAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que le template existe et appartient à l'entreprise
         const templateExists = await db.select()
@@ -238,6 +251,12 @@ export const deleteTemplateAction = useMutation(
         }
 
         const companyId = currentUser[0].companyId;
+
+        // Vérifier si l'utilisateur peut effectuer des actions selon son rôle et l'abonnement
+        const { canPerform, reason } = await canUserPerformAction(companyId, currentUser[0].role);
+        if (!canPerform) {
+            throw new ActionError(reason || "Action non autorisée");
+        }
 
         // Vérifier que le template existe et appartient à l'entreprise
         const templateExists = await db.select()
