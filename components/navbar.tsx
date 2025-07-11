@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -11,10 +11,17 @@ import { authClient } from "@/lib/auth-client";
 
 export function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [shouldRender, setShouldRender] = useState(false);
     const router = useRouter();
-    const { data: session } = authClient.useSession();
+    const { data: session, isPending } = authClient.useSession();
 
-    if (session?.user) {
+    useEffect(() => {
+        // Éviter l'hydratation en ne rendant qu'après le montage
+        setShouldRender(true);
+    }, []);
+
+    // Masquer la navbar pendant le loading ou si l'utilisateur est connecté
+    if (!shouldRender || isPending || session?.user) {
         return null;
     }
 

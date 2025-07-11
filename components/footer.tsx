@@ -3,11 +3,19 @@
 import { FileText, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
+import { useEffect, useState } from "react";
 
 export function Footer() {
-    const { data: session } = authClient.useSession();
+    const { data: session, isPending } = authClient.useSession();
+    const [shouldRender, setShouldRender] = useState(false);
 
-    if (session?.user) {
+    useEffect(() => {
+        // Éviter l'hydratation en ne rendant qu'après le montage
+        setShouldRender(true);
+    }, []);
+
+    // Masquer le footer pendant le loading ou si l'utilisateur est connecté
+    if (!shouldRender || isPending || session?.user) {
         return null;
     }
 
