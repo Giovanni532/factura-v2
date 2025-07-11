@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Plus, Search, Filter, Users, TrendingUp, Calendar, AlertCircle, Crown } from "lucide-react";
+import { Users, TrendingUp, Calendar, AlertCircle, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ClientWithStats } from "@/validation/client-schema";
-import { ClientCard } from "@/components/clients/client-card";
-import { CreateClientButton } from "@/components/clients/create-client-button";
 import { ClientsContext } from "@/hooks/clients-context";
 import { SubscriptionLimits } from "@/db/queries/subscription";
+import { ClientsDataGrid } from "@/components/datagrid/datagrid-client";
 
 interface ClientsPageClientProps {
     initialClients: ClientWithStats[];
@@ -22,10 +19,8 @@ interface ClientsPageClientProps {
 
 export function ClientsPageClient({ initialClients, newClient, subscriptionLimits, searchParams }: ClientsPageClientProps) {
     const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
     const [newClientUrl, setNewClientUrl] = useState(newClient);
-    const search = searchParams.search;
+
     // Vérifier si on peut ajouter un nouveau client
     const canAddNewClient = subscriptionLimits.maxClients === -1 ||
         clients.length < subscriptionLimits.maxClients;
@@ -42,20 +37,10 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
         setNewClientUrl(newClient);
     }, [newClient]);
 
-    // Filtrer les clients
-    const filteredClients = clients.filter(client => {
-        const matchesSearch = client.name.toLowerCase().includes(search?.toLowerCase() || searchTerm.toLowerCase()) ||
-            client.email.toLowerCase().includes(search?.toLowerCase() || searchTerm.toLowerCase());
-
-        let matchesFilter = true;
-        if (filter === "active") {
-            matchesFilter = client.totalInvoices > 0 || client.totalQuotes > 0;
-        } else if (filter === "inactive") {
-            matchesFilter = client.totalInvoices === 0 && client.totalQuotes === 0;
-        }
-
-        return matchesSearch && matchesFilter;
-    });
+    // Mettre à jour les clients quand initialClients change
+    useEffect(() => {
+        setClients(initialClients);
+    }, [initialClients]);
 
     // Statistiques globales
     const totalClients = clients.length;
@@ -184,86 +169,16 @@ export function ClientsPageClient({ initialClients, newClient, subscriptionLimit
                     </Card>
                 </div>
 
-                {/* Barre d'outils */}
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                    <div className="flex flex-1 items-center space-x-2 max-w-sm">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Rechercher un client..."
-                                value={searchTerm || search}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-8"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                            <Button
-                                variant={filter === "all" ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setFilter("all")}
-                            >
-                                Tous
-                            </Button>
-                            <Button
-                                variant={filter === "active" ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setFilter("active")}
-                            >
-                                Actifs
-                            </Button>
-                            <Button
-                                variant={filter === "inactive" ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setFilter("inactive")}
-                            >
-                                Inactifs
-                            </Button>
-                        </div>
-                        <CreateClientButton
-                            newClient={newClientUrl}
-                            disabled={!canAddNewClient}
-                            limitReached={!canAddNewClient}
-                            planName={subscriptionLimits.planName}
-                            maxClients={subscriptionLimits.maxClients}
-                        />
-                    </div>
-                </div>
-
-                {/* Liste des clients */}
-                {filteredClients.length === 0 ? (
-                    <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">
-                                {searchTerm ? "Aucun client trouvé" : "Aucun client"}
-                            </h3>
-                            <p className="text-muted-foreground text-center mb-4">
-                                {searchTerm
-                                    ? "Aucun client ne correspond à votre recherche."
-                                    : "Commencez par ajouter votre premier client."
-                                }
-                            </p>
-                            {!searchTerm && (
-                                <CreateClientButton
-                                    newClient={newClientUrl}
-                                    disabled={!canAddNewClient}
-                                    limitReached={!canAddNewClient}
-                                    planName={subscriptionLimits.planName}
-                                    maxClients={subscriptionLimits.maxClients}
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredClients.map((client) => (
-                            <ClientCard key={client.id} client={client} />
-                        ))}
-                    </div>
-                )}
+                {/* Datagrid des clients */}
+                <ClientsDataGrid
+                    initialClients={clients}
+                    newClient={newClientUrl}
+                    subscriptionLimits={subscriptionLimits}
+                    searchParams={searchParams}
+                    onClientCreated={handleClientCreated}
+                    onClientUpdated={handleClientUpdated}
+                    onClientDeleted={handleClientDeleted}
+                />
             </div>
         </ClientsContext.Provider>
     );

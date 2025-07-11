@@ -121,9 +121,21 @@ export const updateClientAction = useMutation(
             .where(eq(client.id, id))
             .returning();
 
+        // Récupérer les statistiques mises à jour
+        const { getClientById } = await import("@/db/queries/client");
+        const clientWithStats = await getClientById(id, companyId);
+
+        if (!clientWithStats) {
+            throw new ActionError("Erreur lors de la récupération des données du client");
+        }
+
+        // Revalider les pages nécessaires
+        revalidatePath(paths.clients.list);
+        revalidatePath(paths.dashboard);
+
         return {
             success: true,
-            client: updatedClient[0],
+            client: clientWithStats,
             message: "Client modifié avec succès"
         };
     }
