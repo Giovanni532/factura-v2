@@ -30,7 +30,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Users, Crown, Shield, User, Mail, Calendar, CreditCard } from "lucide-react";
+import { Building2, Users, Crown, Shield, User, Mail, Calendar, CreditCard, Globe, MapPin, Phone, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/forms/image-upload";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -92,13 +92,13 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
     const getRoleColor = (role: string) => {
         switch (role) {
             case 'owner':
-                return 'bg-purple-100 text-purple-800';
+                return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
             case 'admin':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
             case 'user':
-                return 'bg-green-100 text-green-800';
+                return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
         }
     };
 
@@ -124,182 +124,219 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
     };
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto space-y-8">
             {/* En-tête de la page */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h1>
-                <p className="text-muted-foreground">
+            <div className="space-y-2">
+                <h1 className="text-4xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h1>
+                <p className="text-lg text-muted-foreground">
                     Gérez les informations de votre entreprise et votre équipe
                 </p>
             </div>
 
-
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Colonne gauche : Informations de l'entreprise (2/3) */}
-                <div className="xl:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Colonne principale : Informations de l'entreprise */}
+                <div className="lg:col-span-2 space-y-8">
                     {/* Informations générales */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Building2 className="h-5 w-5" />
-                                Informations de l&apos;entreprise
-                            </CardTitle>
-                            <CardDescription>
-                                {isOwner ? "Gérez les informations de votre entreprise" : "Informations de l&apos;entreprise (lecture seule)"}
-                            </CardDescription>
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/20">
+                        <CardHeader className="pb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <Building2 className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-2xl font-semibold">Informations de l&apos;entreprise</CardTitle>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <Form {...companyForm}>
-                                <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem className="md:col-span-2">
-                                                    <FormLabel>Nom de l&apos;entreprise</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="Mon Entreprise" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-6">
+                                    {/* Nom de l'entreprise */}
+                                    <FormField
+                                        control={companyForm.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-base font-medium">Nom de l&apos;entreprise</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        placeholder="Mon Entreprise"
+                                                        disabled={!isOwner}
+                                                        className="h-12 text-base"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Email</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} type="email" placeholder="contact@entreprise.com" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                    <Separator />
 
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="phone"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Téléphone</FormLabel>
-                                                    <FormControl>
-                                                        <PhoneInput
-                                                            {...field}
-                                                            disabled={!isOwner}
-                                                            placeholder="Entrez le numéro de téléphone"
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="address"
-                                            render={({ field }) => (
-                                                <FormItem className="md:col-span-2">
-                                                    <FormLabel>Adresse</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="123 Rue de la Paix" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="city"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Ville</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="Paris" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="postalCode"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Code postal</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="75001" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="country"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Pays</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isOwner}>
+                                    {/* Contact */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <Mail className="h-5 w-5 text-muted-foreground" />
+                                            Contact
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="email"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Email</FormLabel>
                                                         <FormControl>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Sélectionner un pays" />
-                                                            </SelectTrigger>
+                                                            <Input {...field} type="email" placeholder="contact@entreprise.com" disabled={!isOwner} />
                                                         </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="France">France</SelectItem>
-                                                            <SelectItem value="Suisse">Suisse</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
 
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="siret"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>SIRET</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="12345678901234" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="phone"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Téléphone</FormLabel>
+                                                        <FormControl>
+                                                            <PhoneInput
+                                                                {...field}
+                                                                disabled={!isOwner}
+                                                                placeholder="Entrez le numéro de téléphone"
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                        <FormField
-                                            control={companyForm.control}
-                                            name="vatNumber"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Numéro de TVA</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="FR12345678901" disabled={!isOwner} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                    <Separator />
+
+                                    {/* Adresse */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <MapPin className="h-5 w-5 text-muted-foreground" />
+                                            Adresse
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="address"
+                                                render={({ field }) => (
+                                                    <FormItem className="md:col-span-2">
+                                                        <FormLabel>Adresse</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="123 Rue de la Paix" disabled={!isOwner} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="city"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Ville</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Paris" disabled={!isOwner} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="postalCode"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Code postal</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="75001" disabled={!isOwner} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="country"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Pays</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isOwner}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Sélectionner un pays" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="France">France</SelectItem>
+                                                                <SelectItem value="Suisse">Suisse</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    {/* Informations légales */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <FileText className="h-5 w-5 text-muted-foreground" />
+                                            Informations légales
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="siret"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>SIRET</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="12345678901234" disabled={!isOwner} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={companyForm.control}
+                                                name="vatNumber"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Numéro de TVA</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="FR12345678901" disabled={!isOwner} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </div>
 
                                     {isOwner && (
-                                        <div className="flex justify-end pt-4">
+                                        <div className="flex justify-end pt-6">
                                             <Button
                                                 type="submit"
                                                 disabled={isUpdatingCompany}
-                                                className="w-40"
+                                                size="lg"
+                                                className="px-8"
                                             >
-                                                {isUpdatingCompany ? "Mise à jour..." : "Mettre à jour"}
+                                                {isUpdatingCompany ? "Mise à jour..." : "Mettre à jour l'entreprise"}
                                             </Button>
                                         </div>
                                     )}
@@ -309,65 +346,81 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                     </Card>
                 </div>
 
-                {/* Colonne droite : Logo et abonnement (1/3) */}
+                {/* Colonne latérale : Logo et abonnement */}
                 <div className="space-y-6">
                     {/* Logo de l'entreprise */}
                     {isOwner && (
-                        <ImageUpload
-                            type="company-logo"
-                            currentImage={initialCompany.logo || ""}
-                            onImageUpdated={() => {
-                                router.refresh();
-                            }}
-                        />
+                        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/20">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-semibold">Logo de l&apos;entreprise</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ImageUpload
+                                    type="company-logo"
+                                    currentImage={initialCompany.logo || ""}
+                                    onImageUpdated={() => {
+                                        router.refresh();
+                                    }}
+                                />
+                            </CardContent>
+                        </Card>
                     )}
 
                     {/* Abonnement */}
-                    <Card>
+                    <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/20">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Shield className="h-5 w-5" />
-                                Abonnement
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="font-medium">Plan actuel</span>
-                                <Badge variant="default" className="font-medium">{initialCompany.subscription.plan}</Badge>
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Utilisateurs</span>
-                                    <span className="font-medium">
-                                        {initialCompany.subscription.currentUsers} / {initialCompany.subscription.maxUsers === -1 ? '∞' : initialCompany.subscription.maxUsers}
-                                    </span>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <Shield className="h-5 w-5 text-primary" />
                                 </div>
-                                {initialCompany.subscription.maxUsers !== -1 && (
-                                    <div className="w-full bg-muted rounded-full h-2">
-                                        <div
-                                            className="h-2 rounded-full transition-all bg-green-500"
-                                            style={{
-                                                width: `${Math.min(100, (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100)}%`
-                                            }}
-                                        />
+                                <div>
+                                    <CardTitle className="text-lg font-semibold">Abonnement</CardTitle>
+                                    <CardDescription>Plan actuel et fonctionnalités</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium">Plan actuel</span>
+                                    <Badge variant="default" className="font-medium px-3 py-1">
+                                        {initialCompany.subscription.plan}
+                                    </Badge>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Utilisateurs</span>
+                                        <span className="font-medium">
+                                            {initialCompany.subscription.currentUsers} / {initialCompany.subscription.maxUsers === -1 ? '∞' : initialCompany.subscription.maxUsers}
+                                        </span>
                                     </div>
-                                )}
+                                    {initialCompany.subscription.maxUsers !== -1 && (
+                                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="h-2 rounded-full transition-all bg-gradient-to-r from-green-500 to-emerald-500"
+                                                style={{
+                                                    width: `${Math.min(100, (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100)}%`
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Fonctionnalités du plan */}
                             {initialCompany.subscription.features.length > 0 && (
-                                <div className="space-y-2">
-                                    <span className="text-sm font-medium">Fonctionnalités :</span>
-                                    <div className="space-y-1">
+                                <div className="space-y-3">
+                                    <span className="text-sm font-medium">Fonctionnalités incluses :</span>
+                                    <div className="space-y-2">
                                         {initialCompany.subscription.features.slice(0, 4).map((feature, index) => (
-                                            <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></div>
-                                                <span className="text-xs">{feature}</span>
+                                            <div key={index} className="flex items-center gap-3 text-sm">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                                <span className="text-muted-foreground">{feature}</span>
                                             </div>
                                         ))}
                                         {initialCompany.subscription.features.length > 4 && (
-                                            <div className="text-xs text-muted-foreground pl-3">
+                                            <div className="text-xs text-muted-foreground pl-5">
                                                 +{initialCompany.subscription.features.length - 4} autres fonctionnalités
                                             </div>
                                         )}
@@ -377,10 +430,10 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
 
                             {/* Bouton de gestion de l'abonnement */}
                             {isOwner && (
-                                <div className="pt-2">
+                                <div className="pt-4">
                                     <Button
                                         variant="outline"
-                                        className="w-full gap-2"
+                                        className="w-full gap-2 h-11"
                                         onClick={() => router.push(paths.settings.billing)}
                                     >
                                         <CreditCard className="h-4 w-4" />
