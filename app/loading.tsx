@@ -5,13 +5,13 @@ import { FileText } from "lucide-react";
 
 export default function Loading() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-slate-900 dark:via-background dark:to-blue-950">
+        <div className="min-h-screen flex items-center justify-center bg-background">
             <div className="flex flex-col items-center space-y-8">
                 {/* Logo animé */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     className="text-center"
                 >
                     <motion.div
@@ -25,31 +25,31 @@ export default function Loading() {
                         }}
                         className="flex items-center justify-center mb-4"
                     >
-                        <FileText className="h-16 w-16 text-primary" />
+                        <FileText className="h-12 w-12 text-primary" />
                     </motion.div>
-                    <h1 className="text-3xl font-bold text-foreground">
+                    <h1 className="text-2xl font-bold text-foreground">
                         Factura
                     </h1>
-                    <p className="text-muted-foreground mt-2">
+                    <p className="text-muted-foreground mt-2 text-sm">
                         Simplifiez votre facturation
                     </p>
                 </motion.div>
 
-                {/* Indicateur de chargement avec animation moderne */}
+                {/* Indicateur de chargement simple */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    className="relative w-64 h-2 bg-muted rounded-full overflow-hidden"
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="relative w-48 h-1 bg-muted rounded-full overflow-hidden"
                 >
                     <motion.div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"
+                        className="absolute top-0 left-0 h-full bg-primary rounded-full"
                         animate={{
-                            x: [-256, 256],
-                            width: [64, 128, 64]
+                            x: [-192, 192],
+                            width: [48, 96, 48]
                         }}
                         transition={{
-                            duration: 1.5,
+                            duration: 1.2,
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}
@@ -60,12 +60,12 @@ export default function Loading() {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
+                    transition={{ duration: 0.4, delay: 0.4 }}
                     className="text-center"
                 >
                     <motion.p
-                        className="text-muted-foreground font-medium"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        className="text-muted-foreground text-sm"
+                        animate={{ opacity: [0.6, 1, 0.6] }}
                         transition={{
                             duration: 1.5,
                             repeat: Infinity,
@@ -75,26 +75,6 @@ export default function Loading() {
                         Chargement en cours...
                     </motion.p>
                 </motion.div>
-
-                {/* Dots animés en bas */}
-                <div className="flex space-x-2">
-                    {[0, 1, 2].map((index) => (
-                        <motion.div
-                            key={index}
-                            className="w-2 h-2 bg-primary rounded-full"
-                            animate={{
-                                scale: [1, 1.2, 1],
-                                opacity: [0.5, 1, 0.5]
-                            }}
-                            transition={{
-                                duration: 1,
-                                repeat: Infinity,
-                                delay: index * 0.2,
-                                ease: "easeInOut"
-                            }}
-                        />
-                    ))}
-                </div>
             </div>
         </div>
     );

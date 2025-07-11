@@ -125,15 +125,15 @@ export default function SearchBar() {
     const getResultIcon = (type: string) => {
         switch (type) {
             case 'invoice':
-                return <FileTextIcon className="h-4 w-4 text-blue-500" />
+                return <FileTextIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             case 'quote':
-                return <FileIcon className="h-4 w-4 text-green-500" />
+                return <FileIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             case 'client':
-                return <UserIcon className="h-4 w-4 text-violet-500" />
+                return <UserIcon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             case 'service':
-                return <Settings className="h-4 w-4 text-orange-500" />
+                return <Settings className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             default:
-                return <SearchIcon className="h-4 w-4" />
+                return <SearchIcon className="h-4 w-4 text-muted-foreground" />
         }
     }
 
@@ -179,22 +179,28 @@ export default function SearchBar() {
                                         {searchResults.map((result, index: number) => (
                                             <li
                                                 key={`${result.type}-${result.id}`}
-                                                className="border-b border-border last:border-0"
+                                                className="border-b border-border/50 last:border-0"
                                                 role="option"
                                                 aria-selected={index === activeIndex}
                                             >
                                                 <Button
                                                     onClick={() => handleResultClick(result.url, result)}
-                                                    className='w-full bg-transparent hover:bg-primary/80 hover:text-primary-foreground cursor-pointer'
+                                                    className={`w-full justify-start gap-3 p-3 h-auto bg-transparent hover:bg-muted/50 transition-colors duration-200 ${index === activeIndex ? 'bg-muted/50 ring-1 ring-primary/20' : ''
+                                                        }`}
                                                     tabIndex={0}
                                                     onFocus={() => setActiveIndex(index)}
+                                                    onMouseEnter={() => setActiveIndex(index)}
                                                 >
-                                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-background">
+                                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/80 border border-border/50 flex-shrink-0">
                                                         {getResultIcon(result.type)}
                                                     </span>
-                                                    <div className="flex-1 overflow-hidden">
-                                                        <p className="truncate font-medium">{result.title}</p>
-                                                        <p className="truncate text-xs text-muted-foreground">{result.description}</p>
+                                                    <div className="flex-1 overflow-hidden text-left min-w-0">
+                                                        <p className="truncate font-medium text-foreground text-sm leading-tight">
+                                                            {result.title}
+                                                        </p>
+                                                        <p className="truncate text-xs text-muted-foreground mt-0.5 leading-tight">
+                                                            {result.description}
+                                                        </p>
                                                     </div>
                                                 </Button>
                                             </li>

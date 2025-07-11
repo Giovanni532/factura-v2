@@ -32,26 +32,26 @@ export default function NotFound() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-slate-900 dark:via-background dark:to-blue-950">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-slate-900 dark:via-background dark:to-blue-950 px-4">
-            <div className="max-w-2xl mx-auto text-center">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+            <div className="max-w-lg mx-auto text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
+                    transition={{ duration: 0.6 }}
                     className="space-y-8"
                 >
                     {/* Logo et icône 404 */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
                         className="flex flex-col items-center space-y-4"
                     >
                         <motion.div
@@ -65,14 +65,14 @@ export default function NotFound() {
                             }}
                             className="flex items-center justify-center"
                         >
-                            <FileText className="h-20 w-20 text-primary" />
+                            <FileText className="h-16 w-16 text-primary" />
                         </motion.div>
 
                         <motion.h1
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
-                            className="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="text-6xl font-bold text-foreground"
                         >
                             404
                         </motion.h1>
@@ -80,37 +80,35 @@ export default function NotFound() {
 
                     {/* Message d'erreur */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.6 }}
-                        className="space-y-4"
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="space-y-3"
                     >
-                        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Oups ! Page introuvable
+                        <h2 className="text-xl font-semibold text-foreground">
+                            Page introuvable
                         </h2>
-                        <p className="text-muted-foreground text-lg max-w-md mx-auto">
+                        <p className="text-muted-foreground text-sm">
                             La page que vous cherchez n&apos;existe pas ou a été déplacée.
-                            Pas de panique, retournons à l&apos;essentiel !
                         </p>
                     </motion.div>
 
                     {/* Suggestions */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.8 }}
-                        className="space-y-4"
+                        transition={{ duration: 0.5, delay: 0.4 }}
                     >
-                        <Card className="bg-background/50 backdrop-blur-sm border-border/50">
-                            <CardContent className="p-6">
-                                <div className="flex items-center space-x-2 mb-4">
-                                    <Search className="h-5 w-5 text-primary" />
-                                    <h3 className="font-semibold text-foreground">Suggestions :</h3>
+                        <Card className="bg-muted/50 border-border">
+                            <CardContent className="p-4">
+                                <div className="flex items-center space-x-2 mb-3">
+                                    <Search className="h-4 w-4 text-primary" />
+                                    <h3 className="font-medium text-foreground text-sm">Suggestions :</h3>
                                 </div>
-                                <ul className="text-sm text-muted-foreground space-y-1 text-left">
+                                <ul className="text-xs text-muted-foreground space-y-1 text-left">
                                     <li>• Vérifiez l&apos;URL dans la barre d&apos;adresse</li>
                                     <li>• Utilisez le bouton retour de votre navigateur</li>
-                                    <li>• Retournez à l&apos;accueil et naviguez depuis là</li>
+                                    <li>• Retournez à l&apos;accueil</li>
                                     {isAuthenticated && <li>• Consultez votre tableau de bord</li>}
                                 </ul>
                             </CardContent>
@@ -119,19 +117,19 @@ export default function NotFound() {
 
                     {/* Boutons d'action */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 1 }}
-                        className="flex flex-col sm:flex-row gap-4 justify-center"
+                        transition={{ duration: 0.5, delay: 0.5 }}
+                        className="flex flex-col sm:flex-row gap-3 justify-center"
                     >
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
                             <Button
                                 onClick={() => router.back()}
                                 variant="outline"
-                                size="lg"
+                                size="sm"
                                 className="w-full sm:w-auto"
                             >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -140,12 +138,12 @@ export default function NotFound() {
                         </motion.div>
 
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
                             <Button
                                 asChild
-                                size="lg"
+                                size="sm"
                                 className="w-full sm:w-auto"
                             >
                                 <Link href={isAuthenticated ? paths.dashboard : paths.home}>
@@ -154,31 +152,6 @@ export default function NotFound() {
                                 </Link>
                             </Button>
                         </motion.div>
-                    </motion.div>
-
-                    {/* Animation de décoration */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 1, delay: 1.2 }}
-                        className="flex justify-center space-x-2 mt-8"
-                    >
-                        {[0, 1, 2, 3, 4].map((index) => (
-                            <motion.div
-                                key={index}
-                                className="w-1 h-1 bg-primary/30 rounded-full"
-                                animate={{
-                                    scale: [1, 1.5, 1],
-                                    opacity: [0.3, 0.8, 0.3]
-                                }}
-                                transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    delay: index * 0.2,
-                                    ease: "easeInOut"
-                                }}
-                            />
-                        ))}
                     </motion.div>
                 </motion.div>
             </div>
