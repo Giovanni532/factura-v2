@@ -4,15 +4,23 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Crown } from "lucide-react";
 import { InvoiceWithDetails, InvoiceStats } from "@/validation/invoice-schema";
-import { InvoiceCard } from "./invoice-card";
 import { CreateInvoiceButton } from "./create-invoice-button";
 import { InvoicesContext } from "../../hooks/invoices-context";
 import { SubscriptionLimits } from "@/db/queries/subscription";
+import { DatagridDocuments, DocumentRow } from "../datagrid/datagrid-documents";
+import { InvoicePreviewModal } from "./invoice-preview-modal";
+import { useAction } from "next-safe-action/hooks";
+import {
+    updateInvoiceStatusAction,
+    deleteInvoiceAction,
+    sendInvoiceAction,
+    downloadInvoiceAction
+} from "@/action/invoice-actions";
+import { toast } from "sonner";
+import type { DateRange } from "react-day-picker";
 
 interface InvoicesPageClientProps {
     invoices: InvoiceWithDetails[];
@@ -31,12 +39,89 @@ interface InvoicesPageClientProps {
 export function InvoicesPageClient({ invoices: initialInvoices, stats: initialStats, formData, subscriptionLimits, filters: initialFilters }: InvoicesPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [search, setSearch] = useState(initialFilters.search);
-    const [statusFilter, setStatusFilter] = useState(initialFilters.status);
     const [invoices, setInvoices] = useState(initialInvoices);
     const [stats, setStats] = useState(initialStats);
     const [newInvoice, setNewInvoice] = useState(initialFilters.new);
     const [id, setId] = useState<string | null>(initialFilters.id);
+    const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithDetails | null>(null);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+    // Actions
+    const { execute: executeStatusUpdate } = useAction(updateInvoiceStatusAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Mettre à jour la facture dans la liste
+                setInvoices(prev => prev.map(inv =>
+                    inv.id === result.data!.invoice.id ? { ...inv, status: result.data!.invoice.status } : inv
+                ));
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la mise à jour du statut");
+        }
+    });
+
+    const { execute: executeDelete } = useAction(deleteInvoiceAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Supprimer la facture de la liste
+                setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice?.id));
+                setSelectedInvoice(null);
+                setIsPreviewModalOpen(false);
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la suppression");
+        }
+    });
+
+    const { execute: executeSend } = useAction(sendInvoiceAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Mettre à jour le statut de la facture
+                setInvoices(prev => prev.map(inv =>
+                    inv.id === selectedInvoice?.id ? { ...inv, status: 'sent' } : inv
+                ));
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de l'envoi");
+        }
+    });
+
+    const { execute: executeDownload } = useAction(downloadInvoiceAction, {
+        onSuccess: (result) => {
+            if (result.data?.success && result.data.pdf) {
+                try {
+                    // Créer un blob et télécharger le PDF
+                    const pdfData = atob(result.data.pdf);
+                    const bytes = new Uint8Array(pdfData.length);
+                    for (let i = 0; i < pdfData.length; i++) {
+                        bytes[i] = pdfData.charCodeAt(i);
+                    }
+
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = result.data.filename || 'facture.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    toast.success("Facture téléchargée avec succès");
+                } catch (error) {
+                    toast.error("Erreur lors du téléchargement du PDF");
+                }
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors du téléchargement");
+        }
+    });
 
     // Vérifier si on peut ajouter une nouvelle facture (basé sur les documents combinés)
     const canAddNewInvoice = subscriptionLimits.maxInvoices === -1 ||
@@ -56,86 +141,74 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         setId(currentId);
     }, [searchParams]);
 
-    // Filtrer les factures
-    const filteredInvoices = useMemo(() => {
-        return invoices.filter(invoice => {
-            const matchesSearch = !search ||
-                invoice.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-                invoice.client.name.toLowerCase().includes(search.toLowerCase());
+    // Transformer les factures en DocumentRow
+    const documentRows: DocumentRow[] = useMemo(() => {
+        return invoices.map(invoice => ({
+            id: invoice.id,
+            type: "invoice" as const,
+            number: invoice.invoiceNumber,
+            client: { id: invoice.client.id, name: invoice.client.name, email: invoice.client.email },
+            date: invoice.issueDate.toISOString(),
+            status: invoice.status,
+            amount: invoice.total,
+            currency: "EUR",
+        }));
+    }, [invoices]);
 
-            const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    // Options de statut pour le filtre
+    const statusOptions = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
 
-            return matchesSearch && matchesStatus;
+    // Callbacks pour la datagrid
+    const handleView = (doc: DocumentRow) => {
+        const invoice = invoices.find(inv => inv.id === doc.id);
+        if (invoice) {
+            setSelectedInvoice(invoice);
+            setIsPreviewModalOpen(true);
+        }
+    };
+
+    const handleStatusChange = (doc: DocumentRow, status: string) => {
+        executeStatusUpdate({ invoiceId: doc.id, status: status as any });
+    };
+
+    const handleDownload = (doc: DocumentRow) => {
+        executeDownload({ invoiceId: doc.id });
+    };
+
+    const handleSend = (doc: DocumentRow, subject: string, message: string) => {
+        executeSend({
+            invoiceId: doc.id,
+            subject,
+            message
         });
-    }, [invoices, search, statusFilter]);
+    };
 
-    const updateFilters = (newFilters: Partial<typeof initialFilters>) => {
+    const handleDelete = (doc: DocumentRow) => {
+        const invoice = invoices.find(inv => inv.id === doc.id);
+        if (invoice) {
+            setSelectedInvoice(invoice);
+            executeDelete({ invoiceId: doc.id });
+            // Mettre à jour immédiatement la liste
+            setInvoices(prev => prev.filter(inv => inv.id !== doc.id));
+        }
+    };
+
+    const handleFiltersChange = (filters: { search: string; status: string; dateRange: DateRange }) => {
         const params = new URLSearchParams(searchParams);
 
-        if (newFilters.search !== undefined) {
-            if (newFilters.search) {
-                params.set('search', newFilters.search);
-            } else {
-                params.delete('search');
-            }
+        if (filters.search) {
+            params.set('search', filters.search);
+        } else {
+            params.delete('search');
         }
 
-        if (newFilters.status !== undefined) {
-            if (newFilters.status !== 'all') {
-                params.set('status', newFilters.status);
-            } else {
-                params.delete('status');
-            }
-        }
-
-        if (newFilters.clientId !== undefined) {
-            if (newFilters.clientId) {
-                params.set('client', newFilters.clientId);
-            } else {
-                params.delete('client');
-            }
-        }
-
-        if (newFilters.new !== undefined) {
-            if (newFilters.new) {
-                setNewInvoice(true);
-            } else {
-                setNewInvoice(false);
-            }
-        }
-
-        if (newFilters.id !== undefined) {
-            if (newFilters.id) {
-                setId(newFilters.id);
-            } else {
-                setId(null);
-            }
+        if (filters.status !== 'all') {
+            params.set('status', filters.status);
+        } else {
+            params.delete('status');
         }
 
         router.push(`/dashboard/invoices?${params.toString()}`);
-    };
-
-    const handleSearch = (value: string) => {
-        setSearch(value);
-        updateFilters({ search: value });
-    };
-
-    const handleStatusFilter = (value: string) => {
-        setStatusFilter(value);
-        updateFilters({ status: value });
-    };
-
-    const clearFilters = () => {
-        setSearch("");
-        setStatusFilter("all");
-        updateFilters({ search: "", status: "all" });
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
     };
 
     return (
@@ -195,38 +268,10 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Factures</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                {subscriptionLimits.currentDocuments}
-                                {subscriptionLimits.maxInvoices !== -1 && (
-                                    <span className="text-sm text-muted-foreground">
-                                        /{subscriptionLimits.maxInvoices}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {stats.totalInvoices} factures + {subscriptionLimits.currentQuotes} devis
-                                {subscriptionLimits.maxInvoices !== -1 && (
-                                    <span className="block">
-                                        Plan {subscriptionLimits.planName}
-                                    </span>
-                                )}
-                            </p>
-                            {/* Barre de progression */}
-                            {subscriptionLimits.maxInvoices !== -1 && (
-                                <div className="mt-2">
-                                    <div className="w-full bg-muted rounded-full h-2">
-                                        <div
-                                            className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
-                                                usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
-                                                }`}
-                                            style={{ width: `${Math.min(100, usagePercentage)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                            <div className="text-2xl font-bold">{stats.totalInvoices}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -247,76 +292,43 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d&apos;affaires</CardTitle>
+                            <CardTitle className="text-sm font-medium">Revenus</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+                            <div className="text-2xl font-bold">
+                                {new Intl.NumberFormat('fr-FR', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                }).format(stats.totalRevenue)}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Filtres */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Filtres</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                            <div className="flex-1">
-                                <Input
-                                    placeholder="Rechercher par numéro ou client..."
-                                    value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                            </div>
-                            <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                                <SelectTrigger className="w-full md:w-[180px]">
-                                    <SelectValue placeholder="Statut" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Tous les statuts</SelectItem>
-                                    <SelectItem value="draft">Brouillon</SelectItem>
-                                    <SelectItem value="sent">Envoyée</SelectItem>
-                                    <SelectItem value="paid">Payée</SelectItem>
-                                    <SelectItem value="overdue">En retard</SelectItem>
-                                    <SelectItem value="cancelled">Annulée</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Button
-                                variant="outline"
-                                onClick={clearFilters}
-                                className="w-full md:w-auto"
-                            >
-                                Réinitialiser
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Datagrid */}
+                <DatagridDocuments
+                    documents={documentRows}
+                    statusOptions={statusOptions}
+                    filters={{
+                        search: initialFilters.search,
+                        status: initialFilters.status || "all",
+                        dateRange: undefined as any
+                    }}
+                    onFiltersChange={handleFiltersChange}
+                    onView={handleView}
+                    onStatusChange={handleStatusChange}
+                    onDownload={handleDownload}
+                    onSend={handleSend}
+                    onDelete={handleDelete}
+                />
 
-                {/* Liste des factures */}
-                {filteredInvoices.length === 0 ? (
-                    <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <div className="text-muted-foreground mb-4">
-                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-semibold mb-2">Aucune facture trouvée</h3>
-                            <p className="text-muted-foreground text-center">
-                                {search || statusFilter !== 'all'
-                                    ? "Aucune facture ne correspond à vos critères de recherche."
-                                    : "Commencez par créer votre première facture."
-                                }
-                            </p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-4">
-                        {filteredInvoices.map((invoice) => (
-                            <InvoiceCard key={invoice.id} invoice={invoice} idToOpen={id} />
-                        ))}
-                    </div>
+                {/* Modale de prévisualisation */}
+                {selectedInvoice && (
+                    <InvoicePreviewModal
+                        invoice={selectedInvoice}
+                        isOpen={isPreviewModalOpen}
+                        onClose={() => setIsPreviewModalOpen(false)}
+                    />
                 )}
             </div>
         </InvoicesContext.Provider>

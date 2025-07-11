@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ExternalLink, Download, Send } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Send, Download, Trash2, X } from "lucide-react";
 import { QuoteWithDetails } from "@/validation/quote-schema";
-import { getQuotePreviewAction, downloadQuoteAction, sendQuoteAction } from "@/action/quote-actions";
 import { useAction } from "next-safe-action/hooks";
+import { sendQuoteAction, downloadQuoteAction } from "@/action/quote-actions";
 import { toast } from "sonner";
 
 interface QuotePreviewModalProps {
@@ -19,114 +21,56 @@ interface QuotePreviewModalProps {
 }
 
 export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalProps) {
-    const [previewHtml, setPreviewHtml] = useState<string>("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [showSendDialog, setShowSendDialog] = useState(false);
-    const [emailSubject, setEmailSubject] = useState(`Devis ${quote.quoteNumber} - ${quote.client.name}`);
-    const [emailMessage, setEmailMessage] = useState(`Bonjour ${quote.client.name},
-
-Veuillez trouver ci-joint le devis ${quote.quoteNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(quote.total)}.
-
-Date de validité : ${new Intl.DateTimeFormat('fr-FR').format(quote.validUntil)}
-
-Merci de votre confiance.
-
-Cordialement,
-Votre équipe`);
-
-    const { execute: executePreview, isPending: isPreviewLoading } = useAction(getQuotePreviewAction, {
-        onSuccess: (result) => {
-            if (result?.data?.html) {
-                setPreviewHtml(result.data.html);
-            }
-            setIsLoading(false);
-        },
-        onError: (error) => {
-            toast.error(error.error.serverError?.message || "Erreur lors du chargement de la prévisualisation");
-            setIsLoading(false);
-        }
-    });
-
-    const { execute: executeDownload, isPending: isDownloading } = useAction(downloadQuoteAction, {
-        onSuccess: (result) => {
-            if (result?.data) {
-                // Créer un blob avec le PDF et télécharger
-                const pdfData = atob(result.data.pdf);
-                const bytes = new Uint8Array(pdfData.length);
-                for (let i = 0; i < pdfData.length; i++) {
-                    bytes[i] = pdfData.charCodeAt(i);
-                }
-
-                const blob = new Blob([bytes], { type: 'application/pdf' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = result.data.filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                toast.success("Devis PDF téléchargé avec succès");
-            }
-        },
-        onError: (error) => {
-            toast.error(error.error.serverError?.message || "Erreur lors du téléchargement");
-        }
-    });
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+    const [emailSubject, setEmailSubject] = useState(`Devis ${quote.quoteNumber}`);
+    const [emailMessage, setEmailMessage] = useState("");
 
     const { execute: executeSend, isPending: isSending } = useAction(sendQuoteAction, {
         onSuccess: (result) => {
-            if (result?.data) {
+            if (result.data) {
                 toast.success(result.data.message);
-                setShowSendDialog(false);
-                onClose();
+                setIsSendModalOpen(false);
+                setEmailSubject(`Devis ${quote.quoteNumber}`);
+                setEmailMessage("");
             }
         },
         onError: (error) => {
-            toast.error(error.error.serverError?.message || "Erreur lors de l'envoi");
+            toast.error(error.error?.serverError?.message || "Erreur lors de l'envoi");
         }
     });
 
-    useEffect(() => {
-        if (isOpen && quote) {
-            setIsLoading(true);
-            executePreview({ quoteId: quote.id });
+    const { execute: executeDownload } = useAction(downloadQuoteAction, {
+        onSuccess: (result) => {
+            if (result.data?.success && result.data.pdf) {
+                try {
+                    // Créer un blob et télécharger le PDF
+                    const pdfData = atob(result.data.pdf);
+                    const bytes = new Uint8Array(pdfData.length);
+                    for (let i = 0; i < pdfData.length; i++) {
+                        bytes[i] = pdfData.charCodeAt(i);
+                    }
+
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = result.data.filename || 'devis.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    toast.success("Devis téléchargé avec succès");
+                } catch (error) {
+                    toast.error("Erreur lors du téléchargement du PDF");
+                }
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors du téléchargement");
         }
-    }, [isOpen, quote, executePreview]);
-
-    // Mettre à jour les valeurs par défaut quand le devis change
-    useEffect(() => {
-        setEmailSubject(`Devis ${quote.quoteNumber} - ${quote.client.name}`);
-        setEmailMessage(`Bonjour ${quote.client.name},
-
-Veuillez trouver ci-joint le devis ${quote.quoteNumber} d'un montant de ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(quote.total)}.
-
-Date de validité : ${new Intl.DateTimeFormat('fr-FR').format(quote.validUntil)}
-
-Merci de votre confiance.
-
-Cordialement,
-Votre équipe`);
-    }, [quote]);
-
-    const openInNewTab = () => {
-        const newWindow = window.open();
-        if (newWindow) {
-            newWindow.document.write(previewHtml);
-            newWindow.document.close();
-        }
-    };
-
-    const handleDownload = () => {
-        executeDownload({ quoteId: quote.id });
-    };
+    });
 
     const handleSend = () => {
-        setShowSendDialog(true);
-    };
-
-    const handleConfirmSend = () => {
         executeSend({
             quoteId: quote.id,
             subject: emailSubject,
@@ -134,91 +78,175 @@ Votre équipe`);
         });
     };
 
-    // Vérifier si le devis peut être envoyé (pas déjà envoyé)
-    const canSend = quote.status !== 'sent' && quote.status !== 'accepted';
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR'
+        }).format(amount);
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'accepted': return 'bg-green-100 text-green-800';
+            case 'sent': return 'bg-blue-100 text-blue-800';
+            case 'rejected': return 'bg-red-100 text-red-800';
+            case 'expired': return 'bg-orange-100 text-orange-800';
+            case 'draft': return 'bg-gray-100 text-gray-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const translateStatus = (status: string): string => {
+        const statusMap: Record<string, string> = {
+            'draft': 'Brouillon',
+            'sent': 'Envoyé',
+            'accepted': 'Accepté',
+            'rejected': 'Refusé',
+            'expired': 'Expiré'
+        };
+        return statusMap[status] || status;
+    };
 
     return (
         <>
+            {/* Modale principale de prévisualisation */}
             <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="max-w-6xl min-w-[90vw] min-h-[90vh] max-h-[90vh] flex flex-col">
-                    <DialogHeader className="flex-shrink-0">
-                        <div className="flex items-center justify-between">
-                            <DialogTitle className="text-xl">
-                                Aperçu : {quote.quoteNumber}
-                            </DialogTitle>
-                            <div className="flex gap-2 pr-6">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={openInNewTab}
-                                    className="flex items-center gap-2"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                    Ouvrir dans un nouvel onglet
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center justify-between">
+                            <span>Devis {quote.quoteNumber}</span>
+                            <div className="flex items-center gap-2">
+                                <Badge className={getStatusColor(quote.status)}>
+                                    {translateStatus(quote.status)}
+                                </Badge>
+                                <Button variant="ghost" size="icon" onClick={onClose}>
+                                    <X className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleDownload}
-                                    disabled={isDownloading}
-                                    className="flex items-center gap-2"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    {isDownloading ? "Téléchargement..." : "Télécharger"}
-                                </Button>
-                                {canSend && (
-                                    <Button
-                                        size="sm"
-                                        onClick={handleSend}
-                                        disabled={isSending}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Send className="w-4 h-4" />
-                                        {isSending ? "Envoi..." : "Envoyer"}
-                                    </Button>
+                            </div>
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-6">
+                        {/* Informations client */}
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2">Client</h3>
+                            <div className="bg-muted p-4 rounded-lg">
+                                <p className="font-medium">{quote.client.name}</p>
+                                <p className="text-sm text-muted-foreground">{quote.client.email}</p>
+                                {quote.client.address && (
+                                    <p className="text-sm text-muted-foreground">{quote.client.address}</p>
+                                )}
+                                {(quote.client.city || quote.client.postalCode) && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {quote.client.postalCode} {quote.client.city}
+                                    </p>
                                 )}
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            Prévisualisation du devis {quote.quoteNumber} pour {quote.client.name}
-                        </p>
-                    </DialogHeader>
 
-                    <div className="flex-1 min-h-0">
-                        <div className="h-full border rounded-lg overflow-hidden bg-white">
-                            {isLoading || isPreviewLoading ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <div className="text-center">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                                        <p className="text-sm text-muted-foreground">Chargement de la prévisualisation...</p>
-                                    </div>
+                        {/* Détails du devis */}
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2">Détails</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">Date d'émission</Label>
+                                    <p className="text-sm">{quote.issueDate.toLocaleDateString('fr-FR')}</p>
                                 </div>
-                            ) : (
-                                <iframe
-                                    srcDoc={previewHtml}
-                                    className="w-full min-w-[90vw] min-h-[75vh] h-full border-0"
-                                    title={`Aperçu ${quote.quoteNumber}`}
-                                    sandbox="allow-same-origin"
-                                />
-                            )}
+                                <div>
+                                    <Label className="text-sm font-medium">Valide jusqu'au</Label>
+                                    <p className="text-sm">{quote.validUntil.toLocaleDateString('fr-FR')}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Articles */}
+                        <div>
+                            <h3 className="text-lg font-semibold mb-2">Articles</h3>
+                            <div className="border rounded-lg">
+                                <div className="grid grid-cols-4 gap-4 p-3 bg-muted font-medium text-sm">
+                                    <div>Description</div>
+                                    <div>Quantité</div>
+                                    <div>Prix unitaire</div>
+                                    <div>Total</div>
+                                </div>
+                                {quote.items.map((item, index) => (
+                                    <div key={index} className="grid grid-cols-4 gap-4 p-3 border-t">
+                                        <div className="text-sm">{item.description}</div>
+                                        <div className="text-sm">{item.quantity}</div>
+                                        <div className="text-sm">{formatCurrency(item.unitPrice)}</div>
+                                        <div className="text-sm font-medium">{formatCurrency(item.total)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Totaux */}
+                        <div className="flex justify-end">
+                            <div className="w-64 space-y-2">
+                                <div className="flex justify-between">
+                                    <span>Sous-total:</span>
+                                    <span>{formatCurrency(quote.subtotal)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>TVA:</span>
+                                    <span>{formatCurrency(quote.vatAmount)}</span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between font-bold text-lg">
+                                    <span>Total:</span>
+                                    <span>{formatCurrency(quote.total)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Notes */}
+                        {quote.notes && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Notes</h3>
+                                <p className="text-sm bg-muted p-3 rounded-lg">{quote.notes}</p>
+                            </div>
+                        )}
+
+                        {/* Conditions */}
+                        {quote.terms && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Conditions</h3>
+                                <p className="text-sm bg-muted p-3 rounded-lg">{quote.terms}</p>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-2 pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsSendModalOpen(true)}
+                                disabled={quote.status === 'accepted' || quote.status === 'rejected' || quote.status === 'expired'}
+                            >
+                                <Send className="h-4 w-4 mr-2" />
+                                Envoyer
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => executeDownload({ quoteId: quote.id })}
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                Télécharger
+                            </Button>
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Modal de confirmation d'envoi */}
-            <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+            {/* Modale d'envoi d'email */}
+            <Dialog open={isSendModalOpen} onOpenChange={setIsSendModalOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Envoyer le devis</DialogTitle>
-                        <DialogDescription>
-                            Le devis <strong>{quote.quoteNumber}</strong> sera envoyé à <strong>{quote.client.email}</strong> avec le PDF en pièce jointe.
-                        </DialogDescription>
+                        <DialogTitle>Envoyer le devis par email</DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email-subject">Objet de l&apos;email</Label>
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="email-subject">Objet</Label>
                             <Input
                                 id="email-subject"
                                 value={emailSubject}
@@ -227,26 +255,36 @@ Votre équipe`);
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div>
                             <Label htmlFor="email-message">Message</Label>
                             <Textarea
                                 id="email-message"
                                 value={emailMessage}
                                 onChange={(e) => setEmailMessage(e.target.value)}
-                                placeholder="Message de l'email"
-                                rows={6}
+                                placeholder="Message personnalisé..."
+                                rows={4}
                             />
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowSendDialog(false)} disabled={isSending}>
-                            Annuler
-                        </Button>
-                        <Button onClick={handleConfirmSend} disabled={isSending}>
-                            {isSending ? "Envoi en cours..." : "Envoyer"}
-                        </Button>
-                    </DialogFooter>
+                        <div className="text-sm text-muted-foreground">
+                            <p>Le devis sera envoyé à : <strong>{quote.client.email}</strong></p>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsSendModalOpen(false)}
+                            >
+                                Annuler
+                            </Button>
+                            <Button
+                                onClick={handleSend}
+                                disabled={isSending || !emailSubject.trim() || !emailMessage.trim()}
+                            >
+                                {isSending ? "Envoi..." : "Envoyer"}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

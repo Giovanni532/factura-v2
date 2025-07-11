@@ -61,6 +61,9 @@ export const createInvoiceAction = useMutation(
 
         await db.insert(invoiceItem).values(invoiceItems);
 
+        // Récupérer la facture complète avec les détails du client
+        const completeInvoice = await getInvoiceById(newInvoice.id, userData[0].companyId);
+
         // Revalider les pages nécessaires pour mettre à jour l'interface
         revalidatePath(paths.invoices.list);
         revalidatePath(paths.dashboard);
@@ -68,7 +71,7 @@ export const createInvoiceAction = useMutation(
         return {
             success: true,
             message: "Facture créée avec succès",
-            invoice: newInvoice
+            invoice: completeInvoice
         };
     }
 );

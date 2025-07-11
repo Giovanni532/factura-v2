@@ -109,12 +109,12 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                 const quoteData = result.data.quote;
                 const newQuote: QuoteWithDetails = {
                     id: quoteData.id,
-                    quoteNumber: quoteData.number,
+                    quoteNumber: quoteData.quoteNumber,
                     issueDate: quoteData.issueDate,
                     validUntil: quoteData.validUntil,
                     status: quoteData.status as 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired',
                     subtotal: quoteData.subtotal,
-                    vatAmount: quoteData.taxAmount,
+                    vatAmount: quoteData.vatAmount,
                     total: quoteData.total,
                     notes: quoteData.notes || "",
                     terms: quoteData.terms || "",
@@ -123,9 +123,9 @@ export function CreateQuoteForm({ onClose, onQuoteCreated, defaultClientId, form
                     templateId: quoteData.templateId,
                     createdAt: quoteData.createdAt,
                     updatedAt: quoteData.updatedAt,
-                    items: [], // Les items seront chargés lors du prochain refresh
-                    client: clients.find(c => c.id === quoteData.clientId) || { id: '', name: '', email: '' },
-                    template: templates.find(t => t.id === quoteData.templateId) || { id: '', name: '', type: 'quote' as const },
+                    items: quoteData.items || [],
+                    client: quoteData.client,
+                    template: quoteData.template || { id: '', name: '', type: 'quote' as const },
                 };
 
                 // Ajouter le nouveau devis au début de la liste

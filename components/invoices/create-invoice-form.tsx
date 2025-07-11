@@ -109,12 +109,12 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
                 const invoiceData = result.data.invoice;
                 const newInvoice: InvoiceWithDetails = {
                     id: invoiceData.id,
-                    invoiceNumber: invoiceData.number,
+                    invoiceNumber: invoiceData.invoiceNumber,
                     issueDate: invoiceData.issueDate,
                     dueDate: invoiceData.dueDate,
                     status: invoiceData.status,
                     subtotal: invoiceData.subtotal,
-                    vatAmount: invoiceData.taxAmount,
+                    vatAmount: invoiceData.vatAmount,
                     total: invoiceData.total,
                     notes: invoiceData.notes || "",
                     terms: "",
@@ -123,9 +123,9 @@ export function CreateInvoiceForm({ onClose, onInvoiceCreated, defaultClientId, 
                     templateId: invoiceData.templateId,
                     createdAt: invoiceData.createdAt,
                     updatedAt: invoiceData.updatedAt,
-                    items: [], // Les items seront chargés lors du prochain refresh
-                    client: clients.find(c => c.id === invoiceData.clientId) || { id: '', name: '', email: '' },
-                    template: templates.find(t => t.id === invoiceData.templateId) || { id: '', name: '', type: 'invoice' as const },
+                    items: invoiceData.items || [],
+                    client: invoiceData.client,
+                    template: invoiceData.template || { id: '', name: '', type: 'invoice' as const },
                 };
 
                 // Ajouter la nouvelle facture au début de la liste

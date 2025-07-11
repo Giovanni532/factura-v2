@@ -62,6 +62,9 @@ export const createQuoteAction = useMutation(
 
         await db.insert(quoteItem).values(quoteItems);
 
+        // Récupérer le devis complet avec les détails du client
+        const completeQuote = await getQuoteById(newQuote.id, userData[0].companyId);
+
         // Revalider les pages nécessaires pour mettre à jour l'interface
         revalidatePath(paths.quotes.list);
         revalidatePath(paths.dashboard);
@@ -69,7 +72,7 @@ export const createQuoteAction = useMutation(
         return {
             success: true,
             message: "Devis créé avec succès",
-            quote: newQuote
+            quote: completeQuote
         };
     }
 );

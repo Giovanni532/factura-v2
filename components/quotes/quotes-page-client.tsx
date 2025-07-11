@@ -4,15 +4,23 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuoteWithDetails, QuoteStats } from "@/validation/quote-schema";
-import { QuoteCard } from "@/components/quotes/quote-card";
 import { CreateQuoteButton } from "@/components/quotes/create-quote-button";
 import { QuotesContext } from "@/hooks/quotes-context";
 import { SubscriptionLimits } from "@/db/queries/subscription";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Crown } from "lucide-react";
+import { DatagridDocuments, DocumentRow } from "../datagrid/datagrid-documents";
+import { QuotePreviewModal } from "./quote-preview-modal";
+import { useAction } from "next-safe-action/hooks";
+import {
+    updateQuoteStatusAction,
+    deleteQuoteAction,
+    sendQuoteAction,
+    downloadQuoteAction
+} from "@/action/quote-actions";
+import { toast } from "sonner";
+import type { DateRange } from "react-day-picker";
 
 interface QuotesPageClientProps {
     quotes: QuoteWithDetails[];
@@ -32,12 +40,89 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const [search, setSearch] = useState(initialFilters.search);
-    const [statusFilter, setStatusFilter] = useState(initialFilters.status);
     const [quotes, setQuotes] = useState(initialQuotes);
     const [stats, setStats] = useState(initialStats);
     const [newQuote, setNewQuote] = useState(initialFilters.new);
     const [id, setId] = useState<string | null>(initialFilters.id);
+    const [selectedQuote, setSelectedQuote] = useState<QuoteWithDetails | null>(null);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+    // Actions
+    const { execute: executeStatusUpdate } = useAction(updateQuoteStatusAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Mettre à jour le devis dans la liste
+                setQuotes(prev => prev.map(quote =>
+                    quote.id === result.data!.quote.id ? { ...quote, status: result.data!.quote.status as any } : quote
+                ));
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la mise à jour du statut");
+        }
+    });
+
+    const { execute: executeDelete } = useAction(deleteQuoteAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Supprimer le devis de la liste
+                setQuotes(prev => prev.filter(quote => quote.id !== selectedQuote?.id));
+                setSelectedQuote(null);
+                setIsPreviewModalOpen(false);
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de la suppression");
+        }
+    });
+
+    const { execute: executeSend } = useAction(sendQuoteAction, {
+        onSuccess: (result) => {
+            if (result.data) {
+                toast.success(result.data.message);
+                // Mettre à jour le statut du devis
+                setQuotes(prev => prev.map(quote =>
+                    quote.id === selectedQuote?.id ? { ...quote, status: 'sent' } : quote
+                ));
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors de l'envoi");
+        }
+    });
+
+    const { execute: executeDownload } = useAction(downloadQuoteAction, {
+        onSuccess: (result) => {
+            if (result.data?.success && result.data.pdf) {
+                try {
+                    // Créer un blob et télécharger le PDF
+                    const pdfData = atob(result.data.pdf);
+                    const bytes = new Uint8Array(pdfData.length);
+                    for (let i = 0; i < pdfData.length; i++) {
+                        bytes[i] = pdfData.charCodeAt(i);
+                    }
+
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = result.data.filename || 'devis.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    toast.success("Devis téléchargé avec succès");
+                } catch (error) {
+                    toast.error("Erreur lors du téléchargement du PDF");
+                }
+            }
+        },
+        onError: (error) => {
+            toast.error(error.error?.serverError?.message || "Erreur lors du téléchargement");
+        }
+    });
 
     // Vérifier si on peut ajouter un nouveau devis (basé sur les documents combinés)
     const canAddNewQuote = subscriptionLimits.maxInvoices === -1 ||
@@ -56,78 +141,75 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         const currentId = searchParams.get('id');
         setId(currentId);
     }, [searchParams]);
-    // Filtrer les devis
-    const filteredQuotes = useMemo(() => {
-        return quotes.filter(quote => {
-            const matchesSearch = !search ||
-                quote.quoteNumber.toLowerCase().includes(search.toLowerCase()) ||
-                quote.client.name.toLowerCase().includes(search.toLowerCase());
 
-            const matchesStatus = statusFilter === 'all' || quote.status === statusFilter;
+    // Transformer les devis en DocumentRow
+    const documentRows: DocumentRow[] = useMemo(() => {
+        return quotes.map(quote => ({
+            id: quote.id,
+            type: "quote" as const,
+            number: quote.quoteNumber,
+            client: { id: quote.client.id, name: quote.client.name, email: quote.client.email },
+            date: quote.issueDate.toISOString(),
+            status: quote.status,
+            amount: quote.total,
+            currency: "EUR",
+        }));
+    }, [quotes]);
 
-            return matchesSearch && matchesStatus;
+    // Options de statut pour le filtre
+    const statusOptions = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
+
+    // Callbacks pour la datagrid
+    const handleView = (doc: DocumentRow) => {
+        const quote = quotes.find(q => q.id === doc.id);
+        if (quote) {
+            setSelectedQuote(quote);
+            setIsPreviewModalOpen(true);
+        }
+    };
+
+    const handleStatusChange = (doc: DocumentRow, status: string) => {
+        executeStatusUpdate({ id: doc.id, status: status as any });
+    };
+
+    const handleDownload = (doc: DocumentRow) => {
+        executeDownload({ quoteId: doc.id });
+    };
+
+    const handleSend = (doc: DocumentRow, subject: string, message: string) => {
+        executeSend({
+            quoteId: doc.id,
+            subject,
+            message
         });
-    }, [quotes, search, statusFilter]);
+    };
 
-    const updateFilters = (newFilters: Partial<typeof initialFilters>) => {
+    const handleDelete = (doc: DocumentRow) => {
+        const quote = quotes.find(q => q.id === doc.id);
+        if (quote) {
+            setSelectedQuote(quote);
+            executeDelete({ id: doc.id });
+            // Mettre à jour immédiatement la liste
+            setQuotes(prev => prev.filter(q => q.id !== doc.id));
+        }
+    };
+
+    const handleFiltersChange = (filters: { search: string; status: string; dateRange: DateRange }) => {
         const params = new URLSearchParams(searchParams);
 
-        if (newFilters.search !== undefined) {
-            if (newFilters.search) {
-                params.set('search', newFilters.search);
-            } else {
-                params.delete('search');
-            }
+        if (filters.search) {
+            params.set('search', filters.search);
+        } else {
+            params.delete('search');
         }
 
-        if (newFilters.status !== undefined) {
-            if (newFilters.status !== 'all') {
-                params.set('status', newFilters.status);
-            } else {
-                params.delete('status');
-            }
-        }
-
-        if (newFilters.clientId !== undefined) {
-            if (newFilters.clientId) {
-                params.set('client', newFilters.clientId);
-            } else {
-                params.delete('client');
-            }
-        }
-
-        if (newFilters.new !== undefined) {
-            if (newFilters.new) {
-                setNewQuote(true);
-            } else {
-                setNewQuote(false);
-            }
+        if (filters.status !== 'all') {
+            params.set('status', filters.status);
+        } else {
+            params.delete('status');
         }
 
         router.push(`/dashboard/quotes?${params.toString()}`);
-    };
-
-    const handleSearch = (value: string) => {
-        setSearch(value);
-        updateFilters({ search: value });
-    };
-
-    const handleStatusFilter = (value: string) => {
-        setStatusFilter(value);
-        updateFilters({ status: value });
-    };
-
-    const clearFilters = () => {
-        setSearch("");
-        setStatusFilter("all");
-        updateFilters({ search: "", status: "all" });
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
     };
 
     return (
@@ -188,38 +270,10 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Devis</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                {subscriptionLimits.currentDocuments}
-                                {subscriptionLimits.maxInvoices !== -1 && (
-                                    <span className="text-sm text-muted-foreground">
-                                        /{subscriptionLimits.maxInvoices}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {stats.totalQuotes} devis + {subscriptionLimits.currentInvoices} factures
-                                {subscriptionLimits.maxInvoices !== -1 && (
-                                    <span className="block">
-                                        Plan {subscriptionLimits.planName}
-                                    </span>
-                                )}
-                            </p>
-                            {/* Barre de progression */}
-                            {subscriptionLimits.maxInvoices !== -1 && (
-                                <div className="mt-2">
-                                    <div className="w-full bg-muted rounded-full h-2">
-                                        <div
-                                            className={`h-2 rounded-full transition-all ${usagePercentage >= 100 ? 'bg-red-500' :
-                                                usagePercentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
-                                                }`}
-                                            style={{ width: `${Math.min(100, usagePercentage)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                            <div className="text-2xl font-bold">{stats.totalQuotes}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -240,80 +294,44 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d&apos;affaires</CardTitle>
+                            <CardTitle className="text-sm font-medium">Valeur moyenne</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+                            <div className="text-2xl font-bold">
+                                {new Intl.NumberFormat('fr-FR', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                }).format(stats.averageQuoteValue)}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Filtres */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Filtres</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                            <div className="flex-1">
-                                <Input
-                                    placeholder="Rechercher par numéro ou client..."
-                                    value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                            </div>
-                            <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                                <SelectTrigger className="w-full md:w-[180px]">
-                                    <SelectValue placeholder="Statut" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Tous les statuts</SelectItem>
-                                    <SelectItem value="draft">Brouillon</SelectItem>
-                                    <SelectItem value="sent">Envoyé</SelectItem>
-                                    <SelectItem value="accepted">Accepté</SelectItem>
-                                    <SelectItem value="rejected">Refusé</SelectItem>
-                                    <SelectItem value="expired">Expiré</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Button variant="outline" onClick={clearFilters}>
-                                Effacer
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Datagrid */}
+                <DatagridDocuments
+                    documents={documentRows}
+                    statusOptions={statusOptions}
+                    filters={{
+                        search: initialFilters.search,
+                        status: initialFilters.status || "all",
+                        dateRange: undefined as any
+                    }}
+                    onFiltersChange={handleFiltersChange}
+                    onView={handleView}
+                    onStatusChange={handleStatusChange}
+                    onDownload={handleDownload}
+                    onSend={handleSend}
+                    onDelete={handleDelete}
+                />
 
-                {/* Liste des devis */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            Devis ({filteredQuotes.length})
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {filteredQuotes.length === 0 ? (
-                            <div className="text-center py-8">
-                                <p className="text-muted-foreground pb-4">
-                                    {search || statusFilter !== 'all'
-                                        ? "Aucun devis ne correspond aux filtres"
-                                        : "Aucun devis trouvé"}
-                                </p>
-                                {search || statusFilter !== 'all' ? (
-                                    <Button variant="outline" onClick={clearFilters} className="mt-2">
-                                        Effacer les filtres
-                                    </Button>
-                                ) : (
-                                    <CreateQuoteButton formData={formData} newQuote={newQuote} />
-                                )}
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {filteredQuotes.map((quote) => (
-                                    <QuoteCard key={quote.id} quote={quote} idToOpen={id} />
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                {/* Modale de prévisualisation */}
+                {selectedQuote && (
+                    <QuotePreviewModal
+                        quote={selectedQuote}
+                        isOpen={isPreviewModalOpen}
+                        onClose={() => setIsPreviewModalOpen(false)}
+                    />
+                )}
             </div>
         </QuotesContext.Provider>
     );
