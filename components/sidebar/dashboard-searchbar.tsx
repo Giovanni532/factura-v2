@@ -73,6 +73,9 @@ export default function SearchBar() {
         // For client results, redirect to the clients page with search param
         if (result.type === 'client') {
             router.push(`/dashboard/clients?search=${encodeURIComponent(result.title)}`);
+        } else if (result.type === 'service') {
+            // Toujours rediriger vers l'onglet prestations avec la recherche
+            router.push(`/dashboard/services?type=services&search=${encodeURIComponent(result.title)}`);
         } else {
             router.push(url);
         }

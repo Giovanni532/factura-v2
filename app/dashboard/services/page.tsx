@@ -9,7 +9,14 @@ import { getUserWithCompany } from "@/db/queries/company";
 import { ServiceWithStats } from "@/validation/service-schema";
 import { paths } from "@/paths";
 
-export default async function ServicesPage() {
+
+interface ServicesPageProps {
+    searchParams: Promise<{ [key: string]: string }>
+}
+
+
+export default async function ServicesPage({ searchParams }: ServicesPageProps) {
+    const searchParamsResult = await searchParams;
     const session = await auth.api.getSession({
         headers: await headers()
     });
@@ -26,6 +33,10 @@ export default async function ServicesPage() {
         redirect(paths.dashboard);
     }
 
+    // Récupérer les paramètres de recherche
+    const initialType = searchParamsResult.type || 'services';
+    const initialSearch = searchParamsResult.search || '';
+
     // Récupérer les services et catégories avec leurs statistiques
     const [services, categories] = await Promise.all([
         getServicesWithStats(companyId),
@@ -40,6 +51,8 @@ export default async function ServicesPage() {
             <ServicesPageClient
                 initialServices={services as ServiceWithStats[]}
                 initialCategories={categories}
+                initialType={initialType}
+                initialSearch={initialSearch}
             />
         </div>
     );

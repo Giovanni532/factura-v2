@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
-import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -10,31 +10,27 @@ interface ImageUploadProps {
     onChange: (value: string) => void;
     disabled?: boolean;
     className?: string;
+    avatarMode?: boolean; // nouveau mode compact pour avatar
 }
 
 export function ImageUpload({
     value,
     onChange,
     disabled = false,
-    className
+    className,
+    avatarMode = false
 }: ImageUploadProps) {
     const [isUploading, setIsUploading] = useState(false);
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return;
-
         const file = acceptedFiles[0];
-
-        // Vérifier la taille du fichier (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('Le fichier ne doit pas dépasser 5MB');
             return;
         }
-
         setIsUploading(true);
-
         try {
-            // Convertir en base64
             const reader = new FileReader();
             reader.onload = () => {
                 const base64 = reader.result as string;
@@ -66,6 +62,43 @@ export function ImageUpload({
         onChange('');
     };
 
+    if (avatarMode) {
+        return (
+            <div className={cn("relative w-28 h-28 mx-auto", className)}>
+                <div {...getRootProps()} className="group cursor-pointer w-full h-full">
+                    <input {...getInputProps()} />
+                    <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-background shadow bg-muted flex items-center justify-center">
+                        {value ? (
+                            <Image
+                                src={value}
+                                alt="Avatar utilisateur"
+                                className="object-cover w-full h-full"
+                                width={112}
+                                height={112}
+                            />
+                        ) : (
+                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        )}
+                        {isUploading && (
+                            <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-full">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        tabIndex={-1}
+                        className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow border border-gray-200 hover:bg-gray-100 transition z-20"
+                        disabled={disabled || isUploading}
+                    >
+                        <Pencil className="h-4 w-4 text-gray-700" />
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Mode classique (card)
     return (
         <div className={cn("space-y-6", className)}>
             {value ? (
@@ -143,7 +176,7 @@ export function ImageUpload({
                         <div className="space-y-2">
                             <p className="text-sm font-medium">
                                 {isUploading ? 'Téléchargement en cours...' :
-                                    isDragActive ? 'Déposez l&apos;image ici' : 'Glissez une image ou cliquez pour parcourir'}
+                                    isDragActive ? 'Déposez l\'image ici' : 'Glissez une image ou cliquez pour parcourir'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                                 PNG, JPG, JPEG, WebP ou SVG (max. 5MB)

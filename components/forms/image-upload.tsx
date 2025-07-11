@@ -16,9 +16,10 @@ interface ImageUploadProps {
     type: ImageUploadType;
     currentImage?: string;
     onImageUpdated?: (newImage: string) => void;
+    avatarMode?: boolean;
 }
 
-export function ImageUpload({ type, currentImage, onImageUpdated }: ImageUploadProps) {
+export function ImageUpload({ type, currentImage, onImageUpdated, avatarMode = false }: ImageUploadProps) {
     const [image, setImage] = useState<string>(currentImage || '');
     const [hasChanges, setHasChanges] = useState(false);
 
@@ -108,6 +109,30 @@ export function ImageUpload({ type, currentImage, onImageUpdated }: ImageUploadP
         if (isUserAvatar) return "Avatar actuel";
         return "Image actuelle";
     };
+
+    if (avatarMode) {
+        return (
+            <div className="flex flex-col items-center gap-3">
+                <ImageUploadBase
+                    value={image}
+                    onChange={handleImageChange}
+                    disabled={isPending}
+                    avatarMode={true}
+                />
+                {hasChanges && (
+                    <div className="flex gap-3 mt-2">
+                        <Button
+                            onClick={handleSave}
+                            disabled={isPending || !image}
+                            className="flex-1"
+                        >
+                            {isPending ? 'Sauvegarde...' : 'Mettre à jour'}
+                        </Button>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <Card>

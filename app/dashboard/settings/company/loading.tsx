@@ -1,17 +1,22 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { motion } from "framer-motion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Users, Shield } from "lucide-react";
 
 export default function CompanySettingsLoading() {
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h2>
+        <div className="space-y-6">
+            {/* En-tête de la page */}
+            <div>
+                <Skeleton className="h-8 w-80 mb-2" />
+                <Skeleton className="h-4 w-96" />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Colonne gauche : Informations de l'entreprise */}
-                <div className="space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Colonne gauche : Informations de l'entreprise (2/3) */}
+                <div className="xl:col-span-2 space-y-6">
                     {/* Informations générales */}
                     <Card>
                         <CardHeader>
@@ -19,44 +24,47 @@ export default function CompanySettingsLoading() {
                                 <Building2 className="h-5 w-5" />
                                 Informations de l&apos;entreprise
                             </CardTitle>
+                            <CardDescription>
+                                Gérez les informations de votre entreprise
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">
-                                        <Skeleton className="h-4 w-32 mb-2" />
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Skeleton className="h-4 w-32" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-16 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-16" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-20 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-20" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <Skeleton className="h-4 w-16 mb-2" />
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Skeleton className="h-4 w-16" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-12 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-12" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-20 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-20" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-12 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-12" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-16 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-16" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
-                                    <div>
-                                        <Skeleton className="h-4 w-20 mb-2" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-20" />
                                         <Skeleton className="h-10 w-full" />
                                     </div>
                                 </div>

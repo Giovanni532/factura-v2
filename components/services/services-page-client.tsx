@@ -17,20 +17,27 @@ import { Briefcase, Tag, TrendingUp, Package, Euro, Search, Filter, X } from "lu
 interface ServicesPageClientProps {
     initialServices: ServiceWithStats[];
     initialCategories: ServiceCategory[];
+    initialType?: string;
+    initialSearch?: string;
 }
 
-export function ServicesPageClient({ initialServices, initialCategories }: ServicesPageClientProps) {
+export function ServicesPageClient({
+    initialServices,
+    initialCategories,
+    initialType = 'services',
+    initialSearch = ''
+}: ServicesPageClientProps) {
     const [services, setServices] = useState<ServiceWithStats[]>(initialServices);
     const [categories, setCategories] = useState<ServiceCategory[]>(initialCategories);
-    const [activeTab, setActiveTab] = useState("services");
+    const [activeTab, setActiveTab] = useState(initialType);
 
     // Filtres pour les services
-    const [serviceSearch, setServiceSearch] = useState("");
+    const [serviceSearch, setServiceSearch] = useState(initialType === 'services' ? initialSearch : "");
     const [serviceStatusFilter, setServiceStatusFilter] = useState<string>("all");
     const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>("all");
 
     // Filtres pour les catégories
-    const [categorySearch, setCategorySearch] = useState("");
+    const [categorySearch, setCategorySearch] = useState(initialType === 'categories' ? initialSearch : "");
     const [categoryServiceCountFilter, setCategoryServiceCountFilter] = useState<string>("all");
 
     // Statistiques globales
