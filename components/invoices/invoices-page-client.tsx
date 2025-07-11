@@ -139,7 +139,16 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
     useEffect(() => {
         const currentId = searchParams.get('id');
         setId(currentId);
-    }, [searchParams]);
+
+        // Si un ID est spécifié, ouvrir automatiquement la prévisualisation du document
+        if (currentId) {
+            const targetInvoice = invoices.find(inv => inv.id === currentId);
+            if (targetInvoice) {
+                setSelectedInvoice(targetInvoice);
+                setIsPreviewModalOpen(true);
+            }
+        }
+    }, [searchParams, invoices]);
 
     // Transformer les factures en DocumentRow
     const documentRows: DocumentRow[] = useMemo(() => {
@@ -209,6 +218,16 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         }
 
         router.push(`/dashboard/invoices?${params.toString()}`);
+    };
+
+    const handleClosePreview = () => {
+        setIsPreviewModalOpen(false);
+        setSelectedInvoice(null);
+
+        // Nettoyer l'ID de l'URL
+        const params = new URLSearchParams(searchParams);
+        params.delete('id');
+        router.replace(`/dashboard/invoices?${params.toString()}`);
     };
 
     return (
@@ -327,7 +346,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                     <InvoicePreviewModal
                         invoice={selectedInvoice}
                         isOpen={isPreviewModalOpen}
-                        onClose={() => setIsPreviewModalOpen(false)}
+                        onClose={handleClosePreview}
                     />
                 )}
             </div>

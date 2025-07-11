@@ -140,7 +140,16 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     useEffect(() => {
         const currentId = searchParams.get('id');
         setId(currentId);
-    }, [searchParams]);
+
+        // Si un ID est spécifié, ouvrir automatiquement la prévisualisation du document
+        if (currentId) {
+            const targetQuote = quotes.find(q => q.id === currentId);
+            if (targetQuote) {
+                setSelectedQuote(targetQuote);
+                setIsPreviewModalOpen(true);
+            }
+        }
+    }, [searchParams, quotes]);
 
     // Transformer les devis en DocumentRow
     const documentRows: DocumentRow[] = useMemo(() => {
@@ -210,6 +219,16 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         }
 
         router.push(`/dashboard/quotes?${params.toString()}`);
+    };
+
+    const handleClosePreview = () => {
+        setIsPreviewModalOpen(false);
+        setSelectedQuote(null);
+
+        // Nettoyer l'ID de l'URL
+        const params = new URLSearchParams(searchParams);
+        params.delete('id');
+        router.replace(`/dashboard/quotes?${params.toString()}`);
     };
 
     return (
@@ -329,7 +348,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                     <QuotePreviewModal
                         quote={selectedQuote}
                         isOpen={isPreviewModalOpen}
-                        onClose={() => setIsPreviewModalOpen(false)}
+                        onClose={handleClosePreview}
                     />
                 )}
             </div>
