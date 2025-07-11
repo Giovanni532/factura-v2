@@ -22,7 +22,8 @@ export interface InvoiceEmailData {
     subject: string;
     message?: string;
     invoiceLink: string;
-    pdfUrl?: string;
+    pdfData?: string; // Base64 du PDF
+    pdfFilename?: string; // Nom du fichier PDF
 }
 
 export interface QuoteEmailData {
@@ -37,7 +38,8 @@ export interface QuoteEmailData {
     subject: string;
     message?: string;
     quoteLink: string;
-    pdfUrl?: string;
+    pdfData?: string; // Base64 du PDF
+    pdfFilename?: string; // Nom du fichier PDF
 }
 
 export type EmailData = InvitationEmailData | InvoiceEmailData | QuoteEmailData;
@@ -81,7 +83,6 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
                     subject: emailData.subject,
                     message: emailData.message || '',
                     invoiceLink: emailData.invoiceLink,
-                    pdfUrl: emailData.pdfUrl,
                 });
                 subject = emailData.subject || `Facture #${emailData.invoiceNumber}`;
                 break;
@@ -98,18 +99,30 @@ export async function sendEmail(emailData: EmailData): Promise<{ success: boolea
                     subject: emailData.subject,
                     message: emailData.message || '',
                     quoteLink: emailData.quoteLink,
-                    pdfUrl: emailData.pdfUrl,
                 });
                 subject = emailData.subject || `Devis #${emailData.quoteNumber}`;
                 break;
         }
 
-        const { data, error } = await resend.emails.send({
+        // Préparer les options d'envoi
+        const emailOptions: any = {
             from: `Factura <onboarding@mail.giovannisalcuni.dev>`,
             to: [emailData.to],
             subject,
             react: emailComponent,
-        });
+        };
+
+        // Ajouter les pièces jointes PDF si disponibles
+        if ((emailData.type === 'invoice' || emailData.type === 'quote') && emailData.pdfData && emailData.pdfFilename) {
+            emailOptions.attachments = [
+                {
+                    filename: emailData.pdfFilename,
+                    content: Buffer.from(emailData.pdfData, 'base64'),
+                }
+            ];
+        }
+
+        const { data, error } = await resend.emails.send(emailOptions);
 
         if (error) {
             console.error('Erreur Resend:', error);

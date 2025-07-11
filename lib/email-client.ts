@@ -22,7 +22,8 @@ export interface InvoiceEmailData {
     subject: string;
     message?: string;
     invoiceLink: string;
-    pdfUrl?: string;
+    pdfData?: string;
+    pdfFilename?: string;
 }
 
 export interface QuoteEmailData {
@@ -37,7 +38,8 @@ export interface QuoteEmailData {
     subject: string;
     message?: string;
     quoteLink: string;
-    pdfUrl?: string;
+    pdfData?: string;
+    pdfFilename?: string;
 }
 
 export type EmailData = InvitationEmailData | InvoiceEmailData | QuoteEmailData;

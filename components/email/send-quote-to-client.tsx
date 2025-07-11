@@ -10,7 +10,6 @@ interface QuoteEmailProps {
     subject: string;
     message: string;
     quoteLink: string;
-    pdfUrl?: string;
 }
 
 export const QuoteEmail: React.FC<QuoteEmailProps> = ({
@@ -23,7 +22,6 @@ export const QuoteEmail: React.FC<QuoteEmailProps> = ({
     subject,
     message,
     quoteLink,
-    pdfUrl,
 }) => {
     return (
         <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
@@ -117,23 +115,7 @@ export const QuoteEmail: React.FC<QuoteEmailProps> = ({
                         Voir le devis
                     </a>
 
-                    {pdfUrl && (
-                        <a
-                            href={pdfUrl}
-                            style={{
-                                backgroundColor: '#28a745',
-                                color: '#ffffff',
-                                padding: '12px 30px',
-                                textDecoration: 'none',
-                                borderRadius: '6px',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                display: 'inline-block',
-                            }}
-                        >
-                            Télécharger PDF
-                        </a>
-                    )}
+
                 </div>
 
                 <div style={{ textAlign: 'center', margin: '20px 0' }}>

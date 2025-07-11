@@ -10,7 +10,6 @@ interface InvoiceEmailProps {
     subject: string;
     message: string;
     invoiceLink: string;
-    pdfUrl?: string;
 }
 
 export const InvoiceEmail: React.FC<InvoiceEmailProps> = ({
@@ -23,7 +22,6 @@ export const InvoiceEmail: React.FC<InvoiceEmailProps> = ({
     subject,
     message,
     invoiceLink,
-    pdfUrl,
 }) => {
     return (
         <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
@@ -105,23 +103,7 @@ export const InvoiceEmail: React.FC<InvoiceEmailProps> = ({
                         Voir la facture
                     </a>
 
-                    {pdfUrl && (
-                        <a
-                            href={pdfUrl}
-                            style={{
-                                backgroundColor: '#28a745',
-                                color: '#ffffff',
-                                padding: '12px 30px',
-                                textDecoration: 'none',
-                                borderRadius: '6px',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                display: 'inline-block',
-                            }}
-                        >
-                            Télécharger PDF
-                        </a>
-                    )}
+
                 </div>
 
                 <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>

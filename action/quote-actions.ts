@@ -14,6 +14,7 @@ import { paths } from "@/paths";
 import { canAddQuote, canUserPerformAction } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
 import { sendQuoteEmail } from "@/lib/email";
+import { generatePDF, getTemplateForDocument } from "@/lib/pdf-generator";
 
 // Action pour créer un nouveau devis
 export const createQuoteAction = useMutation(
@@ -535,7 +536,64 @@ export const sendQuoteAction = useMutation(
             throw new Error("Entreprise non trouvée");
         }
 
-        // Envoi réel de l'email de devis
+        // Générer le PDF du devis
+        const quoteDataForPdf = await getQuoteById(input.quoteId, userData[0].companyId);
+
+        if (!quoteDataForPdf) {
+            throw new ActionError("Devis non trouvé");
+        }
+
+        // Récupérer le template
+        const selectedTemplate = await getTemplateForDocument(quoteDataForPdf.templateId, 'quote', userData[0].companyId);
+
+        // Préparer les données pour le template
+        const templateData = {
+            company: {
+                name: companyData[0].name,
+                address: companyData[0].address || undefined,
+                city: companyData[0].city || undefined,
+                postalCode: companyData[0].postalCode || undefined,
+                country: companyData[0].country || undefined,
+                email: companyData[0].email,
+                phone: companyData[0].phone || undefined,
+                siret: companyData[0].siret || undefined,
+                vatNumber: companyData[0].vatNumber || undefined,
+                logo: companyData[0].logo || undefined,
+            },
+            client: {
+                name: quoteDataForPdf.client.name,
+                email: quoteDataForPdf.client.email,
+                address: quoteDataForPdf.client.address || undefined,
+                city: quoteDataForPdf.client.city || undefined,
+                postalCode: quoteDataForPdf.client.postalCode || undefined,
+                country: quoteDataForPdf.client.country || undefined,
+                siret: quoteDataForPdf.client.siret || undefined,
+                vatNumber: quoteDataForPdf.client.vatNumber || undefined,
+            },
+            document: {
+                number: quoteDataForPdf.quoteNumber,
+                issueDate: quoteDataForPdf.issueDate.toLocaleDateString('fr-FR'),
+                validUntil: quoteDataForPdf.validUntil.toLocaleDateString('fr-FR'),
+                subtotal: quoteDataForPdf.subtotal.toFixed(2),
+                taxRate: "20",
+                taxAmount: quoteDataForPdf.vatAmount.toFixed(2),
+                total: quoteDataForPdf.total.toFixed(2),
+                notes: quoteDataForPdf.notes || "",
+                terms: quoteDataForPdf.terms || "",
+            },
+            items: quoteDataForPdf.items.map(item => ({
+                description: item.description,
+                quantity: item.quantity.toString(),
+                unitPrice: item.unitPrice.toFixed(2),
+                total: item.total.toFixed(2),
+            })),
+        };
+
+        // Générer le PDF
+        const { pdf, filename } = await generatePDF(templateData, selectedTemplate, 'quote');
+        const pdfBase64 = Buffer.from(pdf).toString('base64');
+
+        // Envoi réel de l'email de devis avec PDF en pièce jointe
         const emailResult = await sendQuoteEmail({
             to: clientData[0].email,
             clientName: clientData[0].name,
@@ -547,7 +605,8 @@ export const sendQuoteAction = useMutation(
             subject: input.subject,
             message: input.message,
             quoteLink: `${process.env.NEXT_PUBLIC_APP_URL}/quotes/${quoteData[0].id}`,
-            // pdfUrl: 'URL_PDF_SI_DISPONIBLE',
+            pdfData: pdfBase64,
+            pdfFilename: filename,
         });
         if (!emailResult.success) {
             console.error('Erreur lors de l\'envoi de l\'email de devis:', emailResult.error);
@@ -850,7 +909,64 @@ export const remindQuoteAction = useMutation(
             throw new Error("Entreprise non trouvée");
         }
 
-        // Envoi du rappel de devis
+        // Générer le PDF du devis pour le rappel
+        const quoteDataForPdf = await getQuoteById(input.quoteId, userData[0].companyId);
+
+        if (!quoteDataForPdf) {
+            throw new ActionError("Devis non trouvé");
+        }
+
+        // Récupérer le template
+        const selectedTemplate = await getTemplateForDocument(quoteDataForPdf.templateId, 'quote', userData[0].companyId);
+
+        // Préparer les données pour le template
+        const templateData = {
+            company: {
+                name: companyData[0].name,
+                address: companyData[0].address || undefined,
+                city: companyData[0].city || undefined,
+                postalCode: companyData[0].postalCode || undefined,
+                country: companyData[0].country || undefined,
+                email: companyData[0].email,
+                phone: companyData[0].phone || undefined,
+                siret: companyData[0].siret || undefined,
+                vatNumber: companyData[0].vatNumber || undefined,
+                logo: companyData[0].logo || undefined,
+            },
+            client: {
+                name: quoteDataForPdf.client.name,
+                email: quoteDataForPdf.client.email,
+                address: quoteDataForPdf.client.address || undefined,
+                city: quoteDataForPdf.client.city || undefined,
+                postalCode: quoteDataForPdf.client.postalCode || undefined,
+                country: quoteDataForPdf.client.country || undefined,
+                siret: quoteDataForPdf.client.siret || undefined,
+                vatNumber: quoteDataForPdf.client.vatNumber || undefined,
+            },
+            document: {
+                number: quoteDataForPdf.quoteNumber,
+                issueDate: quoteDataForPdf.issueDate.toLocaleDateString('fr-FR'),
+                validUntil: quoteDataForPdf.validUntil.toLocaleDateString('fr-FR'),
+                subtotal: quoteDataForPdf.subtotal.toFixed(2),
+                taxRate: "20",
+                taxAmount: quoteDataForPdf.vatAmount.toFixed(2),
+                total: quoteDataForPdf.total.toFixed(2),
+                notes: quoteDataForPdf.notes || "",
+                terms: quoteDataForPdf.terms || "",
+            },
+            items: quoteDataForPdf.items.map(item => ({
+                description: item.description,
+                quantity: item.quantity.toString(),
+                unitPrice: item.unitPrice.toFixed(2),
+                total: item.total.toFixed(2),
+            })),
+        };
+
+        // Générer le PDF
+        const { pdf, filename } = await generatePDF(templateData, selectedTemplate, 'quote');
+        const pdfBase64 = Buffer.from(pdf).toString('base64');
+
+        // Envoi du rappel de devis avec PDF en pièce jointe
         const emailResult = await sendQuoteEmail({
             to: quoteData.client.email,
             clientName: quoteData.client.name,
@@ -862,6 +978,8 @@ export const remindQuoteAction = useMutation(
             subject: input.subject,
             message: input.message,
             quoteLink: `${process.env.NEXT_PUBLIC_APP_URL}/quotes/${quoteData.id}`,
+            pdfData: pdfBase64,
+            pdfFilename: filename,
         });
 
         if (!emailResult.success) {

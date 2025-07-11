@@ -693,7 +693,33 @@ export const sendInvoiceAction = useMutation(
         // Remplacer le CSS
         html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
 
-        // Envoi réel de l'email de facture
+        // Générer le PDF avec Puppeteer
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+
+        const pdf = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '20mm',
+                right: '20mm',
+                bottom: '20mm',
+                left: '20mm'
+            }
+        });
+
+        await browser.close();
+
+        // Convertir en base64
+        const pdfBase64 = Buffer.from(pdf).toString('base64');
+        const pdfFilename = `facture-${invoiceData.invoiceNumber}.pdf`;
+
+        // Envoi réel de l'email de facture avec PDF en pièce jointe
         const emailResult = await sendInvoiceEmail({
             to: invoiceData.client.email,
             clientName: invoiceData.client.name,
@@ -705,7 +731,8 @@ export const sendInvoiceAction = useMutation(
             subject: input.subject,
             message: input.message,
             invoiceLink: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${invoiceData.id}`,
-            // pdfUrl: 'URL_PDF_SI_DISPONIBLE',
+            pdfData: pdfBase64,
+            pdfFilename: pdfFilename,
         });
         if (!emailResult.success) {
             console.error('Erreur lors de l\'envoi de l\'email de facture:', emailResult.error);

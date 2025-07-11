@@ -29,7 +29,8 @@ const invoiceEmailSchema = z.object({
     subject: z.string(),
     message: z.string().optional(),
     invoiceLink: z.string().url(),
-    pdfUrl: z.string().url().optional(),
+    pdfData: z.string().optional(),
+    pdfFilename: z.string().optional(),
 });
 
 const quoteEmailSchema = z.object({
@@ -44,7 +45,8 @@ const quoteEmailSchema = z.object({
     subject: z.string(),
     message: z.string().optional(),
     quoteLink: z.string().url(),
-    pdfUrl: z.string().url().optional(),
+    pdfData: z.string().optional(),
+    pdfFilename: z.string().optional(),
 });
 
 const emailSchema = z.discriminatedUnion('type', [
@@ -85,7 +87,6 @@ export async function POST(request: Request) {
                     subject: validatedData.subject,
                     message: validatedData.message || '',
                     invoiceLink: validatedData.invoiceLink,
-                    pdfUrl: validatedData.pdfUrl,
                 });
                 subject = validatedData.subject || `Facture #${validatedData.invoiceNumber}`;
                 break;
@@ -101,18 +102,30 @@ export async function POST(request: Request) {
                     subject: validatedData.subject,
                     message: validatedData.message || '',
                     quoteLink: validatedData.quoteLink,
-                    pdfUrl: validatedData.pdfUrl,
                 });
                 subject = validatedData.subject || `Devis #${validatedData.quoteNumber}`;
                 break;
         }
 
-        const { data, error } = await resend.emails.send({
+        // Préparer les options d'envoi
+        const emailOptions: any = {
             from: process.env.RESEND_FROM_EMAIL!,
             to: [validatedData.to],
             subject,
             react: emailComponent,
-        });
+        };
+
+        // Ajouter les pièces jointes PDF si disponibles
+        if ((validatedData.type === 'invoice' || validatedData.type === 'quote') && validatedData.pdfData && validatedData.pdfFilename) {
+            emailOptions.attachments = [
+                {
+                    filename: validatedData.pdfFilename,
+                    content: Buffer.from(validatedData.pdfData, 'base64'),
+                }
+            ];
+        }
+
+        const { data, error } = await resend.emails.send(emailOptions);
 
         if (error) {
             console.error('Erreur Resend:', error);
