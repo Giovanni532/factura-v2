@@ -111,17 +111,14 @@ export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalP
         <>
             {/* Modale principale de prévisualisation */}
             <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl min-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center justify-between">
                             <span>Devis {quote.quoteNumber}</span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mr-10">
                                 <Badge className={getStatusColor(quote.status)}>
                                     {translateStatus(quote.status)}
                                 </Badge>
-                                <Button variant="ghost" size="icon" onClick={onClose}>
-                                    <X className="h-4 w-4" />
-                                </Button>
                             </div>
                         </DialogTitle>
                     </DialogHeader>

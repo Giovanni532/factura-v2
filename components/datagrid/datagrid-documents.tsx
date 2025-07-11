@@ -192,7 +192,6 @@ export function DatagridDocuments({
 
     const handleStatusChange = (doc: DocumentRow) => {
         setSelectedDocument(doc)
-        // Ne pas pré-remplir le statut pour forcer l'utilisateur à faire un choix
         setSelectedStatus("")
         setShowStatusDialog(true)
     }
