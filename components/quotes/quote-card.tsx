@@ -18,6 +18,7 @@ import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useQuotesContext } from "../../hooks/quotes-context";
 import { QuotePreviewModal } from "./quote-preview-modal";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 interface QuoteCardProps {
     quote: QuoteWithDetails;
@@ -236,21 +237,6 @@ Votre équipe`);
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
-    };
-
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(new Date(date));
-    };
-
     const handleView = () => {
         setShowPreviewModal(true);
         // Ajouter l'ID à l'URL pour permettre le partage
@@ -370,7 +356,7 @@ Votre équipe`);
                         </div>
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">Montant</p>
-                            <p className="text-lg font-bold">{formatCurrency(quote.total)}</p>
+                            <p className="text-lg font-bold">{formatCurrency(quote.total, "EUR")}</p>
                             <p className="text-sm text-muted-foreground">
                                 {quote.items.length} prestation{quote.items.length > 1 ? 's' : ''}
                             </p>

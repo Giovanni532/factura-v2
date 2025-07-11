@@ -9,7 +9,6 @@ import { updateCompanyAction } from "@/action/company-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,16 +20,8 @@ import {
     FormLabel,
     FormMessage
 } from "@/components/ui/form";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Users, Crown, Shield, User, Mail, Calendar, CreditCard, Globe, MapPin, Phone, FileText } from "lucide-react";
+import { Building2, Shield, Mail, CreditCard, MapPin, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/forms/image-upload";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -74,53 +65,6 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
 
     const onCompanySubmit = (data: any) => {
         updateCompany(data);
-    };
-
-    const getRoleLabel = (role: string) => {
-        switch (role) {
-            case 'owner':
-                return 'Propriétaire';
-            case 'admin':
-                return 'Administrateur';
-            case 'user':
-                return 'Utilisateur';
-            default:
-                return role;
-        }
-    };
-
-    const getRoleColor = (role: string) => {
-        switch (role) {
-            case 'owner':
-                return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
-            case 'admin':
-                return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
-            case 'user':
-                return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
-            default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-        }
-    };
-
-    const getRoleIcon = (role: string) => {
-        switch (role) {
-            case 'owner':
-                return <Crown className="h-4 w-4" />;
-            case 'admin':
-                return <Shield className="h-4 w-4" />;
-            case 'user':
-                return <User className="h-4 w-4" />;
-            default:
-                return <User className="h-4 w-4" />;
-        }
-    };
-
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
     };
 
     return (

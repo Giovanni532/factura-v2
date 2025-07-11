@@ -11,8 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import {
     Form,
     FormControl,
@@ -26,6 +24,7 @@ import { User, Mail, Calendar, Shield, Eye, EyeOff, Edit3, Camera } from "lucide
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/forms/image-upload";
+import { formatDate } from "@/lib/utils";
 
 interface ProfilePageClientProps {
     initialUser: UserProfile;
@@ -119,14 +118,6 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
             default:
                 return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
         }
-    };
-
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
     };
 
     return (

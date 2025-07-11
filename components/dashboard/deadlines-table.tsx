@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertTriangle, Clock } from "lucide-react";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 interface DeadlinesTableProps {
     deadlines: {
@@ -26,24 +27,6 @@ interface DeadlinesTableProps {
         }>;
     };
 }
-
-// Fonction pour formater les montants
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'EUR',
-        minimumFractionDigits: 0,
-    }).format(value);
-};
-
-// Fonction pour formater les dates
-const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-    });
-};
 
 // Fonction pour obtenir la couleur du badge selon les jours restants
 const getDaysLeftColor = (daysLeft: number) => {
@@ -102,8 +85,8 @@ export function DeadlinesTable({ deadlines }: DeadlinesTableProps) {
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`p-2 rounded-lg ${item.type === 'invoice'
-                                            ? 'bg-blue-50 dark:bg-blue-900/20'
-                                            : 'bg-purple-50 dark:bg-purple-900/20'
+                                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                                        : 'bg-purple-50 dark:bg-purple-900/20'
                                         }`}>
                                         {item.type === 'invoice' ? (
                                             <Calendar className={`h-4 w-4 ${item.type === 'invoice' ? 'text-blue-600' : 'text-purple-600'
@@ -122,7 +105,7 @@ export function DeadlinesTable({ deadlines }: DeadlinesTableProps) {
                                 <div className="flex items-center gap-4">
                                     <div className="text-right">
                                         <div className="font-medium">
-                                            {formatCurrency(item.total)}
+                                            {formatCurrency(item.total, "EUR")}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {formatDate(item.date)}

@@ -10,6 +10,7 @@ import {
 import { FileText, Receipt, Calendar, Euro } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { paths } from "@/paths"
+import { formatDate, formatCurrency } from "@/lib/utils"
 
 interface RecentDocument {
     id: string
@@ -56,20 +57,6 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
             case 'cancelled': return 'Annulé'
             default: return status
         }
-    }
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount)
-    }
-
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-        }).format(new Date(date))
     }
 
     const handleDocumentClick = (document: RecentDocument) => {
@@ -124,10 +111,10 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <span className="truncate">{document.clientName}</span>
                                     <span>•</span>
-                                    <span>{formatCurrency(document.total)}</span>
+                                    <span>{formatCurrency(document.total, "EUR")}</span>
                                     <span>•</span>
                                     <Calendar className="w-3 h-3" />
-                                    <span>{formatDate(document.createdAt)}</span>
+                                    <span>{formatDate(document.createdAt, true, true)}</span>
                                 </div>
                             </div>
                         </div>

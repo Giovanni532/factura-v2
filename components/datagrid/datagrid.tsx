@@ -43,6 +43,7 @@ import { useInvoicesContext } from "../../hooks/invoices-context";
 import { useQuotesContext } from "../../hooks/quotes-context";
 import { InvoicePreviewModal } from "../invoices/invoice-preview-modal";
 import { QuotePreviewModal } from "../quotes/quote-preview-modal";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 type DataGridType = "invoices" | "quotes";
 
@@ -387,21 +388,6 @@ export function DataGrid({ type, data, stats, formData, subscriptionLimits, filt
         }
     }, [id, data, wasManuallyClosed, selectedItem?.id, showPreviewModal]);
 
-    // Fonctions utilitaires
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
-    };
-
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(new Date(date));
-    };
 
     const getStatusColor = (status: string) => {
         if (type === "invoices") {
@@ -500,7 +486,7 @@ export function DataGrid({ type, data, stats, formData, subscriptionLimits, filt
         const message = type === "invoices"
             ? `Bonjour ${item.client.name},
 
-Veuillez trouver ci-joint la facture ${item.invoiceNumber} d'un montant de ${formatCurrency(item.total)}.
+Veuillez trouver ci-joint la facture ${item.invoiceNumber} d'un montant de ${formatCurrency(item.total, "EUR")}.
 
 Date d'échéance : ${formatDate(item.dueDate)}
 
@@ -510,7 +496,7 @@ Cordialement,
 Votre équipe`
             : `Bonjour ${item.client.name},
 
-Veuillez trouver ci-joint le devis ${item.quoteNumber} d'un montant de ${formatCurrency(item.total)}.
+Veuillez trouver ci-joint le devis ${item.quoteNumber} d'un montant de ${formatCurrency(item.total, "EUR")}.
 
 Date de validité : ${formatDate(item.validUntil)}
 
@@ -551,7 +537,7 @@ Votre équipe`;
         const message = type === "invoices"
             ? `Bonjour ${item.client.name},
 
-Nous vous rappelons que la facture ${item.invoiceNumber} d'un montant de ${formatCurrency(item.total)} est en retard de paiement.
+Nous vous rappelons que la facture ${item.invoiceNumber} d'un montant de ${formatCurrency(item.total, "EUR")} est en retard de paiement.
 
 Date d'échéance : ${formatDate(item.dueDate)}
 
@@ -561,7 +547,7 @@ Cordialement,
 Votre équipe`
             : `Bonjour ${item.client.name},
 
-Nous vous rappelons que le devis ${item.quoteNumber} d'un montant de ${formatCurrency(item.total)} a expiré.
+Nous vous rappelons que le devis ${item.quoteNumber} d'un montant de ${formatCurrency(item.total, "EUR")} a expiré.
 
 Date de validité : ${formatDate(item.validUntil)}
 
@@ -668,7 +654,7 @@ Votre équipe`;
                     const amount = parseFloat(row.getValue("total"));
                     return (
                         <div className="font-medium">
-                            {formatCurrency(amount)}
+                            {formatCurrency(amount, "EUR")}
                         </div>
                     );
                 },

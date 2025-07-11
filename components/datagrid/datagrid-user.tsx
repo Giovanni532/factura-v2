@@ -57,6 +57,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatDate } from "@/lib/utils";
 
 interface TeamMember {
     id: string;
@@ -208,13 +209,6 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
         }
     };
 
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-    };
 
     const handleDeleteMember = (member: TeamMember) => {
         setSelectedMember(member);

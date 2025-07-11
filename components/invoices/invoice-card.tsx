@@ -18,6 +18,7 @@ import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { useInvoicesContext } from "../../hooks/invoices-context";
 import { InvoicePreviewModal } from "./invoice-preview-modal";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 interface InvoiceCardProps {
     invoice: InvoiceWithDetails;
@@ -238,21 +239,6 @@ Votre équipe`);
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
-    };
-
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(new Date(date));
-    };
-
     const handleView = () => {
         setShowPreviewModal(true);
         // Ajouter l'ID à l'URL pour permettre le partage
@@ -372,7 +358,7 @@ Votre équipe`);
                         </div>
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">Montant</p>
-                            <p className="text-lg font-bold">{formatCurrency(invoice.total)}</p>
+                            <p className="text-lg font-bold">{formatCurrency(invoice.total, "EUR")}</p>
                             <p className="text-sm text-muted-foreground">
                                 {invoice.items.length} prestation{invoice.items.length > 1 ? 's' : ''}
                             </p>

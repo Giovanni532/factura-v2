@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "sonner";
 import { Check, Crown, CreditCard, Users, Building2, FileText, AlertCircle, ExternalLink, Calendar } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatDate } from "@/lib/utils";
 
 interface BillingSettingsClientProps {
     plans: BillingPlan[];
@@ -103,14 +104,6 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
             currency: currency.toUpperCase(),
             minimumFractionDigits: 2,
         }).format(price);
-    };
-
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
     };
 
     // Obtenir la date de fin de période la plus récente (Stripe en priorité)
