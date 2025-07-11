@@ -3,6 +3,7 @@ export const paths = {
     home: "/",
     login: "/login",
     signup: "/signup",
+    invitation: "/invitation",
     dashboard: "/dashboard",
 
     // Factures

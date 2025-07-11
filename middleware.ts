@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paths } from '@/paths';
 
 // Routes d'API qui ne nécessitent pas d'authentification
-const publicApiRoutes = ['/api/auth'];
+const publicApiRoutes = ['/api/auth', '/api/invitation'];
+
+// Routes publiques qui ne nécessitent pas d'authentification
+const publicRoutes = [paths.login, paths.signup, paths.invitation];
 
 // Routes protégées qui nécessitent une authentification
 const protectedRoutes = [
@@ -37,8 +40,18 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // Permettre l'accès aux routes publiques
+    if (publicRoutes.some(route => pathname.startsWith(route))) {
+        return NextResponse.next();
+    }
+
     // Permettre l'accès aux fichiers statiques
     if (pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico')) {
+        return NextResponse.next();
+    }
+
+    // Vérifier si c'est une route d'invitation (pour être sûr)
+    if (pathname.startsWith(paths.invitation)) {
         return NextResponse.next();
     }
 
@@ -61,8 +74,8 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(loginUrl);
         }
 
-        // Si l'utilisateur est connecté et essaie d'accéder à login/signup
-        if (isAuthenticated && (pathname === paths.login || pathname === paths.signup || pathname === paths.home)) {
+        // Si l'utilisateur est connecté et essaie d'accéder à login/signup/invitation
+        if (isAuthenticated && (pathname === paths.login || pathname === paths.signup || pathname === paths.home || pathname.startsWith('/invitation'))) {
             return NextResponse.redirect(new URL(paths.dashboard, request.url));
         }
 
