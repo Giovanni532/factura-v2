@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useId, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useId, useMemo, useRef, useState } from "react"
 import {
     ColumnDef,
     flexRender,
@@ -103,6 +102,20 @@ const translateStatus = (status: string): string => {
     };
     return statusMap[status] || status;
 };
+
+const colorStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+        'draft': 'bg-gray-500 text-white',
+        'sent': 'bg-blue-500 text-white',
+        'paid': 'bg-green-500 text-white',
+        'overdue': 'bg-red-500 text-white',
+        'cancelled': 'bg-gray-500 text-white',
+        'accepted': 'bg-green-500 text-white',
+        'rejected': 'bg-red-500 text-white',
+        'expired': 'bg-gray-500 text-white',
+    };
+    return statusMap[status] || status;
+}
 
 interface DatagridDocumentsProps {
     documents: DocumentRow[]
@@ -271,7 +284,8 @@ Votre équipe`)
                     <Badge
                         className={cn(
                             "select-none",
-                            row.original.status === 'draft' ? "cursor-default" : "cursor-pointer"
+                            row.original.status === 'draft' ? "cursor-default" : "cursor-pointer",
+                            colorStatus(row.original.status)
                         )}
                         onClick={() => {
                             if (row.original.status !== 'draft') {

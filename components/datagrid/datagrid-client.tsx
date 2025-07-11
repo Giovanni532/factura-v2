@@ -253,17 +253,6 @@ export function ClientsDataGrid({
         setClients(initialClients)
     }, [initialClients])
 
-    // Gestion des clients avec useCallback pour éviter les re-rendus
-    const handleClientCreated = useCallback((newClient: ClientWithStats) => {
-        setClients(prev => [newClient, ...prev])
-        onClientCreated(newClient)
-    }, [onClientCreated])
-
-    const handleClientUpdated = useCallback((updatedClient: ClientWithStats) => {
-        // La mise à jour est déjà faite dans le callback de l'action
-        // On ne fait que notifier le parent
-        onClientUpdated(updatedClient)
-    }, [onClientUpdated])
 
     const handleClientDeleted = useCallback((clientId: string) => {
         setClients(prev => prev.filter(client => client.id !== clientId))
@@ -343,7 +332,7 @@ export function ClientsDataGrid({
                 const isActive = row.original.totalInvoices > 0 || row.original.totalQuotes > 0
                 return (
                     <Badge
-                        variant={isActive ? "default" : "secondary"}
+                        variant={isActive ? "default" : "destructive"}
                         className={cn(
                             !isActive && "bg-muted-foreground/60 text-primary-foreground"
                         )}
