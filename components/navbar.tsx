@@ -1,40 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { paths } from "@/paths";
+import { authClient } from "@/lib/auth-client";
 
 export function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: session } = authClient.useSession();
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const session = await authClient.getSession();
-                setIsAuthenticated(!!session.data?.user);
-            } catch (error) {
-                console.error("Error checking auth:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        checkAuth();
-    }, []);
-
-    if (isLoading) {
-        return null;
-    }
-
-    if (isAuthenticated) {
+    if (session?.user) {
         return null;
     }
 

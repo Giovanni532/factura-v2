@@ -35,6 +35,7 @@ import Link from "next/link"
 import { Button } from "../ui/button"
 import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/store/use-auth-store"
 
 export function DashboardUser({
     currentUser,
@@ -51,6 +52,7 @@ export function DashboardUser({
 
     const handleSignOut = () => {
         authClient.signOut()
+        useAuthStore.setState({ isAuthenticated: false })
         router.push(paths.login)
         router.refresh()
     }

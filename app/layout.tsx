@@ -5,8 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { AuthProvider } from "@/components/auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,17 +24,12 @@ export const metadata: Metadata = {
 
 
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
 
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  const user = session?.user
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -47,10 +41,12 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          {children}
-          <Footer />
-          <Toaster />
+          <AuthProvider>
+            <Navbar />
+            {children}
+            <Footer />
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

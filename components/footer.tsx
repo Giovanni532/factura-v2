@@ -3,32 +3,11 @@
 import { FileText, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 export function Footer() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const session = await authClient.getSession();
-                setIsAuthenticated(!!session.data?.user);
-            } catch (error) {
-                console.error("Error checking auth:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const { data: session } = authClient.useSession();
 
-        checkAuth();
-    }, []);
-
-    if (isLoading) {
-        return null;
-    }
-
-    if (isAuthenticated) {
+    if (session?.user) {
         return null;
     }
 
