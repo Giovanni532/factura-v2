@@ -77,7 +77,7 @@ export const InvoiceEmail: React.FC<InvoiceEmailProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <span style={{ color: '#666', fontSize: '14px' }}>Date d'échéance :</span>
+                        <span style={{ color: '#666', fontSize: '14px' }}>Date d&apos;échéance :</span>
                         <span style={{ color: '#333', fontSize: '14px' }}>{dueDate}</span>
                     </div>
 
@@ -125,13 +125,13 @@ export const InvoiceEmail: React.FC<InvoiceEmailProps> = ({
                 </div>
 
                 <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
-                    Si vous avez des questions concernant cette facture, n'hésitez pas à nous contacter.
+                    Si vous avez des questions concernant cette facture, n&apos;hésitez pas à nous contacter.
                 </p>
 
                 <p style={{ color: '#333', fontSize: '16px', lineHeight: '1.6' }}>
                     Merci pour votre confiance,
                     <br />
-                    <strong>L'équipe {companyName}</strong>
+                    <strong>L&apos;équipe {companyName}</strong>
                 </p>
             </div>
 

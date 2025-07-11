@@ -132,7 +132,7 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                         style={{ background: 'transparent', border: 'none', padding: 0 }}
                         onClick={() => setShowAvatarUpload(true)}
                     >
-                        <span className="sr-only">Changer l'avatar</span>
+                        <span className="sr-only">Changer l&apos;avatar</span>
                     </button>
                     <Avatar className="h-28 w-28 border-4 border-background shadow-lg bg-muted pointer-events-none">
                         <AvatarImage src={initialUser.image || ""} alt={initialUser.name} />

@@ -149,11 +149,11 @@ export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalP
                             <h3 className="text-lg font-semibold mb-2">Détails</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium">Date d'émission</Label>
+                                    <Label className="text-sm font-medium">Date d&apos;émission</Label>
                                     <p className="text-sm">{quote.issueDate.toLocaleDateString('fr-FR')}</p>
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium">Valide jusqu'au</Label>
+                                    <Label className="text-sm font-medium">Valide jusqu&apos;au</Label>
                                     <p className="text-sm">{quote.validUntil.toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>

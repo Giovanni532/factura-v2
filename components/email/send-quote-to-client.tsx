@@ -77,7 +77,7 @@ export const QuoteEmail: React.FC<QuoteEmailProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <span style={{ color: '#666', fontSize: '14px' }}>Valide jusqu'au :</span>
+                        <span style={{ color: '#666', fontSize: '14px' }}>Valide jusqu&apos;au :</span>
                         <span style={{ color: '#333', fontSize: '14px' }}>{validUntil}</span>
                     </div>
 
@@ -95,7 +95,7 @@ export const QuoteEmail: React.FC<QuoteEmailProps> = ({
                     border: '1px solid #ffeaa7'
                 }}>
                     <p style={{ color: '#856404', fontSize: '14px', lineHeight: '1.6', margin: '0' }}>
-                        <strong>Important :</strong> Ce devis est valable jusqu'au {validUntil}. Passé cette date, les prix pourront être révisés.
+                        <strong>Important :</strong> Ce devis est valable jusqu&apos;au {validUntil}. Passé cette date, les prix pourront être révisés.
                     </p>
                 </div>
 
@@ -172,13 +172,13 @@ export const QuoteEmail: React.FC<QuoteEmailProps> = ({
                 </div>
 
                 <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
-                    Si vous avez des questions concernant ce devis ou si vous souhaitez des modifications, n'hésitez pas à nous contacter.
+                    Si vous avez des questions concernant ce devis ou si vous souhaitez des modifications, n&apos;hésitez pas à nous contacter.
                 </p>
 
                 <p style={{ color: '#333', fontSize: '16px', lineHeight: '1.6' }}>
                     Nous restons à votre disposition pour toute information complémentaire,
                     <br />
-                    <strong>L'équipe {companyName}</strong>
+                    <strong>L&apos;équipe {companyName}</strong>
                 </p>
             </div>
 

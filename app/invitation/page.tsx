@@ -35,7 +35,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
                         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
                             <h2 className="text-xl font-semibold text-red-800 mb-2">Invitation invalide</h2>
                             <p className="text-red-600 mb-4">
-                                Cette invitation n'est plus valide ou a déjà été utilisée.
+                                Cette invitation n&apos;est plus valide ou a déjà été utilisée.
                             </p>
                             <Button asChild>
                                 <Link href={paths.login}>

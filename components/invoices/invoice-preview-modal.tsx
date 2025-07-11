@@ -149,11 +149,11 @@ export function InvoicePreviewModal({ invoice, isOpen, onClose }: InvoicePreview
                             <h3 className="text-lg font-semibold mb-2">Détails</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium">Date d'émission</Label>
+                                    <Label className="text-sm font-medium">Date d&apos;émission</Label>
                                     <p className="text-sm">{invoice.issueDate.toLocaleDateString('fr-FR')}</p>
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium">Date d'échéance</Label>
+                                    <Label className="text-sm font-medium">Date d&apos;échéance</Label>
                                     <p className="text-sm">{invoice.dueDate.toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>

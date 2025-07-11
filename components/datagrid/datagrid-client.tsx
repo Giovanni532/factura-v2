@@ -50,7 +50,7 @@ function usePagination({
     const halfDisplay = Math.floor(paginationItemsToDisplay / 2)
 
     let startPage = Math.max(1, currentPage - halfDisplay)
-    let endPage = Math.min(totalPages, startPage + paginationItemsToDisplay - 1)
+    const endPage = Math.min(totalPages, startPage + paginationItemsToDisplay - 1)
 
     // Adjust start page if we're near the end
     if (endPage - startPage + 1 < paginationItemsToDisplay) {

@@ -31,11 +31,11 @@ export const InvitationEmail: React.FC<InvitationEmailProps> = ({
                 </p>
 
                 <p style={{ color: '#333', fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
-                    {inviterName} vous invite à rejoindre l'équipe de <strong>{companyName}</strong> en tant que <strong>{role}</strong>.
+                    {inviterName} vous invite à rejoindre l&apos;équipe de <strong>{companyName}</strong> en tant que <strong>{role}</strong>.
                 </p>
 
                 <p style={{ color: '#333', fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
-                    Vous pourrez accéder à la plateforme de facturation et de gestion comptable de l'entreprise.
+                    Vous pourrez accéder à la plateforme de facturation et de gestion comptable de l&apos;entreprise.
                 </p>
 
                 <div style={{ textAlign: 'center', margin: '30px 0' }}>
@@ -52,7 +52,7 @@ export const InvitationEmail: React.FC<InvitationEmailProps> = ({
                             display: 'inline-block',
                         }}
                     >
-                        Accepter l'invitation
+                        Accepter l&apos;invitation
                     </a>
                 </div>
 
@@ -69,7 +69,7 @@ export const InvitationEmail: React.FC<InvitationEmailProps> = ({
                 </p>
 
                 <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
-                    Si vous avez des questions, n'hésitez pas à contacter {inviterName}.
+                    Si vous avez des questions, n&apos;hésitez pas à contacter {inviterName}.
                 </p>
             </div>
 

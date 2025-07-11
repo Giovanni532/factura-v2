@@ -1,207 +1,294 @@
-# Quickstarter Drizzle - Next.js avec Drizzle ORM + Better Auth
+# 🧾 Factura - Plateforme de Facturation et Comptabilité
 
-Ce projet Next.js utilise Drizzle ORM avec SQLite (better-sqlite3) et Better Auth pour l'authentification avec middleware de protection des routes.
+**Factura** est une application web complète de facturation et de gestion comptable, conçue pour les entreprises de toutes tailles. Elle offre une solution tout-en-un pour gérer vos factures, devis, clients, comptabilité et rapports financiers.
 
-## Variables d'environnement
+## ✨ Fonctionnalités Principales
+
+### 📊 **Tableau de Bord Intelligent**
+- **Statistiques en temps réel** : Revenus, factures, devis, clients actifs
+- **Graphiques interactifs** : Évolution mensuelle des ventes et bénéfices
+- **Échéances à venir** : Suivi des factures et devis en attente
+- **Documents récents** : Accès rapide aux derniers documents créés
+
+### 🧾 **Gestion des Factures**
+- **Création rapide** : Interface intuitive pour créer des factures professionnelles
+- **Templates personnalisables** : Modèles prédéfinis et personnalisés
+- **Calculs automatiques** : TVA, taxes, remises et totaux
+- **Statuts multiples** : Brouillon, envoyée, payée, en retard
+- **Envoi par email** : Intégration avec templates d'email personnalisés
+- **Export PDF** : Génération automatique de documents PDF
+- **Numérotation automatique** : Séquence personnalisable par entreprise
+
+### 📋 **Gestion des Devis**
+- **Création de devis** : Interface similaire aux factures
+- **Validité configurable** : Dates d'expiration personnalisables
+- **Conversion en facture** : Transformation automatique des devis acceptés
+- **Suivi des statuts** : Envoyé, accepté, refusé, expiré
+- **Acceptation en ligne** : Liens directs pour les clients
+
+### 👥 **Gestion des Clients**
+- **Base de données clients** : Informations complètes (contact, adresse, SIRET, TVA)
+- **Historique complet** : Toutes les factures et devis par client
+- **Statistiques clients** : Chiffre d'affaires, nombre de documents
+- **Import/Export** : Gestion en lot des données clients
+- **Recherche avancée** : Filtres multiples et recherche textuelle
+
+### 🛠️ **Gestion des Prestations/Services**
+- **Catalogue de services** : Définition des prestations et tarifs
+- **Catégorisation** : Organisation par catégories métier
+- **Prix dynamiques** : Tarifs variables selon les clients
+- **Gestion des stocks** : Suivi des quantités disponibles
+- **Statistiques de vente** : Analyse des services les plus populaires
+
+### 📄 **Templates Personnalisables**
+- **Templates prédéfinis** : Modèles classiques, modernes, minimalistes
+- **Personnalisation complète** : Couleurs, logos, mise en page
+- **Système de favoris** : Templates préférés par utilisateur
+- **Prévisualisation** : Aperçu en temps réel des modifications
+- **Export/Import** : Partage de templates entre entreprises
+
+### 💰 **Comptabilité Avancée**
+- **Plan comptable** : Gestion complète du plan de comptes
+- **Écritures comptables** : Saisie et validation des écritures
+- **Journaux comptables** : Organisation par types d'opérations
+- **Exercices fiscaux** : Gestion des périodes comptables
+- **Balance de vérification** : Contrôle de l'équilibre comptable
+
+### 💳 **Gestion des Paiements**
+- **Suivi des paiements** : Enregistrement et suivi des encaissements
+- **Rapprochement bancaire** : Association paiements/factures
+- **Gestion des fournisseurs** : Base de données des partenaires
+- **Catégories de dépenses** : Classification des charges
+- **Rapports de trésorerie** : Analyse des flux de trésorerie
+
+### 📈 **Rapports et Analytics**
+- **Bilan comptable** : Situation financière à date
+- **Compte de résultat** : Analyse des produits et charges
+- **Tableau des flux de trésorerie** : Évolution des encaissements/décaissements
+- **Balance de vérification** : Contrôle de l'équilibre des comptes
+- **Rapports personnalisables** : Création de rapports sur mesure
+
+### 🔐 **Authentification et Sécurité**
+- **Better Auth** : Système d'authentification moderne et sécurisé
+- **Rôles utilisateurs** : Propriétaire, administrateur, utilisateur
+- **Invitations d'équipe** : Système d'invitation par email
+- **Protection des routes** : Middleware de sécurité automatique
+- **Sessions sécurisées** : Gestion des sessions avec expiration
+
+### 💳 **Intégration Paiements (Stripe)**
+- **Abonnements** : Plans mensuels et annuels
+- **Paiements sécurisés** : Intégration Stripe complète
+- **Webhooks** : Synchronisation automatique des statuts
+- **Gestion des factures** : Facturation automatique des abonnements
+- **Portail client** : Interface de gestion des abonnements
+
+### 📧 **Système d'Email**
+- **Templates d'email** : Modèles personnalisables pour factures et devis
+- **Envoi automatique** : Notifications et rappels
+- **Intégration Resend** : Service d'envoi d'emails professionnel
+- **Suivi des envois** : Historique des emails envoyés
+- **Notifications d'équipe** : Invitations et alertes
+
+### 🎨 **Interface Utilisateur**
+- **Design moderne** : Interface utilisateur intuitive et responsive
+- **Thème sombre/clair** : Basculement automatique selon les préférences
+- **Composants Shadcn** : Bibliothèque de composants cohérente
+- **Animations fluides** : Transitions et micro-interactions
+- **Accessibilité** : Conformité aux standards d'accessibilité
+
+## 🚀 Technologies Utilisées
+
+### **Frontend**
+- **[Next.js 15](https://nextjs.org)** - Framework React avec App Router
+- **[React 19](https://react.dev)** - Bibliothèque UI moderne
+- **[TypeScript](https://www.typescriptlang.org)** - Typage statique
+- **[Tailwind CSS](https://tailwindcss.com)** - Framework CSS utilitaire
+- **[Shadcn/ui](https://ui.shadcn.com)** - Composants UI réutilisables
+- **[Framer Motion](https://www.framer.com/motion)** - Animations fluides
+
+### **Backend & Base de Données**
+- **[Drizzle ORM](https://orm.drizzle.team)** - ORM TypeScript moderne
+- **[SQLite](https://www.sqlite.org)** - Base de données embarquée
+- **[Better Auth](https://www.better-auth.com)** - Authentification complète
+- **[Next Safe Action](https://next-safe-action.dev)** - Actions serveur sécurisées
+
+### **Paiements & Services**
+- **[Stripe](https://stripe.com)** - Plateforme de paiement
+- **[Resend](https://resend.com)** - Service d'envoi d'emails
+- **[Puppeteer](https://pptr.dev)** - Génération de PDF
+
+### **Outils de Développement**
+- **[ESLint](https://eslint.org)** - Linting du code
+- **[Drizzle Kit](https://orm.drizzle.team/kit-docs/overview)** - Outils de migration
+- **[Zod](https://zod.dev)** - Validation de schémas
+
+## 📋 Variables d'Environnement
 
 Créez un fichier `.env` à la racine du projet avec les variables suivantes :
 
 ```env
-DB_FILE_NAME=local.db
+# Authentification
 BETTER_AUTH_SECRET=your-secret-key-here-change-this-in-production
 BETTER_AUTH_URL=http://localhost:3000
+
+# Base de données
+DATABASE_URL=file:./local.db
+DATABASE_AUTH_TOKEN=your-database-auth-token
+
+# Stripe (Paiements)
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+STRIPE_PUBLIC_KEY=pk_test_your_public_key
+STRIPE_PRIVATE_KEY=sk_test_your_private_key
+STRIPE_PRICE_FREE=price_free_plan_id
+STRIPE_PRICE_BUSINESS=price_business_plan_id
+STRIPE_PRICE_ENTERPRISE=price_enterprise_plan_id
+
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# OAuth Google (Optionnel)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Email (Resend)
+RESEND_API_KEY=re_your_resend_api_key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
 ```
 
-**Important :** 
-- `DB_FILE_NAME` : Chemin vers le fichier SQLite (sans le préfixe `file:`)
-- `BETTER_AUTH_SECRET` doit être une chaîne aléatoire sécurisée en production
-- `BETTER_AUTH_URL` est nécessaire pour le client React
+## 🛠️ Installation et Configuration
 
-## Installation et configuration
+### **Prérequis**
+- Node.js 18+ 
+- pnpm, npm, yarn ou bun
+- Compte Stripe (pour les paiements)
+- Compte Resend (pour les emails)
 
-1. **Installer les dépendances** :
+### **Installation**
+
+1. **Cloner le repository**
    ```bash
+   git clone <repository-url>
+   cd factura-v2
+   ```
+
+2. **Installer les dépendances**
+   ```bash
+   pnpm install
+   # ou
    npm install
    # ou
    yarn install
-   # ou
-   pnpm install
-   # ou
-   bun install
    ```
 
-2. **Créer le fichier .env** avec les variables ci-dessus
+3. **Configurer les variables d'environnement**
+   ```bash
+   cp .env.example .env
+   # Éditer le fichier .env avec vos valeurs
+   ```
 
-3. **Initialiser la base de données** :
+4. **Initialiser la base de données**
    ```bash
    pnpm run db:push
    ```
 
-4. **Lancer le projet** :
+5. **Générer les données initiales**
    ```bash
-   npm run dev
-   # ou
-   yarn dev
-   # ou
-   pnpm dev
-   # ou
-   bun dev
+   pnpm run templates:init
+   pnpm run subscriptions:init
    ```
 
-Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir le résultat.
+6. **Lancer l'application**
+   ```bash
+   pnpm run dev
+   ```
 
-## Architecture Edge Runtime Compatible
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-### 🔧 **Séparation des configurations**
-- `lib/drizzle.ts` : Configuration Drizzle unifiée (compatible Edge Runtime)
-- `middleware.ts` : Utilise l'API Better Auth via fetch (pas d'import direct)
+## 📚 Scripts Disponibles
 
-### 🔐 **Middleware de protection**
-- **Toutes les routes sont protégées** par défaut
-- Vérification de session via API `/api/auth/get-session`
-- Redirection automatique vers `/login` si non connecté
-- Routes publiques : `/login`, `/signup`, `/api/auth`
-- Redirection vers la page d'origine après connexion
+```bash
+# Développement
+pnpm run dev          # Serveur de développement avec Turbopack
+pnpm run build        # Build de production
+pnpm run start        # Serveur de production
+pnpm run lint         # Linting ESLint
 
-### 📝 Pages disponibles
-- `/login` - Connexion utilisateur
-- `/signup` - Inscription utilisateur  
-- `/` - Tableau de bord (protégé)
+# Base de données
+pnpm run db:generate  # Générer les migrations
+pnpm run db:migrate   # Appliquer les migrations
+pnpm run db:push      # Pousser les changements de schéma
+pnpm run db:studio    # Interface Drizzle Studio
 
-### 🎯 Composants d'authentification
-- `LoginForm` - Formulaire de connexion
-- `SignupForm` - Formulaire d'inscription
-- `UserProfile` - Profil utilisateur avec déconnexion
+# Authentification
+pnpm run auth:generate # Générer le schéma Better Auth
 
-## Scripts disponibles
-
-- `npm run dev` - Lance le serveur de développement
-- `npm run build` - Construit l'application pour la production
-- `npm run start` - Lance le serveur de production
-- `npm run lint` - Lance le linter ESLint
-- `npm run db:generate` - Génère les fichiers de migration
-- `npm run db:migrate` - Applique les migrations
-- `npm run db:push` - Pousse directement les changements de schéma (dev)
-- `npm run db:studio` - Lance Drizzle Studio pour visualiser la DB
-- `npm run auth:generate` - Génère le schéma Better Auth
-
-## Structure des fichiers
-
-```
-├── middleware.ts              # Middleware Edge Runtime compatible
-├── db/
-│   └── schema.ts             # Schéma Drizzle avec tables Better Auth
-├── lib/
-│   ├── drizzle.ts            # Configuration Drizzle unifiée
-│   ├── auth.ts               # Configuration Better Auth (serveur)
-│   ├── auth-client.ts        # Client Better Auth (React)
-│   └── db-example.ts         # Exemples d'utilisation
-├── components/
-│   └── auth/
-│       ├── login-form.tsx    # Formulaire de connexion
-│       ├── signup-form.tsx   # Formulaire d'inscription
-│       ├── user-profile.tsx  # Profil utilisateur
-│       └── index.ts          # Exports
-├── app/
-│   ├── login/page.tsx        # Page de connexion
-│   ├── signup/page.tsx       # Page d'inscription
-│   ├── page.tsx              # Tableau de bord
-│   └── [api]/[auth]/[...all]/route.ts  # Routes API Better Auth
-├── drizzle.config.ts         # Configuration Drizzle Kit
-└── .env                      # Variables d'environnement
+# Données initiales
+pnpm run templates:init      # Initialiser les templates
+pnpm run subscriptions:init  # Initialiser les plans d'abonnement
 ```
 
-## Utilisation
+## 🏗️ Architecture
 
-### Authentification côté client
-
-```typescript
-import { authClient } from '@/lib/auth-client';
-
-// Hook de session
-const { data: session, isPending } = authClient.useSession();
-
-// Connexion
-await authClient.signIn.email({
-  email: 'user@example.com',
-  password: 'password123'
-});
-
-// Inscription
-await authClient.signUp.email({
-  email: 'user@example.com',
-  password: 'password123',
-  name: 'John Doe'
-});
-
-// Déconnexion
-await authClient.signOut();
+### **Structure des Dossiers**
+```
+factura-v2/
+├── app/                    # Pages Next.js (App Router)
+│   ├── api/               # Routes API
+│   ├── dashboard/         # Interface principale
+│   ├── login/             # Page de connexion
+│   └── signup/            # Page d'inscription
+├── components/            # Composants React
+│   ├── ui/               # Composants Shadcn
+│   ├── forms/            # Formulaires
+│   └── features/         # Composants métier
+├── lib/                   # Utilitaires et configurations
+├── db/                    # Schémas et requêtes Drizzle
+├── validation/           # Schémas Zod
+├── hooks/                # Hooks React personnalisés
+└── store/                # État global (Zustand)
 ```
 
-### Authentification côté serveur
+### **Sécurité**
+- ✅ **Middleware de protection** : Toutes les routes protégées
+- ✅ **Validation Zod** : Validation stricte des données
+- ✅ **Sessions sécurisées** : Gestion des sessions avec Better Auth
+- ✅ **CSRF Protection** : Protection contre les attaques CSRF
+- ✅ **Edge Runtime** : Compatible avec les fonctions Edge
 
-```typescript
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+## 🎯 Fonctionnalités Avancées
 
-// Vérifier la session
-const session = await auth.api.getSession({
-  headers: await headers()
-});
+### **Gestion d'Équipe**
+- Invitations par email avec rôles
+- Gestion des permissions par utilisateur
+- Collaboration en temps réel
+- Historique des actions par utilisateur
 
-if (!session?.user) {
-  // Utilisateur non connecté
-}
-```
+### **Automatisation**
+- Envoi automatique des factures
+- Rappels de paiement
+- Notifications d'échéances
+- Génération automatique de rapports
 
-### Avec Drizzle ORM
+### **Intégrations**
+- **Stripe** : Paiements et abonnements
+- **Resend** : Envoi d'emails professionnels
+- **Google OAuth** : Connexion avec Google
+- **PDF Generation** : Export automatique des documents
 
-```typescript
-import { db } from '@/lib/drizzle';
-import { user } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+## 📄 Licence et Droits
 
-// Récupérer un utilisateur
-const userData = await db.select().from(user).where(eq(user.email, 'user@example.com'));
+**© 2025 - Tous droits réservés**
 
-// Créer un utilisateur
-await db.insert(user).values({
-  id: 'user-id',
-  name: 'John Doe',
-  email: 'john@example.com',
-  emailVerified: false,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
-```
+Cette application est la propriété exclusive de Giovanni Salcuni. Toute reproduction, distribution, modification ou utilisation commerciale de ce code source, de sa documentation ou de ses fonctionnalités est strictement interdite sans autorisation écrite préalable.
 
-## Sécurité
+**Interdictions :**
+- ❌ Réutilisation du code source
+- ❌ Distribution ou vente de l'application
+- ❌ Modification sans autorisation
+- ❌ Utilisation commerciale non autorisée
 
-- ✅ Middleware de protection automatique
-- ✅ Validation des mots de passe (min 8 caractères)
-- ✅ Gestion des erreurs avec notifications
-- ✅ Sessions sécurisées avec Better Auth
-- ✅ Protection CSRF intégrée
-- ✅ Compatible Edge Runtime
+**Contact :** Pour toute demande d'utilisation ou de collaboration, veuillez contacter Giovanni Salcuni.
 
-## Technologies utilisées
+---
 
-- **[Next.js](https://nextjs.org)** - Framework React pour la production
-- **[Drizzle ORM](https://orm.drizzle.team)** - ORM TypeScript moderne
-- **[Better Auth](https://www.better-auth.com)** - Solution d'authentification complète
-- **[SQLite](https://www.sqlite.org)** - Base de données embarquée
-- **[Tailwind CSS](https://tailwindcss.com)** - Framework CSS utilitaire
-- **[TypeScript](https://www.typescriptlang.org)** - JavaScript avec typage statique
-
-## Ressources
-
-- [Documentation Next.js](https://nextjs.org/docs) - Fonctionnalités et API Next.js
-- [Documentation Drizzle ORM](https://orm.drizzle.team/docs/get-started/sqlite-new)
-- [Documentation Better Auth](https://www.better-auth.com/docs/basic-usage#sign-up)
-- [Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview) - Interface graphique pour votre base de données
-
-## Déploiement
-
-Le moyen le plus simple de déployer votre application Next.js est d'utiliser la [plateforme Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) des créateurs de Next.js.
-
-Consultez la [documentation de déploiement Next.js](https://nextjs.org/docs/app/building-your-application/deploying) pour plus de détails.
+**Factura** - Simplifiez votre facturation, optimisez votre comptabilité. 🚀

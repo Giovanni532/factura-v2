@@ -192,7 +192,7 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
     return (
         <Card>
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Rejoindre l'équipe</CardTitle>
+                <CardTitle className="text-2xl">Rejoindre l&apos;équipe</CardTitle>
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
                         <User className="h-4 w-4" />
