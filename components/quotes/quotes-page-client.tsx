@@ -158,7 +158,7 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
             type: "quote" as const,
             number: quote.quoteNumber,
             client: { id: quote.client.id, name: quote.client.name, email: quote.client.email },
-            date: quote.issueDate.toISOString(),
+            date: new Date(quote.issueDate).toISOString(),
             status: quote.status,
             amount: quote.total,
             currency: "EUR",

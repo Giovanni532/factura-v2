@@ -2,11 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getClientsWithStats } from "@/db/queries/client";
+import { getUserWithCompanyCached, getClientsWithStatsCached, getSubscriptionLimitsCached } from "@/lib/cache";
 import { ClientsPageClient } from "@/components/clients/clients-page-client";
 import { headers } from "next/headers";
-import { getUserWithCompany } from "@/db/queries/company";
-import { getSubscriptionLimits } from "@/db/queries/subscription";
 import { paths } from "@/paths";
 
 interface InvoicesPageProps {
@@ -23,18 +21,18 @@ export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
         redirect(paths.login);
     }
 
-    // Récupérer les clients avec leurs statistiques
-    const user = await getUserWithCompany(session.user.id);
-    const companyId = user.company?.id;
+    // Récupérer les données avec cache en parallèle
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
+    const companyId = userWithCompany?.company?.id;
 
     if (!companyId) {
         redirect(paths.dashboard);
     }
 
-    const clients = await getClientsWithStats(companyId);
-
-    // Récupérer les limites d'abonnement
-    const subscriptionLimits = await getSubscriptionLimits(companyId);
+    const [clients, subscriptionLimits] = await Promise.all([
+        getClientsWithStatsCached(companyId),
+        getSubscriptionLimitsCached(companyId)
+    ]);
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

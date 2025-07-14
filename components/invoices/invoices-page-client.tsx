@@ -157,7 +157,7 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
             type: "invoice" as const,
             number: invoice.invoiceNumber,
             client: { id: invoice.client.id, name: invoice.client.name, email: invoice.client.email },
-            date: invoice.issueDate.toISOString(),
+            date: new Date(invoice.issueDate).toISOString(),
             status: invoice.status,
             amount: invoice.total,
             currency: "EUR",

@@ -2,12 +2,8 @@
 
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/drizzle";
-import { user } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getInvoicesByCompany, getInvoiceStats } from "@/db/queries/invoice";
+import { getUserWithCompanyCached, getInvoicesByCompanyCached, getInvoiceStatsCached, getSubscriptionLimitsCached, getFormDataCached } from "@/lib/cache";
 import { InvoicesPageClient } from "@/components/invoices/invoices-page-client";
-import { getSubscriptionLimits } from "@/db/queries/subscription";
 import { headers } from "next/headers";
 import { paths } from "@/paths";
 
@@ -25,44 +21,26 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
         redirect(paths.login);
     }
 
-    // Récupérer les données de l'utilisateur et de son entreprise
-    const userData = await db.select().from(user).where(eq(user.id, session.user.id)).limit(1);
+    // Récupérer les données de l'utilisateur et de son entreprise avec cache
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
 
-    if (!userData.length || !userData[0].companyId) {
+    if (!userWithCompany?.company) {
         redirect(paths.dashboard);
     }
 
-    const companyId = userData[0].companyId;
+    const companyId = userWithCompany.company.id;
 
-    // Récupérer les factures avec filtres
-    const invoices = await getInvoicesByCompany(companyId, {
-        search: searchParamsResult.search,
-        status: searchParamsResult.status,
-        clientId: searchParamsResult.client,
-    });
-
-    // Récupérer les statistiques
-    const stats = await getInvoiceStats(companyId, searchParamsResult.client);
-
-    // Récupérer les limites d'abonnement
-    const subscriptionLimits = await getSubscriptionLimits(companyId);
-
-    // Récupérer les données du formulaire
-    let formData = null;
-    try {
-        const headersList = await headers();
-        const response = await fetch(`${process.env.BETTER_AUTH_URL}/api/invoices/form-data`, {
-            headers: {
-                'Cookie': headersList.get('cookie') || '',
-            },
-        });
-
-        if (response.ok) {
-            formData = await response.json();
-        }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des données du formulaire:", error);
-    }
+    // Récupérer les données avec cache en parallèle
+    const [invoices, stats, subscriptionLimits, formData] = await Promise.all([
+        getInvoicesByCompanyCached(companyId, {
+            search: searchParamsResult.search,
+            status: searchParamsResult.status,
+            clientId: searchParamsResult.client,
+        }),
+        getInvoiceStatsCached(companyId, searchParamsResult.client),
+        getSubscriptionLimitsCached(companyId),
+        getFormDataCached('invoices', await headers())
+    ]);
 
     return (
         <InvoicesPageClient

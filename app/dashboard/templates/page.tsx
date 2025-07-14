@@ -3,10 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAllTemplatesWithFavorites } from "@/db/queries/template";
-import { user } from "@/db/schema";
-import { db } from "@/lib/drizzle";
-import { eq } from "drizzle-orm";
+import { getUserWithCompanyCached, getTemplatesByCompanyCached } from "@/lib/cache";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
 import { paths } from "@/paths";
 
@@ -20,24 +17,18 @@ export default async function TemplatesPage() {
         redirect(paths.login);
     }
 
-    // Récupérer les informations de l'utilisateur avec companyId
-    const currentUser = await db.select()
-        .from(user)
-        .where(eq(user.id, session.user.id))
-        .limit(1);
+    // Récupérer les informations de l'utilisateur avec cache
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
 
-    if (currentUser.length === 0 || !currentUser[0].companyId) {
+    if (!userWithCompany?.company) {
         redirect(paths.dashboard);
     }
 
     const userId = session.user.id;
-    const companyId = currentUser[0].companyId;
+    const companyId = userWithCompany.company.id;
 
-    // Récupérer tous les templates avec les informations de favoris
-    const { predefinedTemplates, companyTemplates } = await getAllTemplatesWithFavorites(
-        userId,
-        companyId
-    );
+    // Récupérer les templates avec cache
+    const { predefinedTemplates, companyTemplates } = await getTemplatesByCompanyCached(userId, companyId);
 
     // Séparer les templates par type
     const predefinedInvoices = predefinedTemplates.filter(t => t.type === 'invoice');

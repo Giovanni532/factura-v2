@@ -2,10 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getServicesWithStats, getServiceCategoriesWithStats } from "@/db/queries/service";
+import { getUserWithCompanyCached, getServicesByCompanyCached, getServiceCategoriesCached } from "@/lib/cache";
 import { ServicesPageClient } from "@/components/services/services-page-client";
 import { headers } from "next/headers";
-import { getUserWithCompany } from "@/db/queries/company";
 import { ServiceWithStats } from "@/validation/service-schema";
 import { paths } from "@/paths";
 
@@ -25,9 +24,9 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
         redirect(paths.login);
     }
 
-    // Récupérer l'utilisateur avec son entreprise
-    const user = await getUserWithCompany(session.user.id);
-    const companyId = user.company?.id;
+    // Récupérer l'utilisateur avec son entreprise avec cache
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
+    const companyId = userWithCompany?.company?.id;
 
     if (!companyId) {
         redirect(paths.dashboard);
@@ -37,10 +36,10 @@ export default async function ServicesPage({ searchParams }: ServicesPageProps) 
     const initialType = searchParamsResult.type || 'services';
     const initialSearch = searchParamsResult.search || '';
 
-    // Récupérer les services et catégories avec leurs statistiques
+    // Récupérer les services et catégories avec cache
     const [services, categories] = await Promise.all([
-        getServicesWithStats(companyId),
-        getServiceCategoriesWithStats(companyId)
+        getServicesByCompanyCached(companyId),
+        getServiceCategoriesCached(companyId)
     ]);
 
     return (
