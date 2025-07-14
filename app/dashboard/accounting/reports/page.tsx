@@ -1,8 +1,7 @@
 import { ReportsClient } from "@/components/accounting/reports-client"
-import { getAccountingStats } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getAccountingStatsCached } from "@/lib/cache"
 
 export default async function ReportsPage() {
     const session = await auth.api.getSession({
@@ -14,11 +13,11 @@ export default async function ReportsPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                stats = await getAccountingStats(companyId)
+                stats = await getAccountingStatsCached(companyId)
             }
         } catch (error) {
             console.error("Erreur lors de la récupération des statistiques pour les rapports:", error)

@@ -407,6 +407,188 @@ export const getFormDataCached = unstable_cache(
     }
 );
 
+// Cache pour les statistiques comptables
+export const getAccountingStatsCached = unstable_cache(
+    async (companyId: string) => {
+        const { getAccountingStats } = await import('@/db/queries/accounting');
+        return await getAccountingStats(companyId);
+    },
+    ['accounting-stats'],
+    {
+        revalidate: 60, // 1 minute
+        tags: ['accounting', 'stats']
+    }
+);
+
+// Cache pour l'historique des revenus
+export const getRevenueHistoryCached = unstable_cache(
+    async (companyId: string, months: number = 12) => {
+        const { getRevenueHistory } = await import('@/db/queries/accounting');
+        return await getRevenueHistory(companyId, months);
+    },
+    ['revenue-history'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['accounting', 'revenue']
+    }
+);
+
+// Cache pour les activités comptables récentes
+export const getRecentAccountingActivitiesCached = unstable_cache(
+    async (companyId: string, limit: number = 10) => {
+        const { getRecentAccountingActivities } = await import('@/db/queries/accounting');
+        return await getRecentAccountingActivities(companyId, limit);
+    },
+    ['recent-accounting-activities'],
+    {
+        revalidate: 60, // 1 minute
+        tags: ['accounting', 'activities']
+    }
+);
+
+// Cache pour le plan comptable
+export const getChartOfAccountsCached = unstable_cache(
+    async (companyId: string) => {
+        const { getChartOfAccounts } = await import('@/db/queries/accounting');
+        return await getChartOfAccounts(companyId);
+    },
+    ['chart-of-accounts'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['accounting', 'accounts']
+    }
+);
+
+// Cache pour les exercices fiscaux
+export const getFiscalYearsCached = unstable_cache(
+    async (companyId: string) => {
+        const { getFiscalYears } = await import('@/db/queries/accounting');
+        return await getFiscalYears(companyId);
+    },
+    ['fiscal-years'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['accounting', 'fiscal']
+    }
+);
+
+// Cache pour les écritures comptables
+export const getJournalEntriesCached = unstable_cache(
+    async (companyId: string, filters: any) => {
+        const { getJournalEntries } = await import('@/db/queries/accounting');
+        return await getJournalEntries(companyId, filters);
+    },
+    ['journal-entries'],
+    {
+        revalidate: 30, // 30 secondes
+        tags: ['accounting', 'entries']
+    }
+);
+
+// Cache pour les paiements étendus
+export const getExtendedPaymentsCached = unstable_cache(
+    async (companyId: string, options: any) => {
+        const { getExtendedPayments } = await import('@/db/queries/extended-accounting');
+        return await getExtendedPayments(companyId, options);
+    },
+    ['extended-payments'],
+    {
+        revalidate: 30, // 30 secondes
+        tags: ['accounting', 'payments']
+    }
+);
+
+// Cache pour les factures pour paiements
+export const getInvoicesForPaymentsCached = unstable_cache(
+    async (companyId: string) => {
+        const { getInvoicesForPayments } = await import('@/db/queries/extended-accounting');
+        return await getInvoicesForPayments(companyId);
+    },
+    ['invoices-for-payments'],
+    {
+        revalidate: 60, // 1 minute
+        tags: ['accounting', 'invoices']
+    }
+);
+
+// Cache pour les fournisseurs
+export const getSuppliersCached = unstable_cache(
+    async (companyId: string) => {
+        const { getSuppliers } = await import('@/db/queries/extended-accounting');
+        return await getSuppliers(companyId);
+    },
+    ['suppliers'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['accounting', 'suppliers']
+    }
+);
+
+// Cache pour les catégories de dépenses
+export const getExpenseCategoriesCached = unstable_cache(
+    async (companyId: string) => {
+        const { getExpenseCategories } = await import('@/db/queries/extended-accounting');
+        return await getExpenseCategories(companyId);
+    },
+    ['expense-categories'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['accounting', 'categories']
+    }
+);
+
+// Cache pour les membres de l'équipe
+export const getTeamMembersCached = unstable_cache(
+    async (companyId: string) => {
+        const { getTeamMembers } = await import('@/db/queries/company');
+        return await getTeamMembers(companyId);
+    },
+    ['team-members'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['company', 'team']
+    }
+);
+
+// Cache pour l'entreprise avec membres
+export const getCompanyWithMembersCached = unstable_cache(
+    async (companyId: string) => {
+        const { getCompanyWithMembers } = await import('@/db/queries/company');
+        return await getCompanyWithMembers(companyId);
+    },
+    ['company-with-members'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['company', 'members']
+    }
+);
+
+// Cache pour les plans de facturation
+export const getBillingPlansCached = unstable_cache(
+    async () => {
+        const { getBillingPlans } = await import('@/db/queries/billing');
+        return await getBillingPlans();
+    },
+    ['billing-plans'],
+    {
+        revalidate: 3600, // 1 heure
+        tags: ['billing', 'plans']
+    }
+);
+
+// Cache pour l'abonnement de l'entreprise avec Stripe
+export const getCompanySubscriptionWithStripeCached = unstable_cache(
+    async (companyId: string) => {
+        const { getCompanySubscriptionWithStripe } = await import('@/db/queries/billing');
+        return await getCompanySubscriptionWithStripe(companyId);
+    },
+    ['company-subscription-stripe'],
+    {
+        revalidate: 300, // 5 minutes
+        tags: ['billing', 'subscription']
+    }
+);
+
 // Fonction pour invalider le cache
 export const revalidateCache = {
     user: () => fetch('/api/revalidate?tag=user'),
@@ -416,4 +598,8 @@ export const revalidateCache = {
     charts: () => fetch('/api/revalidate?tag=charts'),
     deadlines: () => fetch('/api/revalidate?tag=deadlines'),
     subscription: () => fetch('/api/revalidate?tag=subscription'),
+    accounting: () => fetch('/api/revalidate?tag=accounting'),
+    billing: () => fetch('/api/revalidate?tag=billing'),
+    team: () => fetch('/api/revalidate?tag=team'),
+    members: () => fetch('/api/revalidate?tag=members'),
 }; 

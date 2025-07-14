@@ -1,8 +1,7 @@
 import { JournalEntriesClient } from "@/components/accounting/journal-entries-client"
-import { getJournalEntries, getChartOfAccounts } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getJournalEntriesCached, getChartOfAccountsCached } from "@/lib/cache"
 import { JournalEntriesProvider } from "@/hooks/use-journal-entries"
 
 export default async function JournalEntriesPage() {
@@ -16,22 +15,25 @@ export default async function JournalEntriesPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                // Récupérer les écritures
-                entries = await getJournalEntries(companyId, {
-                    limit: 20,
-                    offset: 0,
-                    startDate: undefined,
-                    endDate: undefined,
-                    status: undefined,
-                    search: undefined
-                })
+                // Récupérer les données avec cache en parallèle
+                const [entriesData, accountsData] = await Promise.all([
+                    getJournalEntriesCached(companyId, {
+                        limit: 20,
+                        offset: 0,
+                        startDate: undefined,
+                        endDate: undefined,
+                        status: undefined,
+                        search: undefined
+                    }),
+                    getChartOfAccountsCached(companyId)
+                ]);
 
-                // Récupérer les comptes pour la sélection
-                accounts = await getChartOfAccounts(companyId)
+                entries = entriesData;
+                accounts = accountsData;
             }
         } catch (error) {
             console.error("Erreur lors de la récupération des données:", error)

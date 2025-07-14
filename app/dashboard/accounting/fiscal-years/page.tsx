@@ -1,8 +1,7 @@
 import { FiscalYearsClient } from "@/components/accounting/fiscal-years-client"
-import { getFiscalYears } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getFiscalYearsCached } from "@/lib/cache"
 
 export default async function FiscalYearsPage() {
     const session = await auth.api.getSession({
@@ -14,11 +13,11 @@ export default async function FiscalYearsPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                fiscalYears = await getFiscalYears(companyId)
+                fiscalYears = await getFiscalYearsCached(companyId)
             }
         } catch (error) {
             console.error("Erreur lors de la récupération des exercices fiscaux:", error)

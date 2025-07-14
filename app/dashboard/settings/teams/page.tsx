@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { paths } from "@/paths";
 import { TeamsPageClient } from "@/components/teams/teams-page-client";
-import { getUserWithCompany, getTeamMembers } from "@/db/queries/company";
+import { getUserWithCompanyCached, getTeamMembersCached } from "@/lib/cache";
 
 export default async function TeamsPage() {
     const session = await auth.api.getSession({
@@ -16,21 +16,21 @@ export default async function TeamsPage() {
         redirect(paths.login);
     }
 
-    // Récupérer l'utilisateur avec son entreprise
-    const userWithCompany = await getUserWithCompany(session.user.id);
+    // Récupérer l'utilisateur avec son entreprise avec cache
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
 
     if (!userWithCompany?.company) {
         redirect(paths.dashboard);
     }
 
-    // Récupérer les membres de l'équipe et les informations d'abonnement
-    const { members, subscription } = await getTeamMembers(userWithCompany.company.id);
+    // Récupérer les membres de l'équipe avec cache
+    const { members, subscription } = await getTeamMembersCached(userWithCompany.company.id);
 
     return (
         <TeamsPageClient
             members={members}
-            userRole={userWithCompany.user.role as 'owner' | 'admin' | 'user'}
-            currentUserId={userWithCompany.user.id}
+            userRole={userWithCompany.role as 'owner' | 'admin' | 'user'}
+            currentUserId={userWithCompany.id}
             subscription={subscription}
         />
     );

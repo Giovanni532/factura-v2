@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { paths } from "@/paths";
 import { CompanySettingsClient } from "@/components/company/company-settings-client";
-import { getUserWithCompany, getCompanyWithMembers } from "@/db/queries/company";
+import { getUserWithCompanyCached, getCompanyWithMembersCached } from "@/lib/cache";
 
 export default async function CompanySettingsPage() {
     // Récupérer la session utilisateur
@@ -17,25 +17,21 @@ export default async function CompanySettingsPage() {
         redirect(paths.login);
     }
 
-    // Récupérer les données de l'utilisateur avec l'entreprise
-    const userWithCompany = await getUserWithCompany(session.user.id);
+    // Récupérer les données de l'utilisateur avec l'entreprise avec cache
+    const userWithCompany = await getUserWithCompanyCached(session.user.id);
 
     if (!userWithCompany?.company) {
         redirect(paths.dashboard);
     }
 
-    // Récupérer les données complètes de l'entreprise avec ses membres
-    const companyWithMembers = await getCompanyWithMembers(userWithCompany.company.id);
-
-    if (!companyWithMembers) {
-        redirect(paths.dashboard);
-    }
+    // Récupérer l'entreprise avec ses membres avec cache
+    const companyWithMembers = await getCompanyWithMembersCached(userWithCompany.company.id);
 
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <CompanySettingsClient
-                initialCompany={companyWithMembers}
-                userRole={userWithCompany.user.role}
+                initialCompany={companyWithMembers as any}
+                userRole={userWithCompany.role}
             />
         </div>
     );

@@ -1,9 +1,8 @@
 import { AccountingOverview } from "@/components/accounting/accounting-overview"
 import { AccountingStatsCards } from "@/components/accounting/accounting-stats-cards"
-import { getAccountingStats, getRevenueHistory, getRecentAccountingActivities } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getAccountingStatsCached, getRevenueHistoryCached, getRecentAccountingActivitiesCached } from "@/lib/cache"
 
 export default async function AccountingPage() {
     const session = await auth.api.getSession({
@@ -17,18 +16,20 @@ export default async function AccountingPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                // Récupérer les statistiques
-                stats = await getAccountingStats(companyId)
+                // Récupérer les données avec cache en parallèle
+                const [statsData, revenueData, activitiesData] = await Promise.all([
+                    getAccountingStatsCached(companyId),
+                    getRevenueHistoryCached(companyId, 12),
+                    getRecentAccountingActivitiesCached(companyId, 10)
+                ]);
 
-                // Récupérer l'historique des revenus (12 derniers mois)
-                revenueHistory = await getRevenueHistory(companyId, 12)
-
-                // Récupérer les activités récentes (10 dernières activités)
-                recentActivities = await getRecentAccountingActivities(companyId, 10)
+                stats = statsData;
+                revenueHistory = revenueData;
+                recentActivities = activitiesData;
             }
         } catch (error) {
             console.error("Erreur lors de la récupération des données comptables:", error)

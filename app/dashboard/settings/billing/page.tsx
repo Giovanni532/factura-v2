@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { getBillingPlans, getCompanySubscriptionWithStripe } from "@/db/queries/billing";
-import { getUserWithCompany } from "@/db/queries/company";
+import { getUserWithCompanyCached, getBillingPlansCached, getCompanySubscriptionWithStripeCached } from "@/lib/cache";
 import { BillingSettingsClient } from "@/components/billing/billing-settings-client";
 
 export default async function BillingPage() {
@@ -15,20 +14,24 @@ export default async function BillingPage() {
         redirect("/login");
     }
 
-    // Récupérer les informations de l'utilisateur et de l'entreprise
-    const userData = await getUserWithCompany(session.user.id);
+    // Récupérer les informations de l'utilisateur et de l'entreprise avec cache
+    const userData = await getUserWithCompanyCached(session.user.id);
 
-    if (!userData?.user || !userData?.company) {
+    if (!userData?.company) {
         redirect("/dashboard");
     }
 
-    const { user: currentUser, company: currentCompany } = userData;
+    const currentUser = userData;
+    const currentCompany = userData.company;
 
-    // Récupérer tous les plans de facturation disponibles
-    const plans = await getBillingPlans();
+    // Récupérer les données de facturation avec cache en parallèle
+    const [plansData, subscriptionData] = await Promise.all([
+        getBillingPlansCached(),
+        getCompanySubscriptionWithStripeCached(currentCompany.id)
+    ]);
 
-    // Récupérer l'abonnement actuel de l'entreprise
-    const currentSubscription = await getCompanySubscriptionWithStripe(currentCompany.id);
+    const plans = plansData;
+    const currentSubscription = subscriptionData;
 
     return (
         <BillingSettingsClient

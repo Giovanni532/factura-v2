@@ -1,8 +1,7 @@
 import { ChartOfAccountsClient } from "@/components/accounting/chart-of-accounts-client"
-import { getChartOfAccounts } from "@/db/queries/accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getChartOfAccountsCached } from "@/lib/cache"
 
 export default async function ChartOfAccountsPage() {
     const session = await auth.api.getSession({
@@ -14,11 +13,11 @@ export default async function ChartOfAccountsPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                accounts = await getChartOfAccounts(companyId)
+                accounts = await getChartOfAccountsCached(companyId)
             }
         } catch (error) {
             console.error("Erreur lors de la récupération du plan comptable:", error)

@@ -1,9 +1,8 @@
 import { PaymentsClient } from "@/components/accounting/payments-client"
 import { PaymentsProvider } from "@/hooks/payments-context"
-import { getExtendedPayments, getSuppliers, getExpenseCategories, getInvoicesForPayments } from "@/db/queries/extended-accounting"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { getUserWithCompany } from "@/db/queries/company"
+import { getUserWithCompanyCached, getExtendedPaymentsCached, getInvoicesForPaymentsCached, getSuppliersCached, getExpenseCategoriesCached } from "@/lib/cache"
 
 export default async function PaymentsPage() {
     const session = await auth.api.getSession({
@@ -18,21 +17,22 @@ export default async function PaymentsPage() {
 
     if (user) {
         try {
-            const userWithCompany = await getUserWithCompany(user.id)
+            const userWithCompany = await getUserWithCompanyCached(user.id)
             const companyId = userWithCompany.company?.id
 
             if (companyId) {
-                // Récupérer les paiements étendus
-                payments = await getExtendedPayments(companyId, { limit: 100 })
+                // Récupérer les données avec cache en parallèle
+                const [paymentsData, invoicesData, suppliersData, categoriesData] = await Promise.all([
+                    getExtendedPaymentsCached(companyId, { limit: 100 }),
+                    getInvoicesForPaymentsCached(companyId),
+                    getSuppliersCached(companyId),
+                    getExpenseCategoriesCached(companyId)
+                ]);
 
-                // Récupérer les factures pour le formulaire
-                invoices = await getInvoicesForPayments(companyId)
-
-                // Récupérer les fournisseurs
-                suppliers = await getSuppliers(companyId)
-
-                // Récupérer les catégories de dépenses
-                expenseCategories = await getExpenseCategories(companyId)
+                payments = paymentsData;
+                invoices = invoicesData;
+                suppliers = suppliersData;
+                expenseCategories = categoriesData;
             }
         } catch (error) {
             console.error("Error loading payments data:", error)
