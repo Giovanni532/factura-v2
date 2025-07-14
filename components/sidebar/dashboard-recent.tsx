@@ -82,8 +82,17 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Activités récentes</SidebarGroupLabel>
-            <SidebarMenu>
+            {/* Titre fixe */}
+            <div className="sticky top-0 z-10">
+                <SidebarGroupLabel>Activités récentes</SidebarGroupLabel>
+            </div>
+            {/* Liste scrollable */}
+            <SidebarMenu
+                className="overflow-auto max-h-[450px]"
+                style={{
+                    scrollbarWidth: "none",           // Firefox
+                    msOverflowStyle: "none",          // IE/Edge
+                }}>
                 {recentDocuments.map((document) => (
                     <SidebarMenuItem
                         key={`${document.type}-${document.id}`}
@@ -121,6 +130,11 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>
+            <style jsx>{`
+                :global(.hide-scrollbar::-webkit-scrollbar) {
+                    display: none;
+                }
+            `}</style>
         </SidebarGroup>
     )
 }
