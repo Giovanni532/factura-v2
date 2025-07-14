@@ -46,15 +46,42 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
     const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithDetails | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
+    // Fonction pour recalculer les statistiques localement
+    const recalculateStats = (updatedInvoices: InvoiceWithDetails[]) => {
+        const totalInvoices = updatedInvoices.length;
+        const totalPaid = updatedInvoices.filter(inv => inv.status === 'paid').length;
+        const totalOverdue = updatedInvoices.filter(inv => inv.status === 'overdue').length;
+        const totalDraft = updatedInvoices.filter(inv => inv.status === 'draft').length;
+        const totalRevenue = updatedInvoices
+            .filter(inv => inv.status === 'paid')
+            .reduce((sum, inv) => sum + Number(inv.total), 0);
+        const averageInvoiceValue = totalInvoices > 0
+            ? updatedInvoices.reduce((sum, inv) => sum + Number(inv.total), 0) / totalInvoices
+            : 0;
+
+        setStats({
+            totalInvoices,
+            totalPaid,
+            totalOverdue,
+            totalDraft,
+            totalRevenue,
+            averageInvoiceValue
+        });
+    };
+
     // Actions
     const { execute: executeStatusUpdate } = useAction(updateInvoiceStatusAction, {
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Mettre à jour la facture dans la liste
-                setInvoices(prev => prev.map(inv =>
-                    inv.id === result.data!.invoice.id ? { ...inv, status: result.data!.invoice.status } : inv
-                ));
+                // Mettre à jour la facture dans la liste et recalculer les stats
+                setInvoices((prev: any) => {
+                    const updatedInvoices = prev.map((inv: any) =>
+                        inv.id === result.data!.invoice.id ? { ...inv, status: result.data!.invoice.status } : inv
+                    );
+                    recalculateStats(updatedInvoices);
+                    return updatedInvoices;
+                });
             }
         },
         onError: (error) => {
@@ -66,8 +93,12 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Supprimer la facture de la liste
-                setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice?.id));
+                // Supprimer la facture de la liste et recalculer les stats
+                setInvoices(prev => {
+                    const updatedInvoices = prev.filter(inv => inv.id !== selectedInvoice?.id);
+                    recalculateStats(updatedInvoices);
+                    return updatedInvoices;
+                });
                 setSelectedInvoice(null);
                 setIsPreviewModalOpen(false);
             }
@@ -81,10 +112,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Mettre à jour le statut de la facture
-                setInvoices(prev => prev.map(inv =>
-                    inv.id === selectedInvoice?.id ? { ...inv, status: 'sent' } : inv
-                ));
+                // Mettre à jour le statut de la facture et recalculer les stats
+                setInvoices((prev: any) => {
+                    const updatedInvoices = prev.map((inv: any) =>
+                        inv.id === selectedInvoice?.id ? { ...inv, status: 'sent' } : inv
+                    );
+                    recalculateStats(updatedInvoices);
+                    return updatedInvoices;
+                });
             }
         },
         onError: (error) => {
@@ -197,8 +232,12 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         if (invoice) {
             setSelectedInvoice(invoice);
             executeDelete({ invoiceId: doc.id });
-            // Mettre à jour immédiatement la liste
-            setInvoices(prev => prev.filter(inv => inv.id !== doc.id));
+            // Mettre à jour immédiatement la liste et recalculer les stats
+            setInvoices(prev => {
+                const updatedInvoices = prev.filter(inv => inv.id !== doc.id);
+                recalculateStats(updatedInvoices);
+                return updatedInvoices;
+            });
         }
     };
 

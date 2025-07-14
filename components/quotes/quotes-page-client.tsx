@@ -47,15 +47,42 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
     const [selectedQuote, setSelectedQuote] = useState<QuoteWithDetails | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
+    // Fonction pour recalculer les statistiques localement
+    const recalculateStats = (updatedQuotes: QuoteWithDetails[]) => {
+        const totalQuotes = updatedQuotes.length;
+        const totalAccepted = updatedQuotes.filter(quote => quote.status === 'accepted').length;
+        const totalRejected = updatedQuotes.filter(quote => quote.status === 'rejected').length;
+        const totalPending = updatedQuotes.filter(quote => quote.status === 'sent').length;
+        const totalRevenue = updatedQuotes
+            .filter(quote => quote.status === 'accepted')
+            .reduce((sum, quote) => sum + Number(quote.total), 0);
+        const averageQuoteValue = totalQuotes > 0
+            ? updatedQuotes.reduce((sum, quote) => sum + Number(quote.total), 0) / totalQuotes
+            : 0;
+
+        setStats({
+            totalQuotes,
+            totalAccepted,
+            totalRejected,
+            totalPending,
+            totalRevenue,
+            averageQuoteValue
+        });
+    };
+
     // Actions
     const { execute: executeStatusUpdate } = useAction(updateQuoteStatusAction, {
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Mettre à jour le devis dans la liste
-                setQuotes(prev => prev.map(quote =>
-                    quote.id === result.data!.quote.id ? { ...quote, status: result.data!.quote.status as any } : quote
-                ));
+                // Mettre à jour le devis dans la liste et recalculer les stats
+                setQuotes((prev: any) => {
+                    const updatedQuotes = prev.map((quote: any) =>
+                        quote.id === result.data!.quote.id ? { ...quote, status: result.data!.quote.status } : quote
+                    );
+                    recalculateStats(updatedQuotes);
+                    return updatedQuotes;
+                });
             }
         },
         onError: (error) => {
@@ -67,8 +94,12 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Supprimer le devis de la liste
-                setQuotes(prev => prev.filter(quote => quote.id !== selectedQuote?.id));
+                // Supprimer le devis de la liste et recalculer les stats
+                setQuotes(prev => {
+                    const updatedQuotes = prev.filter(quote => quote.id !== selectedQuote?.id);
+                    recalculateStats(updatedQuotes);
+                    return updatedQuotes;
+                });
                 setSelectedQuote(null);
                 setIsPreviewModalOpen(false);
             }
@@ -82,10 +113,14 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         onSuccess: (result) => {
             if (result.data) {
                 toast.success(result.data.message);
-                // Mettre à jour le statut du devis
-                setQuotes(prev => prev.map(quote =>
-                    quote.id === selectedQuote?.id ? { ...quote, status: 'sent' } : quote
-                ));
+                // Mettre à jour le statut du devis et recalculer les stats
+                setQuotes((prev: any) => {
+                    const updatedQuotes = prev.map((quote: any) =>
+                        quote.id === selectedQuote?.id ? { ...quote, status: 'sent' } : quote
+                    );
+                    recalculateStats(updatedQuotes);
+                    return updatedQuotes;
+                });
             }
         },
         onError: (error) => {
@@ -198,8 +233,12 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         if (quote) {
             setSelectedQuote(quote);
             executeDelete({ id: doc.id });
-            // Mettre à jour immédiatement la liste
-            setQuotes(prev => prev.filter(q => q.id !== doc.id));
+            // Mettre à jour immédiatement la liste et recalculer les stats
+            setQuotes(prev => {
+                const updatedQuotes = prev.filter(q => q.id !== doc.id);
+                recalculateStats(updatedQuotes);
+                return updatedQuotes;
+            });
         }
     };
 

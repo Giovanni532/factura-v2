@@ -67,10 +67,23 @@ export default async function DashboardPage() {
     const charts = await getDashboardChartsCached(userWithCompany.company.id);
     const deadlines = await getUpcomingDeadlinesCached(userWithCompany.company.id);
 
+    // Correction : transformer les dates string en objets Date
+    const deadlinesFixed = {
+        ...deadlines,
+        invoices: deadlines?.invoices?.map(inv => ({
+            ...inv,
+            dueDate: inv.dueDate ? new Date(inv.dueDate) : null,
+        })) ?? [],
+        quotes: deadlines?.quotes?.map(q => ({
+            ...q,
+            validUntil: q.validUntil ? new Date(q.validUntil) : null,
+        })) ?? [],
+    };
+
     const dashboardData = {
         stats,
         charts,
-        deadlines,
+        deadlines: deadlinesFixed,
     };
 
     // Si l'utilisateur a une compagnie, afficher le tableau de bord
