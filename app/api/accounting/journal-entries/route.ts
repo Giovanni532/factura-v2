@@ -5,6 +5,20 @@ import { getUserWithCompany } from "@/db/queries/company"
 import { accountingFiltersSchema } from "@/validation/accounting-schema"
 import { headers } from "next/headers"
 
+const ALLOWED_ORIGIN = process.env.NEXT_PUBLIC_APP_URL;
+
+function withCORS(response: Response) {
+    response.headers.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN || "");
+    response.headers.set("Vary", "Origin");
+    response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    return response;
+}
+
+export async function OPTIONS() {
+    return withCORS(new Response(null, { status: 204 }));
+}
+
 export async function GET(request: NextRequest) {
     try {
         const session = await auth.api.getSession({
@@ -12,14 +26,14 @@ export async function GET(request: NextRequest) {
         })
 
         if (!session?.user) {
-            return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+            return withCORS(NextResponse.json({ error: "Non autorisé" }, { status: 401 }))
         }
 
         const userWithCompany = await getUserWithCompany(session.user.id)
         const companyId = userWithCompany.company?.id
 
         if (!companyId) {
-            return NextResponse.json({ error: "Entreprise non trouvée" }, { status: 404 })
+            return withCORS(NextResponse.json({ error: "Entreprise non trouvée" }, { status: 404 }))
         }
 
         // Récupérer les paramètres de filtrage
@@ -39,12 +53,12 @@ export async function GET(request: NextRequest) {
 
         const entries = await getJournalEntries(companyId, validatedFilters)
 
-        return NextResponse.json(entries)
+        return withCORS(NextResponse.json(entries))
     } catch (error) {
         console.error("Erreur lors de la récupération des écritures:", error)
-        return NextResponse.json(
+        return withCORS(NextResponse.json(
             { error: "Erreur interne du serveur" },
             { status: 500 }
-        )
+        ))
     }
 } 
