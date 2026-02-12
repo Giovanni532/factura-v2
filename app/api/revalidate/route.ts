@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        revalidateTag(tag);
+        revalidateTag(tag, 'max');
         return NextResponse.json({ revalidated: true, tag });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to revalidate' }, { status: 500 });
