@@ -32,7 +32,7 @@ const protectedRoutes = [
     '/accounting/', // Pour toutes les sous-routes dynamiques de la comptabilité
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Permettre l'accès aux routes d'API publiques
