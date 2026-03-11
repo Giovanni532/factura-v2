@@ -1,12 +1,9 @@
 import { ChartOfAccountsClient } from "@/components/accounting/chart-of-accounts-client"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getChartOfAccountsCached } from "@/lib/cache"
 
 export default async function ChartOfAccountsPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let accounts: any[] = []

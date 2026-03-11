@@ -1,10 +1,9 @@
 "use server"
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
-import { getUserWithCompanyCached, getQuotesByCompanyCached, getQuoteStatsCached, getSubscriptionLimitsCached, getFormDataCached } from "@/lib/cache";
+import { getUserWithCompanyCached, getQuotesByCompanyCached, getQuoteStatsCached, getSubscriptionLimitsCached, getQuoteFormDataCached } from "@/lib/cache";
 import { QuotesPageClient } from "@/components/quotes/quotes-page-client";
-import { headers } from "next/headers";
 import { paths } from "@/paths";
 
 interface QuotesPageProps {
@@ -13,9 +12,7 @@ interface QuotesPageProps {
 
 export default async function QuotesPage({ searchParams }: QuotesPageProps) {
     const searchParamsResult = await searchParams;
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user?.id) {
         redirect(paths.login);
@@ -39,7 +36,7 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
         }),
         getQuoteStatsCached(companyId, searchParamsResult.client),
         getSubscriptionLimitsCached(companyId),
-        getFormDataCached('quotes', await headers())
+        getQuoteFormDataCached(companyId, session.user.id)
     ]);
 
     return (

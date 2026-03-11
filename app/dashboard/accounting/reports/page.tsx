@@ -1,12 +1,9 @@
 import { ReportsClient } from "@/components/accounting/reports-client"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getAccountingStatsCached } from "@/lib/cache"
 
 export default async function ReportsPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let stats = null

@@ -1,10 +1,9 @@
 'use server'
 
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { getUserWithCompanyCached, getServicesByCompanyCached, getServiceCategoriesCached } from "@/lib/cache";
 import { ServicesPageClient } from "@/components/services/services-page-client";
-import { headers } from "next/headers";
 import { ServiceWithStats } from "@/validation/service-schema";
 import { paths } from "@/paths";
 
@@ -16,9 +15,7 @@ interface ServicesPageProps {
 
 export default async function ServicesPage({ searchParams }: ServicesPageProps) {
     const searchParamsResult = await searchParams;
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

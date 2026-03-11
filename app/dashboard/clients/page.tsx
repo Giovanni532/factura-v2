@@ -1,10 +1,9 @@
 'use server'
 
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { getUserWithCompanyCached, getClientsWithStatsCached, getSubscriptionLimitsCached } from "@/lib/cache";
 import { ClientsPageClient } from "@/components/clients/clients-page-client";
-import { headers } from "next/headers";
 import { paths } from "@/paths";
 
 interface InvoicesPageProps {
@@ -13,9 +12,7 @@ interface InvoicesPageProps {
 
 export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
     const searchParamsResult = await searchParams;
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

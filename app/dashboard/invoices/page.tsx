@@ -1,10 +1,9 @@
 "use server"
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
-import { getUserWithCompanyCached, getInvoicesByCompanyCached, getInvoiceStatsCached, getSubscriptionLimitsCached, getFormDataCached } from "@/lib/cache";
+import { getUserWithCompanyCached, getInvoicesByCompanyCached, getInvoiceStatsCached, getSubscriptionLimitsCached, getInvoiceFormDataCached } from "@/lib/cache";
 import { InvoicesPageClient } from "@/components/invoices/invoices-page-client";
-import { headers } from "next/headers";
 import { paths } from "@/paths";
 
 interface InvoicesPageProps {
@@ -13,9 +12,7 @@ interface InvoicesPageProps {
 
 export default async function InvoicesPage({ searchParams }: InvoicesPageProps) {
     const searchParamsResult = await searchParams;
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user?.id) {
         redirect(paths.login);
@@ -39,7 +36,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
         }),
         getInvoiceStatsCached(companyId, searchParamsResult.client),
         getSubscriptionLimitsCached(companyId),
-        getFormDataCached('invoices', await headers())
+        getInvoiceFormDataCached(companyId, session.user.id)
     ]);
 
     return (

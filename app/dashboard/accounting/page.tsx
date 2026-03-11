@@ -1,13 +1,10 @@
 import { AccountingOverview } from "@/components/accounting/accounting-overview"
 import { AccountingStatsCards } from "@/components/accounting/accounting-stats-cards"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getAccountingStatsCached, getRevenueHistoryCached, getRecentAccountingActivitiesCached } from "@/lib/cache"
 
 export default async function AccountingPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let stats = undefined

@@ -1,16 +1,15 @@
 "use server"
 
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+
+
 import { paths } from "@/paths";
 import { TeamsPageClient } from "@/components/teams/teams-page-client";
 import { getUserWithCompanyCached, getTeamMembersCached } from "@/lib/cache";
 
 export default async function TeamsPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

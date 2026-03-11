@@ -1,12 +1,9 @@
 import { FiscalYearsClient } from "@/components/accounting/fiscal-years-client"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getFiscalYearsCached } from "@/lib/cache"
 
 export default async function FiscalYearsPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let fiscalYears: any[] = []

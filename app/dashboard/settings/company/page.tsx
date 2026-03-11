@@ -1,7 +1,8 @@
 "use server"
 
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+
+
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { paths } from "@/paths";
 import { CompanySettingsClient } from "@/components/company/company-settings-client";
@@ -9,9 +10,7 @@ import { getUserWithCompanyCached, getCompanyWithMembersCached } from "@/lib/cac
 
 export default async function CompanySettingsPage() {
     // Récupérer la session utilisateur
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

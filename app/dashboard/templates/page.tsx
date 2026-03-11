@@ -1,7 +1,8 @@
 "use server"
 
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+
+
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { getUserWithCompanyCached, getTemplatesByCompanyCached } from "@/lib/cache";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
@@ -9,9 +10,7 @@ import { paths } from "@/paths";
 
 export default async function TemplatesPage() {
     // Récupérer la session utilisateur
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

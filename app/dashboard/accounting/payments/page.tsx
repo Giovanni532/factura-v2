@@ -1,13 +1,10 @@
 import { PaymentsClient } from "@/components/accounting/payments-client"
 import { PaymentsProvider } from "@/hooks/payments-context"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getExtendedPaymentsCached, getInvoicesForPaymentsCached, getSuppliersCached, getExpenseCategoriesCached } from "@/lib/cache"
 
 export default async function PaymentsPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let payments: any[] = []
