@@ -1,8 +1,7 @@
 "use server"
 
 import React from 'react';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { getSession } from '@/lib/get-session';
 import { redirect } from 'next/navigation';
 import { getUserWithCompanyCached, getDashboardStatsCached, getDashboardChartsCached, getUpcomingDeadlinesCached } from '@/lib/cache';
 import { CreateCompanyForm } from '@/components/forms/create-company-form';
@@ -13,9 +12,7 @@ import { DashboardClient } from '@/components/dashboard/dashboard-client';
 
 export default async function DashboardPage() {
     // Récupérer la session utilisateur côté serveur
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     // Rediriger vers la page de connexion si non connecté
     if (!session?.user) {
@@ -62,10 +59,12 @@ export default async function DashboardPage() {
         );
     }
 
-    // Récupérer les données de la dashboard côté serveur avec cache
-    const stats = await getDashboardStatsCached(userWithCompany.company.id);
-    const charts = await getDashboardChartsCached(userWithCompany.company.id);
-    const deadlines = await getUpcomingDeadlinesCached(userWithCompany.company.id);
+    // Récupérer les données de la dashboard côté serveur avec cache (en parallèle)
+    const [stats, charts, deadlines] = await Promise.all([
+        getDashboardStatsCached(userWithCompany.company.id),
+        getDashboardChartsCached(userWithCompany.company.id),
+        getUpcomingDeadlinesCached(userWithCompany.company.id),
+    ]);
 
     // Correction : transformer les dates string en objets Date
     const deadlinesFixed = {

@@ -381,7 +381,33 @@ export const getTemplatesByCompanyCached = unstable_cache(
     }
 );
 
-// Cache pour les données de formulaire
+// Cache pour les données du formulaire de facture (accès DB direct, pas de HTTP)
+export const getInvoiceFormDataCached = unstable_cache(
+    async (companyId: string, userId: string) => {
+        const { getInvoiceFormData } = await import('@/db/queries/form-data');
+        return await getInvoiceFormData(companyId, userId);
+    },
+    ['invoice-form-data'],
+    {
+        revalidate: 60, // 1 minute
+        tags: ['form-data', 'invoices']
+    }
+);
+
+// Cache pour les données du formulaire de devis (accès DB direct, pas de HTTP)
+export const getQuoteFormDataCached = unstable_cache(
+    async (companyId: string, userId: string) => {
+        const { getQuoteFormData } = await import('@/db/queries/form-data');
+        return await getQuoteFormData(companyId, userId);
+    },
+    ['quote-form-data'],
+    {
+        revalidate: 60, // 1 minute
+        tags: ['form-data', 'quotes']
+    }
+);
+
+// @deprecated Utiliser getInvoiceFormDataCached ou getQuoteFormDataCached à la place
 export const getFormDataCached = unstable_cache(
     async (type: 'invoices' | 'quotes', headers: Headers) => {
         try {
@@ -402,7 +428,7 @@ export const getFormDataCached = unstable_cache(
     },
     ['form-data'],
     {
-        revalidate: 300, // 5 minutes
+        revalidate: 300,
         tags: ['form-data']
     }
 );

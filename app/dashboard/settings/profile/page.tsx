@@ -1,7 +1,8 @@
 "use server"
 
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+
+
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { paths } from "@/paths";
 import { ProfilePageClient } from "@/components/profile/profile-page-client";
@@ -9,9 +10,7 @@ import { getUserWithCompanyCached } from "@/lib/cache";
 
 export default async function ProfilePage() {
     // Récupérer la session utilisateur
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getSession();
 
     if (!session?.user) {
         redirect(paths.login);

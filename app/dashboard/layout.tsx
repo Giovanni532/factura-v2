@@ -4,8 +4,7 @@ import {
     SidebarInset,
     SidebarProvider,
 } from "@/components/ui/sidebar"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompany } from "@/db/queries/company"
 import { getRecentDocuments } from "@/db/queries/invoice"
 
@@ -21,9 +20,7 @@ interface RecentDocument {
 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let role = "user"

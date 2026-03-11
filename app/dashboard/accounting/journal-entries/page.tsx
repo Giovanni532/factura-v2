@@ -1,13 +1,10 @@
 import { JournalEntriesClient } from "@/components/accounting/journal-entries-client"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getJournalEntriesCached, getChartOfAccountsCached } from "@/lib/cache"
 import { JournalEntriesProvider } from "@/hooks/use-journal-entries"
 
 export default async function JournalEntriesPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await getSession()
 
     const user = session?.user
     let entries: any[] = []
