@@ -7,10 +7,9 @@ import {
     SidebarMenu,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FileText, Receipt, Calendar, Euro } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { paths } from "@/paths"
-import { formatDate, formatCurrency } from "@/lib/utils"
+import { formatDate, formatCurrency, cn } from "@/lib/utils"
+import { getStatus, toneDot } from "@/lib/status"
 
 interface RecentDocument {
     id: string
@@ -29,36 +28,6 @@ interface DashboardDocumentsProps {
 export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps) {
     const router = useRouter()
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'paid':
-            case 'accepted':
-                return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-            case 'sent':
-                return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-            case 'draft':
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-            case 'overdue':
-            case 'expired':
-                return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-            default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-        }
-    }
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'paid': return 'Payée'
-            case 'sent': return 'Envoyée'
-            case 'draft': return 'Brouillon'
-            case 'overdue': return 'En retard'
-            case 'accepted': return 'Accepté'
-            case 'expired': return 'Expiré'
-            case 'cancelled': return 'Annulé'
-            default: return status
-        }
-    }
-
     const handleDocumentClick = (document: RecentDocument) => {
         if (document.type === 'invoice') {
             router.push(`${paths.invoices.list}?id=${document.id}`)
@@ -67,74 +36,45 @@ export function DashboardDocuments({ recentDocuments }: DashboardDocumentsProps)
         }
     }
 
-    if (recentDocuments.length === 0) {
-        return (
-            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-                <SidebarGroupLabel>Activités récentes</SidebarGroupLabel>
-                <SidebarMenu>
-                    <SidebarMenuItem className="text-muted-foreground text-sm">
-                        Aucun document récent
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarGroup>
-        )
-    }
-
     return (
-        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            {/* Titre fixe */}
-            <div className="sticky top-0 z-10">
-                <SidebarGroupLabel>Activités récentes</SidebarGroupLabel>
-            </div>
-            {/* Liste scrollable */}
-            <SidebarMenu
-                className="overflow-auto max-h-[450px]"
-                style={{
-                    scrollbarWidth: "none",           // Firefox
-                    msOverflowStyle: "none",          // IE/Edge
-                }}>
-                {recentDocuments.map((document) => (
-                    <SidebarMenuItem
-                        key={`${document.type}-${document.id}`}
-                        onClick={() => handleDocumentClick(document)}
-                        className="cursor-pointer hover:bg-accent p-2 rounded-md"
-                    >
-                        <div className="flex items-center gap-2 w-full">
-                            {document.type === 'invoice' ? (
-                                <FileText className="w-4 h-4 text-blue-600" />
-                            ) : (
-                                <Receipt className="w-4 h-4 text-purple-600" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium truncate">
-                                        {document.number}
+        <SidebarGroup className="min-h-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Activité récente</SidebarGroupLabel>
+            {recentDocuments.length === 0 ? (
+                <p className="px-2 text-sm text-muted-foreground">Aucun document récent</p>
+            ) : (
+                <SidebarMenu className="hide-scrollbar max-h-[440px] gap-0 overflow-auto">
+                    {recentDocuments.map((document) => {
+                        const { tone, label } = getStatus(document.status, document.type)
+                        return (
+                            <SidebarMenuItem key={`${document.type}-${document.id}`}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDocumentClick(document)}
+                                    className="group/doc grid w-full grid-cols-[auto_1fr_auto] items-center gap-x-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-sidebar-accent"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        title={label}
+                                        className={cn("size-1.5 rounded-full", toneDot[tone])}
+                                    />
+                                    <span className="min-w-0">
+                                        <span className="block font-mono text-[12px] leading-tight">
+                                            {document.number}
+                                            <span className="sr-only"> — {label}</span>
+                                        </span>
+                                        <span className="block truncate text-[12px] text-muted-foreground">
+                                            {document.clientName} · {formatDate(document.createdAt, true, true)}
+                                        </span>
                                     </span>
-                                    <Badge
-                                        variant="secondary"
-                                        className={`text-xs ${getStatusColor(document.status)}`}
-                                    >
-                                        {getStatusLabel(document.status)}
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span className="truncate">{document.clientName}</span>
-                                    <span>•</span>
-                                    <span>{formatCurrency(document.total, "EUR")}</span>
-                                    <span>•</span>
-                                    <Calendar className="w-3 h-3" />
-                                    <span>{formatDate(document.createdAt, true, true)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-            <style jsx>{`
-                :global(.hide-scrollbar::-webkit-scrollbar) {
-                    display: none;
-                }
-            `}</style>
+                                    <span className="font-mono text-[12px] tabular-nums text-sidebar-foreground/80">
+                                        {formatCurrency(document.total, "EUR")}
+                                    </span>
+                                </button>
+                            </SidebarMenuItem>
+                        )
+                    })}
+                </SidebarMenu>
+            )}
         </SidebarGroup>
     )
 }

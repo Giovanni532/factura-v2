@@ -28,6 +28,7 @@ import {
     IconAlertCircle
 } from "@tabler/icons-react"
 import { CalendarIcon } from "lucide-react"
+import { LedgerStats } from "@/components/ledger"
 import {
     generateReportAction,
     getFiscalYearsAction,
@@ -224,10 +225,10 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
 
     const getCategoryColor = (category: Report["category"]) => {
         switch (category) {
-            case "financial": return "bg-blue-100 text-blue-800";
-            case "management": return "bg-green-100 text-green-800";
-            case "legal": return "bg-purple-100 text-purple-800";
-            default: return "bg-gray-100 text-gray-800";
+            case "financial": return "bg-info/10 text-info";
+            case "management": return "bg-success/10 text-success";
+            case "legal": return "bg-foreground/[0.07] text-foreground";
+            default: return "bg-muted text-foreground";
         }
     };
 
@@ -353,11 +354,12 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
     return (
         <div className="space-y-6">
             {/* En-tête avec contrôles */}
-            <div className="flex flex-col space-y-4 lg:flex-row lg:items-end lg:justify-between lg:space-y-0">
+            <div className="flex flex-col space-y-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between lg:space-y-0">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Rapports comptables</h1>
-                    <p className="text-muted-foreground">
-                        Générez et consultez vos rapports financiers et comptables
+                    <p className="ledger-label mb-2">Comptabilité</p>
+                    <h1 className="text-3xl font-semibold tracking-[-0.03em]">Rapports</h1>
+                    <p className="mt-1 text-muted-foreground">
+                        Bilan, compte de résultat et flux de trésorerie, par exercice ou par période
                     </p>
                 </div>
 
@@ -529,56 +531,14 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
 
             {/* Statistiques rapides */}
             {stats && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d&apos;affaires</CardTitle>
-                            <IconTrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.revenue.current)}</div>
-                            <p className={`text-xs ${stats.revenue.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercentage(stats.revenue.change)} vs période précédente
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Charges</CardTitle>
-                            <IconCalculator className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.expenses.current)}</div>
-                            <p className={`text-xs ${stats.expenses.change <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercentage(stats.expenses.change)} vs période précédente
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Résultat net</CardTitle>
-                            <IconReportMoney className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.netIncome.current)}</div>
-                            <p className={`text-xs ${stats.netIncome.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercentage(stats.netIncome.change)} vs période précédente
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Créances en attente</CardTitle>
-                            <IconAlertCircle className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatCurrency(stats.pendingPayments.current)}</div>
-                            <p className={`text-xs ${stats.pendingPayments.change <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatPercentage(stats.pendingPayments.change)} vs période précédente
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <LedgerStats
+                    items={[
+                        { label: "Chiffre d'affaires", value: formatCurrency(stats.revenue.current), icon: IconTrendingUp, delta: stats.revenue.change || null, detail: "Sur la période" },
+                        { label: "Charges", value: formatCurrency(stats.expenses.current), icon: IconCalculator, delta: stats.expenses.change ? -stats.expenses.change : null, detail: "Sur la période" },
+                        { label: "Résultat net", value: formatCurrency(stats.netIncome.current), icon: IconReportMoney, tone: stats.netIncome.current < 0 ? "destructive" : undefined, delta: stats.netIncome.change || null, detail: "Produits moins charges" },
+                        { label: "Créances en attente", value: formatCurrency(stats.pendingPayments.current), icon: IconAlertCircle, tone: stats.pendingPayments.current > 0 ? "warning" : undefined, detail: "Factures non encaissées" },
+                    ]}
+                />
             )}
 
             {/* Alerte si aucune période sélectionnée */}
@@ -999,7 +959,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                         <tbody>
                                             <tr className="print-total">
                                                 <td><strong>Résultat Net</strong></td>
-                                                <td className={`number ${(generatedReport?.netIncome || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <td className={`number ${(generatedReport?.netIncome || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                                                     <strong>{formatCurrency(generatedReport?.netIncome || 0)}</strong>
                                                 </td>
                                             </tr>
@@ -1022,18 +982,18 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             {generatedReport?.operating?.inflows?.map((item: any, index: number) => (
                                                 <tr key={index}>
                                                     <td>{item.name} (Encaissement)</td>
-                                                    <td className="number text-green-600">+{formatCurrency(item.amount)}</td>
+                                                    <td className="number text-success">+{formatCurrency(item.amount)}</td>
                                                 </tr>
                                             ))}
                                             {generatedReport?.operating?.outflows?.map((item: any, index: number) => (
                                                 <tr key={`outflow-${index}`}>
                                                     <td>{item.name} (Décaissement)</td>
-                                                    <td className="number text-red-600">-{formatCurrency(item.amount)}</td>
+                                                    <td className="number text-destructive">-{formatCurrency(item.amount)}</td>
                                                 </tr>
                                             ))}
                                             <tr className="print-total">
                                                 <td><strong>Flux net d&apos;exploitation</strong></td>
-                                                <td className={`number ${(generatedReport?.operating?.netOperating || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <td className={`number ${(generatedReport?.operating?.netOperating || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                                                     <strong>{formatCurrency(generatedReport?.operating?.netOperating || 0)}</strong>
                                                 </td>
                                             </tr>
@@ -1045,7 +1005,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                         <tbody>
                                             <tr className="print-total">
                                                 <td><strong>Flux de trésorerie net</strong></td>
-                                                <td className={`number ${(generatedReport?.netCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <td className={`number ${(generatedReport?.netCashFlow || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
                                                     <strong>{formatCurrency(generatedReport?.netCashFlow || 0)}</strong>
                                                 </td>
                                             </tr>
@@ -1083,9 +1043,9 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                                 <td className="number"><strong>{formatCurrency(generatedReport?.totalCredits || 0)}</strong></td>
                                                 <td className="number">
                                                     {generatedReport?.isBalanced ? (
-                                                        <span className="text-green-600"><strong>Équilibré</strong></span>
+                                                        <span className="text-success"><strong>Équilibré</strong></span>
                                                     ) : (
-                                                        <span className="text-red-600"><strong>Non équilibré</strong></span>
+                                                        <span className="text-destructive"><strong>Non équilibré</strong></span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -1195,7 +1155,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     <div className="border-t pt-2">
                                         <div className="flex justify-between font-bold text-lg">
                                             <span>Résultat Net</span>
-                                            <span className={generatedReport?.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                            <span className={generatedReport?.netIncome >= 0 ? 'text-success' : 'text-destructive'}>
                                                 {formatCurrency(generatedReport?.netIncome || 0)}
                                             </span>
                                         </div>
@@ -1217,18 +1177,18 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                             {generatedReport?.operating?.inflows?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
-                                                    <span className="text-green-600">+{formatCurrency(item.amount)}</span>
+                                                    <span className="text-success">+{formatCurrency(item.amount)}</span>
                                                 </div>
                                             ))}
                                             {generatedReport?.operating?.outflows?.map((item: any, index: number) => (
                                                 <div key={index} className="flex justify-between text-sm">
                                                     <span>{item.name}</span>
-                                                    <span className="text-red-600">-{formatCurrency(item.amount)}</span>
+                                                    <span className="text-destructive">-{formatCurrency(item.amount)}</span>
                                                 </div>
                                             ))}
                                             <div className="border-t pt-1 font-semibold flex justify-between">
                                                 <span>Flux net d&apos;exploitation</span>
-                                                <span className={generatedReport?.operating?.netOperating >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                <span className={generatedReport?.operating?.netOperating >= 0 ? 'text-success' : 'text-destructive'}>
                                                     {formatCurrency(generatedReport?.operating?.netOperating || 0)}
                                                 </span>
                                             </div>
@@ -1238,7 +1198,7 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                     <div className="border-t pt-2">
                                         <div className="flex justify-between font-bold text-lg">
                                             <span>Flux de trésorerie net</span>
-                                            <span className={generatedReport?.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                            <span className={generatedReport?.netCashFlow >= 0 ? 'text-success' : 'text-destructive'}>
                                                 {formatCurrency(generatedReport?.netCashFlow || 0)}
                                             </span>
                                         </div>
@@ -1282,9 +1242,9 @@ export function ReportsClient({ initialStats }: ReportsClientProps) {
                                                 <td className="text-right p-2">{formatCurrency(generatedReport?.totalCredits || 0)}</td>
                                                 <td className="text-right p-2">
                                                     {generatedReport?.isBalanced ? (
-                                                        <span className="text-green-600">Équilibré</span>
+                                                        <span className="text-success">Équilibré</span>
                                                     ) : (
-                                                        <span className="text-red-600">Non équilibré</span>
+                                                        <span className="text-destructive">Non équilibré</span>
                                                     )}
                                                 </td>
                                             </tr>

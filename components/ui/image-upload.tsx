@@ -88,10 +88,10 @@ export function ImageUpload({
                     <button
                         type="button"
                         tabIndex={-1}
-                        className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow border border-gray-200 hover:bg-gray-100 transition z-20"
+                        className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow border border-border hover:bg-muted transition z-20"
                         disabled={disabled || isUploading}
                     >
-                        <Pencil className="h-4 w-4 text-gray-700" />
+                        <Pencil className="h-4 w-4 text-foreground" />
                     </button>
                 </div>
             </div>
@@ -102,11 +102,11 @@ export function ImageUpload({
     return (
         <div className={cn("space-y-6", className)}>
             {value ? (
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                <div className="bg-gradient-to-br from-muted/50 to-muted rounded-2xl p-6 border border-border ">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Image actuelle</span>
+                            <div className="w-2 h-2 bg-success rounded-full"></div>
+                            <span className="text-sm font-medium text-foreground ">Image actuelle</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div
@@ -119,7 +119,7 @@ export function ImageUpload({
                                     variant="ghost"
                                     size="sm"
                                     disabled={disabled || isUploading}
-                                    className="h-8 w-8 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"
+                                    className="h-8 w-8 p-0 hover:bg-muted rounded-full"
                                 >
                                     <Upload className="h-4 w-4" />
                                 </Button>
@@ -130,7 +130,7 @@ export function ImageUpload({
                                 variant="ghost"
                                 size="sm"
                                 disabled={disabled}
-                                className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-full"
+                                className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive rounded-full"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
@@ -138,7 +138,7 @@ export function ImageUpload({
                     </div>
 
                     <div className="relative mx-auto w-fit">
-                        <div className="aspect-square w-24 h-24 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm">
+                        <div className="aspect-square w-24 h-24 rounded-xl overflow-hidden border border-border bg-white shadow-sm">
                             <Image
                                 src={value}
                                 alt="Image uploadée"
@@ -150,7 +150,7 @@ export function ImageUpload({
                     </div>
 
                     <div className="text-center mt-4">
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        <p className="text-xs text-muted-foreground font-medium">
                             Cliquez sur les icônes pour modifier ou supprimer
                         </p>
                     </div>

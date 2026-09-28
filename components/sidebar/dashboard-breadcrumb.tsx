@@ -39,15 +39,15 @@ export function DashboardBreadcrumb() {
     // Si on est sur la page dashboard, afficher juste "Dashboard"
     if (pathSegments.length === 1 && pathSegments[0] === 'dashboard') {
         return (
-            <motion.header
+            <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear"
+                className="flex h-12 min-w-0 flex-1 shrink items-center gap-2"
             >
-                <div className="flex w-full items-center justify-between px-4 lg:gap-2 lg:px-6">
+                <div className="flex w-full min-w-0 items-center justify-between">
                     <motion.div
-                        className="flex items-center gap-1 lg:gap-2"
+                        className="flex min-w-0 items-center gap-1 lg:gap-2"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.1 }}
@@ -58,14 +58,14 @@ export function DashboardBreadcrumb() {
                             <BreadcrumbList>
                                 <BreadcrumbItem>
                                     <BreadcrumbLink asChild>
-                                        <Link href={paths.dashboard}>Dashboard</Link>
+                                        <Link href={paths.dashboard}>Tableau de bord</Link>
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                             </BreadcrumbList>
                         </Breadcrumb>
                     </motion.div>
                 </div>
-            </motion.header>
+            </motion.div>
         )
     }
 
@@ -73,7 +73,7 @@ export function DashboardBreadcrumb() {
     const buildBreadcrumbItems = () => {
         const items = [
             {
-                label: "Dashboard",
+                label: "Tableau de bord",
                 href: paths.dashboard,
                 isLink: true
             }
@@ -191,23 +191,23 @@ export function DashboardBreadcrumb() {
     const breadcrumbItems = buildBreadcrumbItems()
 
     return (
-        <motion.header
+        <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear"
+            className="flex h-12 min-w-0 flex-1 shrink items-center gap-2"
         >
-            <div className="flex w-full items-center justify-between px-4 lg:gap-2 lg:px-6">
+            <div className="flex w-full min-w-0 items-center justify-between">
                 <motion.div
-                    className="flex items-center gap-1 lg:gap-2"
+                    className="flex min-w-0 items-center gap-1 lg:gap-2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                 >
                     <SidebarTrigger className="-ml-1" />
                     <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-                    <motion.h1
-                        className="text-base font-medium"
+                    <motion.div
+                        className="min-w-0 text-sm font-medium"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3, delay: 0.2 }}
@@ -216,24 +216,25 @@ export function DashboardBreadcrumb() {
                             <BreadcrumbList>
                                 {breadcrumbItems.map((item, index) => (
                                     <React.Fragment key={index}>
-                                        <BreadcrumbItem>
+                                        {/* En mobile, seul le dernier niveau reste visible */}
+                                        <BreadcrumbItem className={index < breadcrumbItems.length - 1 ? "hidden sm:inline-flex" : "min-w-0"}>
                                             {item.isLink ? (
                                                 <BreadcrumbLink asChild>
                                                     <Link href={item.href}>{item.label}</Link>
                                                 </BreadcrumbLink>
                                             ) : (
-                                                <span className="text-foreground">{item.label}</span>
+                                                <span className="truncate text-foreground">{item.label}</span>
                                             )}
                                         </BreadcrumbItem>
-                                        {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
+                                        {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator className="hidden sm:inline-flex" />}
                                     </React.Fragment>
                                 ))}
                             </BreadcrumbList>
                         </Breadcrumb>
-                    </motion.h1>
+                    </motion.div>
                 </motion.div>
             </div>
-        </motion.header>
+        </motion.div>
     )
 }
 

@@ -25,20 +25,20 @@ const validatePassword = (password: string) => {
     const score = Object.values(checks).filter(Boolean).length;
 
     let strength = 'Très faible';
-    let color = 'text-red-500';
+    let color = 'text-destructive';
 
     if (score >= 5) {
         strength = 'Très fort';
-        color = 'text-green-500';
+        color = 'text-success';
     } else if (score >= 4) {
         strength = 'Fort';
-        color = 'text-green-400';
+        color = 'text-success';
     } else if (score >= 3) {
         strength = 'Moyen';
-        color = 'text-yellow-500';
+        color = 'text-warning';
     } else if (score >= 2) {
         strength = 'Faible';
-        color = 'text-orange-500';
+        color = 'text-warning';
     }
 
     return { checks, strength, color, score };
@@ -61,11 +61,11 @@ const PasswordCriteria = ({ checks }: { checks: any }) => (
         ].map(({ key, label }) => (
             <div key={key} className="flex items-center gap-2 text-xs">
                 {checks[key] ? (
-                    <Check className="w-3 h-3 text-green-500" />
+                    <Check className="w-3 h-3 text-success" />
                 ) : (
-                    <X className="w-3 h-3 text-red-500" />
+                    <X className="w-3 h-3 text-destructive" />
                 )}
-                <span className={checks[key] ? 'text-green-600' : 'text-muted-foreground'}>
+                <span className={checks[key] ? 'text-success' : 'text-muted-foreground'}>
                     {label}
                 </span>
             </div>
@@ -175,8 +175,8 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
         return (
             <Card>
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-                        <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/10 ">
+                        <CheckCircle className="h-6 w-6 text-success " />
                     </div>
                     <CardTitle className="text-2xl">Invitation acceptée !</CardTitle>
                 </CardHeader>
@@ -206,9 +206,9 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
             </CardHeader>
             <CardContent>
                 {error && (
-                    <Alert className="mb-4 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
-                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        <AlertDescription className="text-red-600 dark:text-red-400">
+                    <Alert className="mb-4 border-destructive/25 bg-destructive/[0.06] ">
+                        <AlertCircle className="h-4 w-4 text-destructive " />
+                        <AlertDescription className="text-destructive ">
                             {error}
                         </AlertDescription>
                     </Alert>
@@ -255,12 +255,12 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
                                         {passwordValidation.strength}
                                     </span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div className="w-full bg-muted rounded-full h-1.5">
                                     <motion.div
-                                        className={`h-1.5 rounded-full transition-all duration-300 ${passwordValidation.score >= 5 ? 'bg-green-500' :
-                                            passwordValidation.score >= 4 ? 'bg-green-400' :
-                                                passwordValidation.score >= 3 ? 'bg-yellow-500' :
-                                                    passwordValidation.score >= 2 ? 'bg-orange-500' : 'bg-red-500'
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${passwordValidation.score >= 5 ? 'bg-success' :
+                                            passwordValidation.score >= 4 ? 'bg-success' :
+                                                passwordValidation.score >= 3 ? 'bg-warning' :
+                                                    passwordValidation.score >= 2 ? 'bg-warning' : 'bg-destructive'
                                             }`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${(passwordValidation.score / 5) * 100}%` }}
@@ -303,7 +303,7 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="text-xs text-red-500"
+                                className="text-xs text-destructive"
                             >
                                 Les mots de passe ne correspondent pas
                             </motion.p>

@@ -16,7 +16,7 @@ export function SupplierCard({ supplier, onEdit, onDelete }: SupplierCardProps) 
                 <div className="flex justify-between items-start">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                            <IconBuilding className="h-4 w-4 text-blue-600" />
+                            <IconBuilding className="h-4 w-4 text-info" />
                             <span className="font-medium">{supplier.name}</span>
                             <Badge variant={supplier.isActive ? "default" : "secondary"}>
                                 {supplier.isActive ? "Actif" : "Inactif"}

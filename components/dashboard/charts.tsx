@@ -1,6 +1,7 @@
 "use client"
 
 import { Bar, BarChart, XAxis, CartesianGrid, LabelList, Line, LineChart } from "recharts"
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 
 import {
     Card,
@@ -13,20 +14,20 @@ import {
 import {
     ChartConfig,
     ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { TrendingUp } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-// Configuration pour le graphique en barres (revenus)
 const barChartConfig = {
     benefice: {
-        label: "Chiffre d'affaires",
+        label: "Encaissé",
         color: "var(--chart-1)",
     },
 } satisfies ChartConfig
 
-// Configuration pour le graphique en ligne (factures et devis)
 const lineChartConfig = {
     invoice: {
         label: "Factures",
@@ -38,112 +39,94 @@ const lineChartConfig = {
     },
 } satisfies ChartConfig
 
-export function RevenueQuoteAndInvoiceChart({ charts }: { charts: any }) {
+const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 })
+
+// Tendance réelle sur les deux derniers mois complets (le mois en cours est
+// partiel : le comparer donnerait une fausse baisse).
+function Trend({ data, unit }: { data: { month: string; value: number }[]; unit: string }) {
+    const complete = data.slice(0, -1)
+    const [prev, last] = complete.slice(-2)
+    if (!prev || !last || !prev.value) {
+        return <span className="text-muted-foreground">Pas encore assez d&apos;historique pour une tendance.</span>
+    }
+    const pct = ((last.value - prev.value) / prev.value) * 100
+    const flat = Math.abs(pct) < 1
+    const Icon = flat ? Minus : pct > 0 ? ArrowUpRight : ArrowDownRight
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <Icon className={cn("size-4", flat ? "text-muted-foreground" : pct > 0 ? "text-success" : "text-destructive")} />
+            {unit} en {last.month.toLowerCase()} :{" "}
+            <span className="font-mono">{flat ? "stable" : `${pct > 0 ? "+" : "−"}${Math.abs(pct).toFixed(0)} %`}</span>
+            <span className="text-muted-foreground">vs {prev.month.toLowerCase()}</span>
+        </span>
+    )
+}
+
+export function RevenueQuoteAndInvoiceChart({ charts }: { charts: { month: string; benefice: number }[] }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Chiffre d&apos;affaires mensuel</CardTitle>
-                <CardDescription>Évolution du CA sur les 6 derniers mois</CardDescription>
+                <CardTitle>Chiffre d&apos;affaires encaissé</CardTitle>
+                <CardDescription>Factures payées, par mois d&apos;émission — 6 derniers mois</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={barChartConfig}>
-                    <BarChart
-                        accessibilityLayer
-                        data={charts}
-                        margin={{
-                            top: 20,
-                        }}
-                    >
-                        <CartesianGrid vertical={false} />
+                <ChartContainer config={barChartConfig} className="aspect-[16/9]">
+                    <BarChart accessibilityLayer data={charts} margin={{ top: 24 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="2 4" />
                         <XAxis
                             dataKey="month"
                             tickLine={false}
                             tickMargin={10}
                             axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 3)}
+                            className="font-mono"
                         />
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Bar dataKey="benefice" fill="var(--color-benefice)" radius={8}>
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                        <Bar dataKey="benefice" fill="var(--color-benefice)" radius={[4, 4, 0, 0]} maxBarSize={48}>
                             <LabelList
                                 position="top"
-                                offset={12}
-                                className="fill-foreground"
-                                fontSize={12}
-                                formatter={(value: any) => `${value.toLocaleString('fr-FR')} €`}
+                                offset={10}
+                                className="fill-foreground font-mono"
+                                fontSize={11}
+                                formatter={(value) => (typeof value === "number" && value ? `${compact.format(value)}\u00a0€` : "")}
                             />
                         </Bar>
                     </BarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-                <div className="flex gap-2 leading-none font-medium">
-                    Chiffre d&apos;affaires en hausse ce mois <TrendingUp className="h-4 w-4" />
-                </div>
-                <div className="text-muted-foreground leading-none">
-                    Affichage du CA des 6 derniers mois
-                </div>
+            <CardFooter className="border-t pt-4 text-sm">
+                <Trend data={charts.map((c) => ({ month: c.month, value: c.benefice }))} unit="Encaissements" />
             </CardFooter>
         </Card>
     )
 }
 
-export function RevenueChart({ charts }: { charts: any }) {
+export function RevenueChart({ charts }: { charts: { month: string; invoice: number; quote: number }[] }) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Volume d&apos;activité</CardTitle>
-                <CardDescription>Nombre de factures et devis par mois</CardDescription>
+                <CardDescription>Factures et devis émis par mois</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={lineChartConfig}>
-                    <LineChart
-                        accessibilityLayer
-                        data={charts}
-                        margin={{
-                            left: 12,
-                            right: 12,
-                        }}
-                    >
-                        <CartesianGrid vertical={false} />
+                <ChartContainer config={lineChartConfig} className="aspect-[16/9]">
+                    <LineChart accessibilityLayer data={charts} margin={{ left: 12, right: 12, top: 12 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="2 4" />
                         <XAxis
                             dataKey="month"
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => value.slice(0, 3)}
+                            tickMargin={10}
+                            className="font-mono"
                         />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                        <Line
-                            dataKey="invoice"
-                            type="monotone"
-                            stroke="var(--color-invoice)"
-                            strokeWidth={2}
-                            dot={false}
-                        />
-                        <Line
-                            dataKey="quote"
-                            type="monotone"
-                            stroke="var(--color-quote)"
-                            strokeWidth={2}
-                            dot={false}
-                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Line dataKey="invoice" type="monotone" stroke="var(--color-invoice)" strokeWidth={2} dot={{ r: 3 }} />
+                        <Line dataKey="quote" type="monotone" stroke="var(--color-quote)" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3 }} />
                     </LineChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter>
-                <div className="flex w-full items-start gap-2 text-sm">
-                    <div className="grid gap-2">
-                        <div className="flex items-center gap-2 leading-none font-medium">
-                            Activité en hausse ce mois <TrendingUp className="h-4 w-4" />
-                        </div>
-                        <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                            Évolution des 6 derniers mois
-                        </div>
-                    </div>
-                </div>
+            <CardFooter className="border-t pt-4 text-sm">
+                <Trend data={charts.map((c) => ({ month: c.month, value: c.invoice }))} unit="Factures émises" />
             </CardFooter>
         </Card>
     )

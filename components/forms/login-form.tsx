@@ -223,18 +223,18 @@ export function LoginForm() {
             animate="visible"
             className="w-full max-w-md mx-auto"
         >
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-0 bg-transparent py-0 shadow-none">
                 <motion.div variants={itemVariants}>
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center">Connexion</CardTitle>
-                        <CardDescription className="text-center">
+                    <CardHeader className="space-y-1 px-0 pb-2">
+                        <CardTitle className="text-2xl font-semibold tracking-[-0.03em]">Connexion</CardTitle>
+                        <CardDescription>
                             Entrez vos identifiants pour accéder à votre compte
                         </CardDescription>
                     </CardHeader>
                 </motion.div>
 
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-0">
                         <motion.div
                             variants={fieldVariants}
                             className="space-y-2"
@@ -295,7 +295,7 @@ export function LoginForm() {
                         </motion.div>
                     </CardContent>
 
-                    <CardFooter className="flex flex-col space-y-4 mt-4">
+                    <CardFooter className="mt-4 flex flex-col space-y-4 px-0">
                         <motion.div
                             variants={buttonVariants}
                             initial="idle"

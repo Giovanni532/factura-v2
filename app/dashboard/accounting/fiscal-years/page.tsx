@@ -1,6 +1,7 @@
 import { FiscalYearsClient } from "@/components/accounting/fiscal-years-client"
 import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getFiscalYearsCached } from "@/lib/cache"
+import { PageHeader } from "@/components/ledger"
 
 export default async function FiscalYearsPage() {
     const session = await getSession()
@@ -23,12 +24,7 @@ export default async function FiscalYearsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Exercices Fiscaux</h1>
-                <p className="text-muted-foreground">
-                    Gérez vos exercices fiscaux et vos périodes comptables.
-                </p>
-            </div>
+            <PageHeader eyebrow="Comptabilité" title="Exercices fiscaux" description="Vos périodes comptables, ouvertes et clôturées" />
 
             <FiscalYearsClient fiscalYears={fiscalYears} />
         </div>

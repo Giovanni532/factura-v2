@@ -30,7 +30,7 @@ export const getDashboardStatsAction = useMutation(
             totalRevenue: sql<number>`sum(${invoice.total})`,
             paidInvoices: sql<number>`count(case when ${invoice.status} = 'paid' then 1 end)`,
             pendingInvoices: sql<number>`count(case when ${invoice.status} = 'sent' then 1 end)`,
-            overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < date('now') then 1 end)`,
+            overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < cast(strftime('%s', 'now') as integer) then 1 end)`,
             monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} then 1 end)`,
             monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
         })
@@ -42,7 +42,7 @@ export const getDashboardStatsAction = useMutation(
             totalQuotes: sql<number>`count(*)`,
             acceptedQuotes: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
             pendingQuotes: sql<number>`count(case when ${quote.status} = 'sent' then 1 end)`,
-            expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < date('now') then 1 end)`,
+            expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < cast(strftime('%s', 'now') as integer) then 1 end)`,
             monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfMonth} and ${quote.createdAt} <= ${endOfMonth} then 1 end)`,
         })
             .from(quote)
@@ -111,7 +111,7 @@ export const getDashboardChartsAction = useMutation(
 
         // Données des 6 derniers mois pour les factures
         const monthlyInvoices = await db.select({
-            month: sql<string>`strftime('%Y-%m', ${invoice.createdAt})`,
+            month: sql<string>`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`,
             count: sql<number>`count(*)`,
             revenue: sql<number>`sum(case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
         })
@@ -120,12 +120,12 @@ export const getDashboardChartsAction = useMutation(
                 eq(invoice.companyId, companyId),
                 gte(invoice.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
             ))
-            .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
-            .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt})`);
+            .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`)
+            .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`);
 
         // Données des 6 derniers mois pour les devis
         const monthlyQuotes = await db.select({
-            month: sql<string>`strftime('%Y-%m', ${quote.createdAt})`,
+            month: sql<string>`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`,
             count: sql<number>`count(*)`,
             accepted: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
         })
@@ -134,8 +134,8 @@ export const getDashboardChartsAction = useMutation(
                 eq(quote.companyId, companyId),
                 gte(quote.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
             ))
-            .groupBy(sql`strftime('%Y-%m', ${quote.createdAt})`)
-            .orderBy(sql`strftime('%Y-%m', ${quote.createdAt})`);
+            .groupBy(sql`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`)
+            .orderBy(sql`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`);
 
         // Données des services les plus utilisés (basé sur les descriptions des items)
         const topServices = await db.select({

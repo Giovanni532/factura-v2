@@ -20,12 +20,12 @@ export function PaymentCard({ payment, onEdit, onDelete }: PaymentCardProps) {
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                             {payment.type === 'incoming' ? (
-                                <ArrowDownCircle className="h-4 w-4 text-green-600" />
+                                <ArrowDownCircle className="h-4 w-4 text-success" />
                             ) : (
-                                <ArrowUpCircle className="h-4 w-4 text-red-600" />
+                                <ArrowUpCircle className="h-4 w-4 text-destructive" />
                             )}
                             <span className="font-medium">{payment.description}</span>
-                            <Badge variant={payment.type === 'incoming' ? 'default' : 'destructive'} className={payment.type === 'incoming' ? 'bg-green-500' : 'bg-red-500'}>
+                            <Badge variant={payment.type === 'incoming' ? 'success' : 'destructive'}>
                                 {payment.type === 'incoming' ? 'Encaissement' : 'Décaissement'}
                             </Badge>
                         </div>

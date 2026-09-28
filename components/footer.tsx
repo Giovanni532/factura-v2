@@ -1,9 +1,28 @@
 "use client";
 
-import { FileText, Mail } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/logo";
+import { authClient } from "@/lib/auth-client";
+import { paths } from "@/paths";
+
+const COLUMNS = [
+    {
+        title: "Produit",
+        links: [
+            { href: "/#features", label: "Fonctionnalités" },
+            { href: "/#method", label: "Méthode" },
+            { href: "/#pricing", label: "Tarifs" },
+        ],
+    },
+    {
+        title: "Compte",
+        links: [
+            { href: paths.login, label: "Se connecter" },
+            { href: paths.signup, label: "Créer un compte" },
+        ],
+    },
+];
 
 export function Footer() {
     const { data: session, isPending } = authClient.useSession();
@@ -20,72 +39,43 @@ export function Footer() {
     }
 
     return (
-        <footer id="contact" className="bg-muted text-foreground py-16 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="grid md:grid-cols-4 gap-8">
-                    <div>
-                        <div className="flex items-center mb-4">
-                            <FileText className="h-8 w-8 text-primary" />
-                            <span className="ml-2 text-xl font-bold">Factura</span>
-                        </div>
-                        <p className="text-muted-foreground mb-4">
-                            La solution complète pour votre facturation et comptabilité.
+        <footer id="contact" className="border-t px-4 pb-10 pt-16 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+                <div className="grid gap-12 md:grid-cols-12">
+                    <div className="md:col-span-6">
+                        <Logo />
+                        <p className="mt-4 max-w-sm text-muted-foreground">
+                            La facturation et la comptabilité des indépendants et des petites entreprises, tenues avec la
+                            rigueur d&apos;un registre.
                         </p>
-                        <div className="flex space-x-4">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Mail className="h-4 w-4" />
-                                <span>contact@factura.fr</span>
-                            </div>
+                        <a
+                            href="mailto:contact@factura.fr"
+                            className="mt-6 inline-block font-mono text-sm underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground"
+                        >
+                            contact@factura.fr
+                        </a>
+                    </div>
+                    {COLUMNS.map((column) => (
+                        <div key={column.title} className="md:col-span-3">
+                            <p className="ledger-label">{column.title}</p>
+                            <ul className="mt-4 space-y-2.5">
+                                {column.links.map((link) => (
+                                    <li key={link.href}>
+                                        <Link href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                                            {link.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Produit</h3>
-                        <ul className="space-y-2 text-muted-foreground">
-                            <li><a href="#features" className="hover:text-foreground transition-colors">Fonctionnalités</a></li>
-                            <li><a href="#pricing" className="hover:text-foreground transition-colors">Tarifs</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Mises à jour</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Roadmap</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Ressources</h3>
-                        <ul className="space-y-2 text-muted-foreground">
-                            <li><a href="#" className="hover:text-foreground transition-colors">Documentation</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Guides</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Support</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">Entreprise</h3>
-                        <ul className="space-y-2 text-muted-foreground">
-                            <li><a href="#" className="hover:text-foreground transition-colors">À propos</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Carrières</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Confidentialité</a></li>
-                            <li><a href="#" className="hover:text-foreground transition-colors">Mentions légales</a></li>
-                        </ul>
-                    </div>
+                    ))}
                 </div>
 
-                <Separator className="my-8" />
-
-                <div className="flex flex-col md:flex-row justify-between items-center">
-                    <p className="text-muted-foreground text-sm">
-                        © 2024 Factura. Tous droits réservés.
-                    </p>
-                    <div className="flex space-x-6 mt-4 md:mt-0">
-                        <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Conditions d&apos;utilisation
-                        </a>
-                        <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Politique de confidentialité
-                        </a>
-                    </div>
+                <div className="mt-16 flex flex-col gap-2 border-t pt-6 font-mono text-xs text-muted-foreground md:flex-row md:justify-between">
+                    <span>© {new Date().getFullYear()} Factura. Tous droits réservés.</span>
+                    <span>Facturation · Devis · Comptabilité</span>
                 </div>
             </div>
         </footer>
     );
-} 
+}

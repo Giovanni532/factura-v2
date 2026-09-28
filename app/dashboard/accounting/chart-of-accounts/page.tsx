@@ -1,6 +1,7 @@
 import { ChartOfAccountsClient } from "@/components/accounting/chart-of-accounts-client"
 import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getChartOfAccountsCached } from "@/lib/cache"
+import { PageHeader } from "@/components/ledger"
 
 export default async function ChartOfAccountsPage() {
     const session = await getSession()
@@ -23,12 +24,7 @@ export default async function ChartOfAccountsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Plan Comptable</h1>
-                <p className="text-muted-foreground">
-                    Gérez votre plan comptable et vos comptes.
-                </p>
-            </div>
+            <PageHeader eyebrow="Comptabilité" title="Plan comptable" description="Les comptes de votre entreprise, classés par nature" />
 
             <ChartOfAccountsClient accounts={accounts} />
         </div>

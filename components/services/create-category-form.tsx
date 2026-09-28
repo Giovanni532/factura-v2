@@ -28,7 +28,7 @@ export function CreateCategoryForm({ onClose }: CreateCategoryFormProps) {
         defaultValues: {
             name: "",
             description: "",
-            color: "#3b82f6", // Bleu par défaut
+            color: "#0E5A43", // Vert registre par défaut
         },
     });
 
@@ -105,7 +105,7 @@ export function CreateCategoryForm({ onClose }: CreateCategoryFormProps) {
                                     />
                                     <Input
                                         type="text"
-                                        placeholder="#3b82f6"
+                                        placeholder="#0E5A43"
                                         {...field}
                                     />
                                 </div>

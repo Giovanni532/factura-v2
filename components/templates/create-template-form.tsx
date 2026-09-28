@@ -570,16 +570,16 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
     return (
         <div className="space-y-6">
             {/* Section d'aide pour les variables */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Variables disponibles</h3>
-                <p className="text-sm text-blue-800 mb-3">
+            <div className="bg-info/[0.06] border border-info/25 rounded-lg p-4">
+                <h3 className="font-semibold text-info mb-2">Variables disponibles</h3>
+                <p className="text-sm text-info mb-3">
                     Utilisez ces variables dans votre HTML pour rendre votre template dynamique :
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Entreprise</h4>
-                        <ul className="space-y-1 text-blue-700 font-mono">
+                        <h4 className="font-semibold text-info mb-1">Entreprise</h4>
+                        <ul className="space-y-1 text-info font-mono">
                             <li>{'{{company.name}}'}</li>
                             <li>{'{{company.email}}'}</li>
                             <li>{'{{company.phone}}'}</li>
@@ -594,8 +594,8 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Client</h4>
-                        <ul className="space-y-1 text-blue-700 font-mono">
+                        <h4 className="font-semibold text-info mb-1">Client</h4>
+                        <ul className="space-y-1 text-info font-mono">
                             <li>{'{{client.name}}'}</li>
                             <li>{'{{client.email}}'}</li>
                             <li>{'{{client.address}}'}</li>
@@ -608,8 +608,8 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">{defaultType === 'quote' ? 'Devis' : 'Facture'}</h4>
-                        <ul className="space-y-1 text-blue-700 font-mono">
+                        <h4 className="font-semibold text-info mb-1">{defaultType === 'quote' ? 'Devis' : 'Facture'}</h4>
+                        <ul className="space-y-1 text-info font-mono">
                             <li>{'{{' + defaultType + '.number}}'}</li>
                             <li>{'{{' + defaultType + '.issueDate}}'}</li>
                             {defaultType === 'invoice' && <li>{'{{invoice.dueDate}}'}</li>}
@@ -624,18 +624,18 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                     </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-blue-200">
-                    <h4 className="font-semibold text-blue-900 mb-1">Articles (boucle)</h4>
-                    <div className="text-xs text-blue-700 font-mono bg-blue-100 p-2 rounded">
+                <div className="mt-4 pt-3 border-t border-info/25">
+                    <h4 className="font-semibold text-info mb-1">Articles (boucle)</h4>
+                    <div className="text-xs text-info font-mono bg-info/10 p-2 rounded">
                         <div>{'{{#each items}}'}</div>
                         <div className="ml-4">{'{{description}} - {{quantity}} - {{unitPrice}} - {{total}}'}</div>
                         <div>{'{{/each}}'}</div>
                     </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-blue-200">
-                    <h4 className="font-semibold text-blue-900 mb-1">Conditions</h4>
-                    <div className="text-xs text-blue-700 font-mono">
+                <div className="mt-3 pt-3 border-t border-info/25">
+                    <h4 className="font-semibold text-info mb-1">Conditions</h4>
+                    <div className="text-xs text-info font-mono">
                         <div>{'{{#if variable}}...{{/if}}'} - Affiche le contenu si la variable existe</div>
                         <div className="mt-1">{'{{CSS}}'} - Remplacé par votre CSS</div>
                     </div>
@@ -651,10 +651,10 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                                 id="name"
                                 {...register("name")}
                                 placeholder={`Ex: Template moderne ${defaultType === 'quote' ? 'devis' : 'facture'}`}
-                                className={errors.name ? "border-red-500" : ""}
+                                className={errors.name ? "border-destructive" : ""}
                             />
                             {errors.name && (
-                                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                                <p className="text-sm text-destructive mt-1">{errors.name.message}</p>
                             )}
                         </div>
 
@@ -667,7 +667,7 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                                 rows={3}
                             />
                             {errors.description && (
-                                <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
+                                <p className="text-sm text-destructive mt-1">{errors.description.message}</p>
                             )}
                         </div>
                     </div>
@@ -693,7 +693,7 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                         </div>
 
                         {previewMode === "preview" && (
-                            <div className="border rounded-lg h-64 overflow-auto bg-gray-50 p-4">
+                            <div className="border rounded-lg h-64 overflow-auto bg-muted/50 p-4">
                                 <iframe
                                     srcDoc={watchedHtml?.replace("{{CSS}}", watchedCss || "")}
                                     className="w-full h-full border-0"
@@ -713,10 +713,10 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                             {...register("html")}
                             placeholder="Votre code HTML..."
                             rows={12}
-                            className={`font-mono text-sm ${errors.html ? "border-red-500" : ""}`}
+                            className={`font-mono text-sm ${errors.html ? "border-destructive" : ""}`}
                         />
                         {errors.html && (
-                            <p className="text-sm text-red-500 mt-1">{errors.html.message}</p>
+                            <p className="text-sm text-destructive mt-1">{errors.html.message}</p>
                         )}
                     </div>
 
@@ -730,7 +730,7 @@ export function CreateTemplateForm({ onClose, defaultType = 'invoice' }: CreateT
                             className="font-mono text-sm"
                         />
                         {errors.css && (
-                            <p className="text-sm text-red-500 mt-1">{errors.css.message}</p>
+                            <p className="text-sm text-destructive mt-1">{errors.css.message}</p>
                         )}
                     </div>
                 </div>

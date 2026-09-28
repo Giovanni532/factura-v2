@@ -46,23 +46,23 @@ export function AccountingOverview({ stats, revenueHistory, recentActivities }: 
         switch (status) {
             case "paid":
             case "accepted":
-                return "bg-green-100 text-green-800"
+                return "bg-success/10 text-success"
             case "sent":
-                return "bg-yellow-100 text-yellow-800"
+                return "bg-warning/10 text-warning"
             case "draft":
-                return "bg-gray-100 text-gray-800"
+                return "bg-muted text-foreground"
             case "cancelled":
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             case "rejected":
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             case "expired":
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             case "converted":
-                return "bg-green-100 text-green-800"
+                return "bg-success/10 text-success"
             case "overdue":
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             default:
-                return "bg-gray-100 text-gray-800"
+                return (status as string) === "completed" ? "bg-success/10 text-success" : "bg-muted text-foreground"
         }
     }
 
@@ -87,7 +87,8 @@ export function AccountingOverview({ stats, revenueHistory, recentActivities }: 
             case "overdue":
                 return "En retard"
             default:
-                return status
+                // Les paiements remontent avec le statut « completed »
+                return (status as string) === "completed" ? "Réglé" : status
         }
     }
 
@@ -95,9 +96,10 @@ export function AccountingOverview({ stats, revenueHistory, recentActivities }: 
         return type === 'invoice' ? IconFileInvoice : IconReceipt
     }
 
+    // Montant signé au format français : « +2 594,40 € »
     const formatAmount = (amount: number) => {
-        const sign = amount >= 0 ? "+" : ""
-        return `${sign}€${Math.abs(amount).toLocaleString()}`
+        const formatted = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(Math.abs(amount))
+        return `${amount >= 0 ? "+" : "−"}${formatted}`
     }
 
     return (
@@ -148,14 +150,15 @@ export function AccountingOverview({ stats, revenueHistory, recentActivities }: 
                                     </div>
                                     <div className="flex-1 space-y-1">
                                         <p className="text-sm font-medium leading-none">
-                                            {activity.description}
+                                            {/* « Paiement - » quand la référence est vide */}
+                                            {activity.description.replace(/\s*-\s*$/, "")}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                             {new Date(activity.date).toLocaleDateString('fr-FR')}
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-medium">
+                                        <p className="font-mono text-[13px] font-medium tabular-nums">
                                             {formatAmount(activity.amount)}
                                         </p>
                                         <Badge

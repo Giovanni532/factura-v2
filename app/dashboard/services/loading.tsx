@@ -85,14 +85,14 @@ export default function ServicesLoading() {
 
                                 {/* Statistiques */}
                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                                    <div className="text-center p-3 bg-info/[0.06] rounded-lg">
                                         <div className="flex items-center justify-center gap-1 mb-1">
                                             <Skeleton className="h-4 w-4" />
                                             <Skeleton className="h-5 w-8" />
                                         </div>
                                         <Skeleton className="h-3 w-16 mx-auto" />
                                     </div>
-                                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                                    <div className="text-center p-3 bg-success/[0.06] rounded-lg">
                                         <div className="flex items-center justify-center gap-1 mb-1">
                                             <Skeleton className="h-4 w-4" />
                                             <Skeleton className="h-5 w-12" />

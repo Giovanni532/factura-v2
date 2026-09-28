@@ -1,81 +1,30 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { FileText } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { LOGO } from "@/components/logo";
 
+// Chargement : les deux traits du « f » se tracent en boucle, comme un total
+// qu'on souligne.
 export default function Loading() {
+    const reduce = useReducedMotion();
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-            <div className="flex flex-col items-center space-y-8">
-                {/* Logo animé */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-center"
-                >
-                    <motion.div
-                        animate={{
-                            rotateY: [0, 360],
-                        }}
-                        transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                        className="flex items-center justify-center mb-4"
-                    >
-                        <FileText className="h-12 w-12 text-primary" />
-                    </motion.div>
-                    <h1 className="text-2xl font-bold text-foreground">
-                        Factura
-                    </h1>
-                    <p className="text-muted-foreground mt-2 text-sm">
-                        Simplifiez votre facturation
-                    </p>
-                </motion.div>
-
-                {/* Indicateur de chargement simple */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
-                    className="relative w-48 h-1 bg-muted rounded-full overflow-hidden"
-                >
-                    <motion.div
-                        className="absolute top-0 left-0 h-full bg-primary rounded-full"
-                        animate={{
-                            x: [-192, 192],
-                            width: [48, 96, 48]
-                        }}
-                        transition={{
-                            duration: 1.2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
+        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-background">
+            <svg viewBox={LOGO.viewBox} className="size-14" role="img" aria-label="Chargement">
+                <rect width="48" height="48" rx={LOGO.radius} className="fill-primary" />
+                <path d={LOGO.stem} strokeWidth={LOGO.stroke} fill="none" className="stroke-primary-foreground" />
+                {LOGO.bars.map((bar, i) => (
+                    <motion.rect
+                        key={bar.y}
+                        {...bar}
+                        className="fill-primary-foreground"
+                        style={{ originX: 0 }}
+                        initial={{ scaleX: reduce ? 1 : 0 }}
+                        animate={reduce ? undefined : { scaleX: [0, 1, 1, 0] }}
+                        transition={{ duration: 1.6, delay: i * 0.18, repeat: Infinity, times: [0, 0.35, 0.8, 1], ease: "easeInOut" }}
                     />
-                </motion.div>
-
-                {/* Texte de chargement */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.4 }}
-                    className="text-center"
-                >
-                    <motion.p
-                        className="text-muted-foreground text-sm"
-                        animate={{ opacity: [0.6, 1, 0.6] }}
-                        transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                    >
-                        Chargement en cours...
-                    </motion.p>
-                </motion.div>
-            </div>
+                ))}
+            </svg>
+            <p className="ledger-label">Chargement du registre</p>
         </div>
     );
-} 
+}

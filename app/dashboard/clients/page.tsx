@@ -5,6 +5,7 @@ import { getSession } from "@/lib/get-session";
 import { getUserWithCompanyCached, getClientsWithStatsCached, getSubscriptionLimitsCached } from "@/lib/cache";
 import { ClientsPageClient } from "@/components/clients/clients-page-client";
 import { paths } from "@/paths";
+import { PageHeader } from "@/components/ledger"
 
 interface InvoicesPageProps {
     searchParams: Promise<{ [key: string]: string }>
@@ -32,10 +33,8 @@ export default async function ClientsPage({ searchParams }: InvoicesPageProps) {
     ]);
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
-            </div>
+        <div className="space-y-6">
+            <PageHeader title="Clients" description="Votre carnet de clients et le chiffre d'affaires de chacun" />
             <ClientsPageClient
                 initialClients={clients}
                 newClient={searchParamsResult.new === "true" ? true : false}

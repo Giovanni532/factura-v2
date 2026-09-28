@@ -260,7 +260,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                             size="sm"
                             onClick={handleToggleFavorite}
                             disabled={isFavoriteLoading}
-                            className={`p-2 ${isFavorite ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-red-500'}`}
+                            className={`p-2 ${isFavorite ? 'text-destructive hover:text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
                         >
                             <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
                         </Button>
@@ -294,7 +294,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                                         <DropdownMenuItem
                                             onClick={handleDelete}
                                             disabled={isDeleteLoading}
-                                            className="text-red-600 focus:text-red-600"
+                                            className="text-destructive focus:text-destructive"
                                         >
                                             <Trash2 className="w-4 h-4 mr-2" />
                                             Supprimer
@@ -318,8 +318,8 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                             sandbox="allow-same-origin"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                            <div className="text-gray-400 text-sm">Génération de l&apos;aperçu...</div>
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <div className="text-muted-foreground text-sm">Génération de l&apos;aperçu...</div>
                         </div>
                     )}
                     {/* Overlay pour éviter les interactions avec l'iframe */}
@@ -338,7 +338,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
 
                 {/* Informations additionnelles */}
                 <div className="mt-3 text-xs text-muted-foreground">
-                    Créé le {template.createdAt.toLocaleDateString('fr-FR')}
+                    Créé le {new Date(template.createdAt).toLocaleDateString('fr-FR')}
                 </div>
             </CardContent>
 
@@ -355,7 +355,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                     <DialogHeader>
                         <div className="flex items-center gap-3">
                             <div className="flex-shrink-0">
-                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                                <AlertTriangle className="w-6 h-6 text-destructive" />
                             </div>
                             <div>
                                 <DialogTitle>Supprimer ce template</DialogTitle>
@@ -375,7 +375,7 @@ export function TemplateCard({ template, type }: TemplateCardProps) {
                                 {template.description && (
                                     <p><span className="font-medium">Description :</span> {template.description}</p>
                                 )}
-                                <p><span className="font-medium">Créé le :</span> {template.createdAt.toLocaleDateString('fr-FR')}</p>
+                                <p><span className="font-medium">Créé le :</span> {new Date(template.createdAt).toLocaleDateString('fr-FR')}</p>
                             </div>
                         </div>
                     </div>

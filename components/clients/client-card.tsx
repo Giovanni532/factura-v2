@@ -118,7 +118,7 @@ export function ClientCard({ client }: ClientCardProps) {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onClick={handleDelete}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Supprimer
@@ -160,18 +160,18 @@ export function ClientCard({ client }: ClientCardProps) {
                 {/* Statistiques */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="text-lg font-bold text-blue-600">{client.totalInvoices}</div>
+                        <div className="text-lg font-bold text-info">{client.totalInvoices}</div>
                         <div className="text-xs text-muted-foreground">Factures</div>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="text-lg font-bold text-green-600">{client.totalQuotes}</div>
+                        <div className="text-lg font-bold text-success">{client.totalQuotes}</div>
                         <div className="text-xs text-muted-foreground">Devis</div>
                     </div>
                 </div>
 
                 {client.totalRevenue > 0 && (
-                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg mb-4">
-                        <div className="text-lg font-bold text-green-600">
+                    <div className="text-center p-3 bg-success/[0.06] rounded-lg mb-4">
+                        <div className="text-lg font-bold text-success">
                             {client.totalRevenue.toLocaleString('fr-FR')} €
                         </div>
                         <div className="text-xs text-muted-foreground">Chiffre d&apos;affaires</div>
@@ -192,7 +192,7 @@ export function ClientCard({ client }: ClientCardProps) {
 
                 {/* Informations additionnelles */}
                 <div className="mt-3 text-xs text-muted-foreground">
-                    Client depuis le {client.createdAt.toLocaleDateString('fr-FR')}
+                    Client depuis le {new Date(client.createdAt).toLocaleDateString('fr-FR')}
                 </div>
             </CardContent>
 

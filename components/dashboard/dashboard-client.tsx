@@ -1,11 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight, FileText, Receipt, UserPlus } from "lucide-react";
 import { StatsCards } from "./stats-cards";
 import { RevenueChart, RevenueQuoteAndInvoiceChart } from "./charts";
 import { DeadlinesTable } from "./deadlines-table";
-import { FileText, Users } from "lucide-react";
-import Link from "next/link";
-import { Button } from "../ui/button";
 import { paths } from "@/paths";
 
 interface DashboardData {
@@ -18,124 +17,82 @@ interface DashboardClientProps {
     initialData: DashboardData;
 }
 
+// Les 6 derniers mois au format "YYYY-MM", du plus ancien au plus récent :
+// un mois sans activité reste affiché à zéro plutôt que de disparaître.
+function lastSixMonths() {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    });
+}
+
+// Abréviations sans ambiguïté (juin ≠ juillet) : « Juin », « Juil. », « Sept. »
+function monthLabel(month: string) {
+    const name = new Date(`${month}-01T00:00:00`).toLocaleString("fr-FR", { month: "short" });
+    return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+const QUICK_ACTIONS = [
+    { href: `${paths.invoices.list}?new=true`, label: "Nouvelle facture", hint: "Émettre et envoyer", icon: Receipt },
+    { href: `${paths.quotes.list}?new=true`, label: "Nouveau devis", hint: "Chiffrer une prestation", icon: FileText },
+    { href: `${paths.clients.list}?new=true`, label: "Nouveau client", hint: "Ajouter au registre", icon: UserPlus },
+];
+
 export function DashboardClient({ initialData }: DashboardClientProps) {
+    const { stats, charts, deadlines } = initialData;
+    const months = lastSixMonths();
+
+    const revenueBarData = months.map((month) => ({
+        month: monthLabel(month),
+        benefice: Number(charts?.monthlyBenefits?.find((b: any) => b.month === month)?.benefice) || 0,
+    }));
+
+    const revenueLineData = months.map((month) => ({
+        month: monthLabel(month),
+        invoice: Number(charts?.monthlyInvoices?.find((i: any) => i.month === month)?.invoices) || 0,
+        quote: Number(charts?.monthlyQuotes?.find((q: any) => q.month === month)?.quotes) || 0,
+    }));
 
     return (
-        <div className="space-y-8">
-            {initialData.stats && (
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-semibold">Statistiques</h2>
-                    <StatsCards stats={initialData.stats} />
-                </div>
-            )}
-            {/* Graphiques */}
-            {initialData.charts && (
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-semibold">Analyses</h2>
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {/* Préparation des données pour les deux charts */}
-                        {(() => {
-                            // Pour le bar chart - on utilise les données de bénéfices
-                            const benefitMonths = Array.from(new Set([
-                                ...(initialData.charts.monthlyBenefits?.map((b: any) => b.month) || []),
-                            ])).sort();
+        <div className="space-y-6">
+            {stats && <StatsCards stats={stats} />}
 
-                            // Pour le line chart - on combine les mois des factures et devis
-                            const activityMonths = Array.from(new Set([
-                                ...(initialData.charts.monthlyInvoices?.map((i: any) => i.month) || []),
-                                ...(initialData.charts.monthlyQuotes?.map((q: any) => q.month) || []),
-                            ])).sort();
-
-                            // Pour le bar chart (RevenueQuoteAndInvoiceChart) - Chiffre d'affaires
-                            const revenueBarData = benefitMonths.map((month) => {
-                                const benefit = initialData.charts.monthlyBenefits?.find((b: any) => b.month === month) || {};
-                                // On affiche le nom du mois (ex: "Janvier")
-                                const monthName = new Date(month + "-01").toLocaleString("fr-FR", { month: "long" });
-                                return {
-                                    month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                                    benefice: Number(benefit.benefice) || 0, // chiffre d'affaires des factures payées
-                                };
-                            });
-
-                            // Pour le line chart (RevenueChart) - Volume d'activité (factures et devis)
-                            const revenueLineData = activityMonths.map((month) => {
-                                const inv = initialData.charts.monthlyInvoices?.find((i: any) => i.month === month) || {};
-                                const qte = initialData.charts.monthlyQuotes?.find((q: any) => q.month === month) || {};
-                                // On affiche le nom du mois (ex: "Janvier")
-                                const monthName = new Date(month + "-01").toLocaleString("fr-FR", { month: "long" });
-                                return {
-                                    month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                                    invoice: Number(inv.invoices) || 0, // nombre de factures
-                                    quote: Number(qte.quotes) || 0, // nombre de devis
-                                };
-                            });
-
-                            return (
-                                <>
-                                    <RevenueQuoteAndInvoiceChart charts={revenueBarData} />
-                                    <RevenueChart charts={revenueLineData} />
-                                </>
-                            );
-                        })()}
-                    </div>
+            {charts && (
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <RevenueQuoteAndInvoiceChart charts={revenueBarData} />
+                    <RevenueChart charts={revenueLineData} />
                 </div>
             )}
 
-            {/* Tableau des échéances */}
-            {initialData.deadlines && (
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-semibold">Suivi</h2>
-                    <DeadlinesTable deadlines={initialData.deadlines} />
-                </div>
-            )}
+            <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+                {deadlines && <DeadlinesTable deadlines={deadlines} />}
 
-            {/* Actions rapides */}
-            <div className="space-y-6">
-                <h2 className="text-2xl font-semibold">Actions rapides</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Button variant="outline" className="w-full h-24" asChild>
-                        <Link href={paths.invoices.list + "?new=true"}>
-                            <div className="flex items-center gap-3 w-full h-full">
-                                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                                    <FileText className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div className="flex flex-col items-start w-full">
-                                    <div className="font-medium">Nouvelle facture</div>
-                                    <div className="text-sm text-muted-foreground">Créer une facture</div>
-                                </div>
-                            </div>
-                        </Link>
-                    </Button>
-
-                    <Button variant="outline" className="w-full h-24" asChild>
-                        <Link href={paths.quotes.list + "?new=true"}>
-                            <div className="flex items-center gap-3 w-full h-full">
-                                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20">
-                                    <FileText className="h-5 w-5 text-purple-600" />
-                                </div>
-                                <div className="flex flex-col items-start w-full">
-                                    <div className="font-medium">Nouveau devis</div>
-                                    <div className="text-sm text-muted-foreground">Créer un devis</div>
-                                </div>
-                            </div>
-                        </Link>
-                    </Button>
-
-                    <Button variant="outline" className="w-full h-24" asChild>
-                        <Link href={paths.clients.list + "?new=true"}>
-                            <div className="flex items-center gap-3 w-full h-full">
-                                <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-900/20">
-                                    <Users className="h-5 w-5 text-orange-600" />
-                                </div>
-                                <div className="flex flex-col items-start w-full">
-                                    <div className="font-medium">Nouveau client</div>
-                                    <div className="text-sm text-muted-foreground">Ajouter un client</div>
-                                </div>
-                            </div>
-                        </Link>
-                    </Button>
-                </div>
+                <section aria-labelledby="quick-actions" className="rounded-xl border bg-card">
+                    <h2 id="quick-actions" className="border-b px-5 py-4 font-semibold">
+                        Actions rapides
+                    </h2>
+                    <ul>
+                        {QUICK_ACTIONS.map(({ href, label, hint, icon: Icon }) => (
+                            <li key={href} className="border-b last:border-0">
+                                <Link
+                                    href={href}
+                                    className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/60"
+                                >
+                                    <span className="flex size-9 items-center justify-center rounded-md border bg-background">
+                                        <Icon className="size-4" />
+                                    </span>
+                                    <span className="flex-1">
+                                        <span className="block text-sm font-medium">{label}</span>
+                                        <span className="block text-[13px] text-muted-foreground">{hint}</span>
+                                    </span>
+                                    <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             </div>
         </div>
     );
-} 
+}

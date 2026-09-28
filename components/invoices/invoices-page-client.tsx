@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LedgerStats, PageHeader } from "@/components/ledger";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Crown } from "lucide-react";
@@ -273,28 +273,26 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
         <InvoicesContext.Provider value={{ invoices, setInvoices, stats, setStats }}>
             <div className="space-y-6">
                 {/* En-tête */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Factures</h1>
-                        <p className="text-muted-foreground">
-                            Gérez vos factures et suivez vos paiements
-                        </p>
-                    </div>
-                    <CreateInvoiceButton
-                        formData={formData}
-                        newInvoice={newInvoice}
-                        disabled={!canAddNewInvoice}
-                        limitReached={!canAddNewInvoice}
-                        planName={subscriptionLimits.planName}
-                        maxInvoices={subscriptionLimits.maxInvoices}
-                    />
-                </div>
+                <PageHeader
+                    title="Factures"
+                    description="Émettez vos factures et suivez leurs encaissements"
+                    actions={
+                        <CreateInvoiceButton
+                            formData={formData}
+                            newInvoice={newInvoice}
+                            disabled={!canAddNewInvoice}
+                            limitReached={!canAddNewInvoice}
+                            planName={subscriptionLimits.planName}
+                            maxInvoices={subscriptionLimits.maxInvoices}
+                        />
+                    }
+                />
 
                 {/* Alerte de limite d'abonnement */}
                 {shouldShowAlert && (
-                    <Alert className={!canAddNewInvoice ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
-                        <AlertCircle className={`h-4 w-4 ${!canAddNewInvoice ? "text-red-600" : "text-yellow-600"}`} />
-                        <AlertDescription className={!canAddNewInvoice ? "text-red-800" : "text-yellow-800"}>
+                    <Alert className={!canAddNewInvoice ? "border-destructive/25 bg-destructive/[0.06]" : "border-warning/25 bg-warning/[0.06]"}>
+                        <AlertCircle className={`h-4 w-4 ${!canAddNewInvoice ? "text-destructive" : "text-warning"}`} />
+                        <AlertDescription className={!canAddNewInvoice ? "text-destructive" : "text-warning"}>
                             {!canAddNewInvoice ? (
                                 <div className="flex items-center justify-between">
                                     <span>
@@ -323,45 +321,14 @@ export function InvoicesPageClient({ invoices: initialInvoices, stats: initialSt
                 )}
 
                 {/* Statistiques */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Factures</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Payées</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">{stats.totalPaid}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">En retard</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">{stats.totalOverdue}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Revenus</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {new Intl.NumberFormat('fr-FR', {
-                                    style: 'currency',
-                                    currency: 'EUR'
-                                }).format(stats.totalRevenue)}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <LedgerStats
+                  items={[
+                    { label: "Factures", value: stats.totalInvoices },
+                    { label: "Payées", value: stats.totalPaid, tone: "success" },
+                    { label: "En retard", value: stats.totalOverdue, tone: stats.totalOverdue > 0 ? "destructive" : undefined },
+                    { label: "Encaissé", value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(stats.totalRevenue) },
+                  ]}
+                />
 
                 {/* Datagrid */}
                 <DatagridDocuments

@@ -234,17 +234,17 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
     const getTypeColor = (type: AccountWithBalance["type"]) => {
         switch (type) {
             case "asset":
-                return "bg-blue-100 text-blue-800"
+                return "bg-info/10 text-info"
             case "liability":
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             case "equity":
-                return "bg-purple-100 text-purple-800"
+                return "bg-foreground/[0.07] text-foreground"
             case "revenue":
-                return "bg-green-100 text-green-800"
+                return "bg-success/10 text-success"
             case "expense":
-                return "bg-orange-100 text-orange-800"
+                return "bg-warning/10 text-warning"
             default:
-                return "bg-gray-100 text-gray-800"
+                return "bg-muted text-foreground"
         }
     }
 
@@ -300,7 +300,7 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                             <div className="w-6" />
                         )}
 
-                        <IconFolder className="h-5 w-5 text-blue-500" />
+                        <IconFolder className="h-5 w-5 text-info" />
 
                         <div>
                             <div className="flex items-center space-x-2">
@@ -335,7 +335,7 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openCreateSubAccountDialog(account)}
-                                className="text-blue-600 hover:text-blue-700"
+                                className="text-info hover:text-info"
                                 title="Ajouter un sous-compte"
                             >
                                 <IconPlus className="h-4 w-4" />
@@ -348,7 +348,7 @@ export function ChartOfAccountsClient({ accounts }: ChartOfAccountsClientProps) 
                                 size="sm"
                                 onClick={() => handleDelete(account)}
                                 disabled={isDeleting}
-                                className="text-red-600 hover:text-red-700"
+                                className="text-destructive hover:text-destructive"
                             >
                                 <IconTrash className="h-4 w-4" />
                             </Button>

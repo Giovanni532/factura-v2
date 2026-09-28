@@ -110,13 +110,13 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
     const getRoleColor = (role: string) => {
         switch (role) {
             case 'owner':
-                return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                return 'bg-foreground/[0.07] text-foreground';
             case 'admin':
-                return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                return 'bg-info/10 text-info';
             case 'user':
-                return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                return 'bg-success/10 text-success';
             default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                return 'bg-muted text-foreground';
         }
     };
 
@@ -143,10 +143,10 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                     <button
                         type="button"
                         aria-label="Changer l'avatar"
-                        className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md border border-gray-200 hover:bg-gray-100 transition z-20"
+                        className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md border border-border hover:bg-muted transition z-20"
                         onClick={() => setShowAvatarUpload(true)}
                     >
-                        <Camera className="h-5 w-5 text-gray-700" />
+                        <Camera className="h-5 w-5 text-foreground" />
                     </button>
                     {showAvatarUpload && (
                         <div className="absolute left-1/2 top-full z-20 -translate-x-1/2 mt-2">
@@ -167,7 +167,7 @@ export function ProfilePageClient({ initialUser }: ProfilePageClientProps) {
                         </div>
                     )}
                 </div>
-                <h1 className="text-2xl font-bold mt-2 text-center">{initialUser.name}</h1>
+                <p className="mt-2 text-center text-2xl font-semibold tracking-[-0.02em]">{initialUser.name}</p>
                 <div className="flex flex-col items-center gap-1">
                     <Badge className={getRoleColor(initialUser.role)}>
                         {initialUser.companyName ?

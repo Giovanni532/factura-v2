@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { getStatus, toneDot } from "@/lib/status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -103,19 +104,6 @@ const translateStatus = (status: string): string => {
     return statusMap[status] || status;
 };
 
-const colorStatus = (status: string): string => {
-    const statusMap: Record<string, string> = {
-        'draft': 'bg-gray-500 text-white',
-        'sent': 'bg-blue-500 text-white',
-        'paid': 'bg-green-500 text-white',
-        'overdue': 'bg-red-500 text-white',
-        'cancelled': 'bg-gray-500 text-white',
-        'accepted': 'bg-green-500 text-white',
-        'rejected': 'bg-red-500 text-white',
-        'expired': 'bg-gray-500 text-white',
-    };
-    return statusMap[status] || status;
-}
 
 interface DatagridDocumentsProps {
     documents: DocumentRow[]
@@ -254,7 +242,7 @@ Votre équipe`)
             header: "Numéro",
             accessorKey: "number",
             cell: ({ row }) => (
-                <Button variant="link" className="p-0 h-auto" onClick={() => handleView(row.original)}>
+                <Button variant="link" className="h-auto p-0 font-mono text-[13px] font-medium text-foreground decoration-foreground/30" onClick={() => handleView(row.original)}>
                     {row.original.number}
                 </Button>
             ),
@@ -271,7 +259,11 @@ Votre équipe`)
             id: "date",
             header: "Date",
             accessorKey: "date",
-            cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+            cell: ({ row }) => (
+                <span className="font-mono text-[13px] text-muted-foreground">
+                    {new Date(row.original.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                </span>
+            ),
             size: 120,
         },
         {
@@ -281,22 +273,21 @@ Votre équipe`)
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <Badge
+                        variant={getStatus(row.original.status, row.original.type).tone}
                         className={cn(
-                            "select-none",
-                            row.original.status === 'draft' ? "cursor-default" : "cursor-pointer",
-                            colorStatus(row.original.status)
+                            "select-none gap-1.5",
+                            row.original.status === 'draft' ? "cursor-default" : "cursor-pointer hover:ring-1 hover:ring-current/30"
                         )}
+                        title={row.original.status === 'draft' ? "Envoyez le document pour changer son statut" : "Changer le statut"}
                         onClick={() => {
                             if (row.original.status !== 'draft') {
                                 handleStatusChange(row.original)
                             }
                         }}
                     >
-                        {translateStatus(row.original.status)}
+                        <span aria-hidden="true" className={cn("size-1.5 rounded-full", toneDot[getStatus(row.original.status, row.original.type).tone])} />
+                        {getStatus(row.original.status, row.original.type).label}
                     </Badge>
-                    {row.original.status === 'draft' && (
-                        <span className="text-xs text-muted-foreground">(Cliquez sur Envoyer)</span>
-                    )}
                 </div>
             ),
             size: 150,
@@ -305,11 +296,14 @@ Votre équipe`)
             id: "amount",
             header: "Montant",
             accessorKey: "amount",
-            cell: ({ row }) =>
-                new Intl.NumberFormat("fr-FR", {
-                    style: "currency",
-                    currency: row.original.currency,
-                }).format(row.original.amount),
+            cell: ({ row }) => (
+                <span className="font-mono text-[13px] tabular-nums">
+                    {new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: row.original.currency,
+                    }).format(row.original.amount)}
+                </span>
+            ),
             size: 120,
         },
         {
@@ -348,7 +342,7 @@ Votre équipe`)
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(row.original)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(row.original)}>
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -399,11 +393,11 @@ Votre équipe`)
             <div className="space-y-4">
                 {/* Filtres */}
                 <div className="flex flex-wrap items-center gap-3 justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         {/* Recherche */}
                         <Input
                             ref={inputRef}
-                            className="min-w-60"
+                            className="w-full min-w-0 sm:w-auto sm:min-w-60"
                             value={search}
                             onChange={e => handleSearch(e.target.value)}
                             placeholder="Rechercher par numéro ou client..."
@@ -541,7 +535,7 @@ Votre équipe`)
                     </Table>
                 </div>
                 {/* Pagination */}
-                <div className="flex items-center justify-between gap-8">
+                <div className="flex flex-wrap items-center justify-between gap-4 md:gap-8">
                     {/* Résultats par page */}
                     <div className="flex items-center gap-3">
                         <Select

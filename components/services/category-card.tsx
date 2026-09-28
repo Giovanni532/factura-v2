@@ -64,8 +64,8 @@ export function CategoryCard({ category }: CategoryCardProps) {
                             <div
                                 className="w-4 h-4 rounded-full border-2"
                                 style={{
-                                    backgroundColor: category.color || '#3b82f6',
-                                    borderColor: category.color || '#3b82f6'
+                                    backgroundColor: category.color || '#0E5A43',
+                                    borderColor: category.color || '#0E5A43'
                                 }}
                             />
                             <CardTitle className="text-lg leading-tight">{category.name}</CardTitle>
@@ -90,7 +90,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem
                                 onClick={handleDelete}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Supprimer
@@ -104,8 +104,8 @@ export function CategoryCard({ category }: CategoryCardProps) {
                 {/* Statistiques */}
                 <div className="text-center p-4 bg-muted/50 rounded-lg mb-4">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                        <Tag className="w-5 h-5" style={{ color: category.color || '#3b82f6' }} />
-                        <div className="text-2xl font-bold" style={{ color: category.color || '#3b82f6' }}>
+                        <Tag className="w-5 h-5" style={{ color: category.color || '#0E5A43' }} />
+                        <div className="text-2xl font-bold" style={{ color: category.color || '#0E5A43' }}>
                             {category.serviceCount}
                         </div>
                     </div>
@@ -124,15 +124,15 @@ export function CategoryCard({ category }: CategoryCardProps) {
                     <div className="flex items-center gap-2">
                         <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color || '#3b82f6' }}
+                            style={{ backgroundColor: category.color || '#0E5A43' }}
                         />
-                        <span>Couleur : {category.color || '#3b82f6'}</span>
+                        <span>Couleur : {category.color || '#0E5A43'}</span>
                     </div>
                 </div>
 
                 {/* Informations additionnelles */}
                 <div className="text-xs text-muted-foreground">
-                    Créée le {category.createdAt.toLocaleDateString('fr-FR')}
+                    Créée le {new Date(category.createdAt).toLocaleDateString('fr-FR')}
                 </div>
             </CardContent>
 
@@ -158,17 +158,17 @@ export function CategoryCard({ category }: CategoryCardProps) {
                                     <p><span className="font-medium">Description :</span> {category.description}</p>
                                 )}
                                 <p><span className="font-medium">Prestations :</span> {category.serviceCount}</p>
-                                <p><span className="font-medium">Couleur :</span> {category.color || '#3b82f6'}</p>
+                                <p><span className="font-medium">Couleur :</span> {category.color || '#0E5A43'}</p>
                             </div>
                         </div>
 
                         {category.serviceCount > 0 && (
-                            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                            <div className="mt-4 p-3 bg-warning/[0.06] rounded-lg border border-warning/25 ">
+                                <div className="flex items-center gap-2 text-warning ">
                                     <AlertTriangle className="w-4 h-4" />
                                     <span className="text-sm font-medium">Attention</span>
                                 </div>
-                                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                <p className="text-sm text-warning mt-1">
                                     Vous devez d&apos;abord supprimer ou déplacer toutes les prestations de cette catégorie.
                                 </p>
                             </div>

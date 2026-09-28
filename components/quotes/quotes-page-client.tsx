@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LedgerStats, PageHeader } from "@/components/ledger";
 import { Button } from "@/components/ui/button";
 import { QuoteWithDetails, QuoteStats } from "@/validation/quote-schema";
 import { CreateQuoteButton } from "@/components/quotes/create-quote-button";
@@ -274,29 +274,27 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
         <QuotesContext.Provider value={{ quotes, setQuotes, stats, setStats }}>
             <div className="space-y-6">
                 {/* En-tête */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Devis</h1>
-                        <p className="text-muted-foreground">
-                            Gérez vos devis et suivez vos conversions
-                        </p>
-                    </div>
-                    <CreateQuoteButton
-                        formData={formData}
-                        newQuote={newQuote}
-                        disabled={!canAddNewQuote}
-                        limitReached={!canAddNewQuote}
-                        planName={subscriptionLimits.planName}
-                        maxDocuments={subscriptionLimits.maxInvoices}
-                        currentDocuments={subscriptionLimits.currentDocuments}
-                    />
-                </div>
+                <PageHeader
+                    title="Devis"
+                    description="Chiffrez vos prestations et suivez leurs conversions"
+                    actions={
+                        <CreateQuoteButton
+                            formData={formData}
+                            newQuote={newQuote}
+                            disabled={!canAddNewQuote}
+                            limitReached={!canAddNewQuote}
+                            planName={subscriptionLimits.planName}
+                            maxDocuments={subscriptionLimits.maxInvoices}
+                            currentDocuments={subscriptionLimits.currentDocuments}
+                        />
+                    }
+                />
 
                 {/* Alerte de limite d'abonnement */}
                 {shouldShowAlert && (
-                    <Alert className={!canAddNewQuote ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
-                        <AlertCircle className={`h-4 w-4 ${!canAddNewQuote ? "text-red-600" : "text-yellow-600"}`} />
-                        <AlertDescription className={!canAddNewQuote ? "text-red-800" : "text-yellow-800"}>
+                    <Alert className={!canAddNewQuote ? "border-destructive/25 bg-destructive/[0.06]" : "border-warning/25 bg-warning/[0.06]"}>
+                        <AlertCircle className={`h-4 w-4 ${!canAddNewQuote ? "text-destructive" : "text-warning"}`} />
+                        <AlertDescription className={!canAddNewQuote ? "text-destructive" : "text-warning"}>
                             {!canAddNewQuote ? (
                                 <div className="flex items-center justify-between">
                                     <span>
@@ -325,45 +323,14 @@ export function QuotesPageClient({ quotes: initialQuotes, stats: initialStats, f
                 )}
 
                 {/* Statistiques */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Devis</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.totalQuotes}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Acceptés</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">{stats.totalAccepted}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">En attente</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-600">{stats.totalPending}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Valeur moyenne</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {new Intl.NumberFormat('fr-FR', {
-                                    style: 'currency',
-                                    currency: 'EUR'
-                                }).format(stats.averageQuoteValue)}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <LedgerStats
+                  items={[
+                    { label: "Devis", value: stats.totalQuotes },
+                    { label: "Acceptés", value: stats.totalAccepted, tone: "success" },
+                    { label: "En attente", value: stats.totalPending, tone: stats.totalPending > 0 ? "warning" : undefined },
+                    { label: "Valeur moyenne", value: new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(stats.averageQuoteValue) },
+                  ]}
+                />
 
                 {/* Datagrid */}
                 <DatagridDocuments

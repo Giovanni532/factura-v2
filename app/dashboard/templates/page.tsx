@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { getUserWithCompanyCached, getTemplatesByCompanyCached } from "@/lib/cache";
 import { TemplatesPageClient } from "@/components/templates/templates-page-client";
 import { paths } from "@/paths";
+import { PageHeader } from "@/components/ledger"
 
 export default async function TemplatesPage() {
     // Récupérer la session utilisateur
@@ -39,13 +40,8 @@ export default async function TemplatesPage() {
     const favoriteTemplates = [...predefinedTemplates, ...companyTemplates].filter(t => t.isFavorite);
 
     return (
-        <div className="container mx-auto py-6 space-y-8">
-            <div className="flex flex-col space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-                <p className="text-muted-foreground">
-                    Choisissez parmi nos templates prédéfinis ou créez vos propres templates personnalisés pour vos factures et devis.
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader title="Templates" description="Modèles prédéfinis ou personnalisés pour vos factures et devis" />
 
             <TemplatesPageClient
                 predefinedInvoices={predefinedInvoices}

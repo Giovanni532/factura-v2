@@ -32,9 +32,9 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
             return (
                 <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
                     <div className="w-full max-w-md">
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                            <h2 className="text-xl font-semibold text-red-800 mb-2">Invitation invalide</h2>
-                            <p className="text-red-600 mb-4">
+                        <div className="bg-destructive/[0.06] border border-destructive/25 rounded-lg p-6 text-center">
+                            <h2 className="text-xl font-semibold text-destructive mb-2">Invitation invalide</h2>
+                            <p className="text-destructive mb-4">
                                 Cette invitation n&apos;est plus valide ou a déjà été utilisée.
                             </p>
                             <Button asChild>

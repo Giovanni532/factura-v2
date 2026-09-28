@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/forms/image-upload";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { paths } from "@/paths";
+import { PageHeader } from "@/components/ledger";
 
 interface CompanySettingsClientProps {
     initialCompany: CompanyWithDetails;
@@ -68,14 +69,13 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="space-y-6">
             {/* En-tête de la page */}
-            <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tight">Paramètres de l&apos;entreprise</h1>
-                <p className="text-lg text-muted-foreground">
-                    Gérez les informations de votre entreprise et votre équipe
-                </p>
-            </div>
+            <PageHeader
+                eyebrow="Réglages"
+                title="Entreprise"
+                description="Les informations qui apparaissent sur vos factures et vos devis"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Colonne principale : Informations de l'entreprise */}
@@ -342,7 +342,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                     {initialCompany.subscription.maxUsers !== -1 && (
                                         <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                                             <div
-                                                className="h-2 rounded-full transition-all bg-gradient-to-r from-green-500 to-emerald-500"
+                                                className="h-2 rounded-full transition-all bg-gradient-to-r from-success to-success"
                                                 style={{
                                                     width: `${Math.min(100, (initialCompany.subscription.currentUsers / initialCompany.subscription.maxUsers) * 100)}%`
                                                 }}
@@ -359,7 +359,7 @@ export function CompanySettingsClient({ initialCompany, userRole }: CompanySetti
                                     <div className="space-y-2">
                                         {initialCompany.subscription.features.slice(0, 4).map((feature, index) => (
                                             <div key={index} className="flex items-center gap-3 text-sm">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                                <div className="w-2 h-2 bg-success rounded-full flex-shrink-0"></div>
                                                 <span className="text-muted-foreground">{feature}</span>
                                             </div>
                                         ))}

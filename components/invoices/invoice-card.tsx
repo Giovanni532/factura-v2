@@ -219,12 +219,12 @@ Votre équipe`);
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'draft': return 'bg-gray-100 text-gray-800';
-            case 'sent': return 'bg-blue-100 text-blue-800';
-            case 'paid': return 'bg-green-100 text-green-800';
-            case 'overdue': return 'bg-red-100 text-red-800';
-            case 'cancelled': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'draft': return 'bg-muted text-foreground';
+            case 'sent': return 'bg-info/10 text-info';
+            case 'paid': return 'bg-success/10 text-success';
+            case 'overdue': return 'bg-destructive/10 text-destructive';
+            case 'cancelled': return 'bg-muted text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -335,7 +335,7 @@ Votre équipe`);
                                 )}
                                 <DropdownMenuItem
                                     onClick={() => setShowDeleteDialog(true)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                 >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Supprimer

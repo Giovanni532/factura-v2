@@ -186,13 +186,13 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
     const getRoleColor = (role: string) => {
         switch (role) {
             case 'owner':
-                return 'bg-purple-100 text-purple-800';
+                return 'bg-foreground/[0.07] text-foreground';
             case 'admin':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-info/10 text-info';
             case 'user':
-                return 'bg-green-100 text-green-800';
+                return 'bg-success/10 text-success';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-muted text-foreground';
         }
     };
 
@@ -346,9 +346,9 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
 
             {/* Alerte de limite d'utilisateurs */}
             {isOwner && userUsagePercentage >= 80 && (
-                <Alert className={userUsagePercentage >= 100 ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"}>
-                    <AlertTriangle className={`h-4 w-4 ${userUsagePercentage >= 100 ? "text-red-600" : "text-yellow-600"}`} />
-                    <AlertDescription className={userUsagePercentage >= 100 ? "text-red-800" : "text-yellow-800"}>
+                <Alert className={userUsagePercentage >= 100 ? "border-destructive/25 bg-destructive/[0.06]" : "border-warning/25 bg-warning/[0.06]"}>
+                    <AlertTriangle className={`h-4 w-4 ${userUsagePercentage >= 100 ? "text-destructive" : "text-warning"}`} />
+                    <AlertDescription className={userUsagePercentage >= 100 ? "text-destructive" : "text-warning"}>
                         {userUsagePercentage >= 100 ? (
                             <span>
                                 <strong>Limite atteinte !</strong> Vous avez atteint la limite de {subscription.maxUsers} utilisateurs
@@ -440,7 +440,7 @@ export default function DatagridUser({ members, userRole, currentUserId, subscri
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={() => handleDeleteMember(member)}
-                                                            className="text-red-600"
+                                                            className="text-destructive"
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-2" />
                                                             Supprimer

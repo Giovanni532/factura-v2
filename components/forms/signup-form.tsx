@@ -55,20 +55,20 @@ const validatePassword = (password: string) => {
     const score = Object.values(checks).filter(Boolean).length;
 
     let strength = 'Très faible';
-    let color = 'text-red-500';
+    let color = 'text-destructive';
 
     if (score >= 5) {
         strength = 'Très fort';
-        color = 'text-green-500';
+        color = 'text-success';
     } else if (score >= 4) {
         strength = 'Fort';
-        color = 'text-green-400';
+        color = 'text-success';
     } else if (score >= 3) {
         strength = 'Moyen';
-        color = 'text-yellow-500';
+        color = 'text-warning';
     } else if (score >= 2) {
         strength = 'Faible';
-        color = 'text-orange-500';
+        color = 'text-warning';
     }
 
     return { checks, strength, color, score };
@@ -91,11 +91,11 @@ const PasswordCriteria = ({ checks }: { checks: any }) => (
         ].map(({ key, label }) => (
             <div key={key} className="flex items-center gap-2 text-xs">
                 {checks[key] ? (
-                    <Check className="w-3 h-3 text-green-500" />
+                    <Check className="w-3 h-3 text-success" />
                 ) : (
-                    <X className="w-3 h-3 text-red-500" />
+                    <X className="w-3 h-3 text-destructive" />
                 )}
-                <span className={checks[key] ? 'text-green-600' : 'text-muted-foreground'}>
+                <span className={checks[key] ? 'text-success' : 'text-muted-foreground'}>
                     {label}
                 </span>
             </div>
@@ -326,18 +326,18 @@ export function SignupForm() {
             animate="visible"
             className="w-full max-w-md mx-auto"
         >
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-0 bg-transparent py-0 shadow-none">
                 <motion.div variants={itemVariants}>
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center">Inscription</CardTitle>
-                        <CardDescription className="text-center">
+                    <CardHeader className="space-y-1 px-0 pb-2">
+                        <CardTitle className="text-2xl font-semibold tracking-[-0.03em]">Inscription</CardTitle>
+                        <CardDescription>
                             Créez votre compte pour commencer
                         </CardDescription>
                     </CardHeader>
                 </motion.div>
 
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-0">
                         <motion.div
                             variants={fieldVariants}
                             className="space-y-2"
@@ -449,12 +449,12 @@ export function SignupForm() {
                                             {passwordValidation.strength}
                                         </span>
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div className="w-full bg-muted rounded-full h-1.5">
                                         <motion.div
-                                            className={`h-1.5 rounded-full transition-all duration-300 ${passwordValidation.score >= 5 ? 'bg-green-500' :
-                                                passwordValidation.score >= 4 ? 'bg-green-400' :
-                                                    passwordValidation.score >= 3 ? 'bg-yellow-500' :
-                                                        passwordValidation.score >= 2 ? 'bg-orange-500' : 'bg-red-500'
+                                            className={`h-1.5 rounded-full transition-all duration-300 ${passwordValidation.score >= 5 ? 'bg-success' :
+                                                passwordValidation.score >= 4 ? 'bg-success' :
+                                                    passwordValidation.score >= 3 ? 'bg-warning' :
+                                                        passwordValidation.score >= 2 ? 'bg-warning' : 'bg-destructive'
                                                 }`}
                                             initial={{ width: 0 }}
                                             animate={{ width: `${(passwordValidation.score / 5) * 100}%` }}
@@ -505,7 +505,7 @@ export function SignupForm() {
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
-                                    className="text-xs text-red-500"
+                                    className="text-xs text-destructive"
                                 >
                                     Les mots de passe ne correspondent pas
                                 </motion.p>
@@ -513,7 +513,7 @@ export function SignupForm() {
                         </motion.div>
                     </CardContent>
 
-                    <CardFooter className="flex flex-col space-y-4 mt-4">
+                    <CardFooter className="mt-4 flex flex-col space-y-4 px-0">
                         <motion.div
                             variants={buttonVariants}
                             initial="idle"

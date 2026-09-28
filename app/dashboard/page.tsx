@@ -7,6 +7,9 @@ import { getUserWithCompanyCached, getDashboardStatsCached, getDashboardChartsCa
 import { CreateCompanyForm } from '@/components/forms/create-company-form';
 import { paths } from '@/paths';
 import { DashboardClient } from '@/components/dashboard/dashboard-client';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 
 
 
@@ -25,35 +28,17 @@ export default async function DashboardPage() {
     // Si l'utilisateur n'a pas de compagnie, afficher le formulaire de création
     if (!userWithCompany?.company) {
         return (
-            <div className="min-h-screen bg-background">
-                {/* Header */}
-                <div className="border-b border-border bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto px-4 py-8">
-                        <div className="text-center max-w-3xl mx-auto">
-                            <h1 className="text-4xl font-bold text-foreground mb-3">
-                                Bienvenue, {session.user.name} !
-                            </h1>
-                            <p className="text-lg text-muted-foreground">
-                                Pour commencer à utiliser l&apos;application de facturation,
-                                veuillez créer votre entreprise en remplissant le formulaire ci-dessous.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Formulaire */}
-                <div className="container mx-auto px-4 py-12">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-semibold text-foreground mb-2">
-                                Créer votre entreprise
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Renseignez les informations de votre entreprise pour personnaliser vos factures.
-                            </p>
-                        </div>
-                        <CreateCompanyForm />
-                    </div>
+            <div className="mx-auto max-w-4xl py-6 md:py-10">
+                <p className="ledger-label">Première étape</p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-4xl">
+                    Bienvenue, {session.user.name.split(" ")[0]}.
+                </h1>
+                <p className="mt-3 max-w-2xl text-muted-foreground">
+                    Ouvrons votre registre : renseignez votre entreprise. Ces informations apparaîtront
+                    sur vos factures et vos devis.
+                </p>
+                <div className="mt-10 border-t pt-10">
+                    <CreateCompanyForm />
                 </div>
             </div>
         );
@@ -86,26 +71,32 @@ export default async function DashboardPage() {
     };
 
     // Si l'utilisateur a une compagnie, afficher le tableau de bord
+    const today = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+    const firstName = (userWithCompany.name || session.user.name).split(" ")[0];
+
     return (
-        <div className="min-h-screen bg-background">
-            {/* Header avec informations de l'entreprise */}
-            <div className="border-b border-border bg-background/80 backdrop-blur-sm">
-                <div className="container mx-auto px-4 py-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-foreground mb-2">
-                                Bienvenue, {userWithCompany.name} !
-                            </h1>
-                            <p className="text-muted-foreground">
-                                Tableau de bord de facturation
-                            </p>
-                        </div>
-                    </div>
+        <div className="space-y-8">
+            <header className="flex flex-col gap-5 border-b pb-6 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p className="ledger-label">
+                        {today} · {userWithCompany.company.name}
+                    </p>
+                    <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Bonjour, {firstName}</h1>
+                    <p className="mt-1 text-muted-foreground">Voici l&apos;état de vos comptes aujourd&apos;hui.</p>
                 </div>
-            </div>
-            <div className="container mx-auto px-4 py-8">
-                <DashboardClient initialData={dashboardData} />
-            </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button asChild variant="outline">
+                        <Link href={`${paths.quotes.list}?new=true`}>Nouveau devis</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href={`${paths.invoices.list}?new=true`}>
+                            <Plus />
+                            Nouvelle facture
+                        </Link>
+                    </Button>
+                </div>
+            </header>
+            <DashboardClient initialData={dashboardData} />
         </div>
     );
 }

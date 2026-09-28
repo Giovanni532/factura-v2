@@ -77,10 +77,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
         <Card className="group relative transition-all duration-200 hover:shadow-lg">
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
                             <CardTitle className="text-lg leading-tight">{service.name}</CardTitle>
-                            <Badge variant={service.isActive ? "default" : "secondary"} className="text-xs">
+                            <Badge variant={service.isActive ? "success" : "muted"}>
                                 {service.isActive ? "Active" : "Inactive"}
                             </Badge>
                             {service.category && (
@@ -106,7 +106,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem
                                 onClick={handleDelete}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Supprimer
@@ -121,7 +121,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">Prix unitaire</div>
-                        <div className="text-lg font-bold text-green-600">
+                        <div className="text-lg font-bold text-success">
                             {service.unitPrice.toLocaleString('fr-FR')} {getCurrencySymbol(service.currency)}
                         </div>
                     </div>
@@ -141,17 +141,17 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
                 {/* Statistiques */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <div className="text-center p-3 bg-info/[0.06] rounded-lg">
                         <div className="flex items-center justify-center gap-1 mb-1">
-                            <Package className="w-4 h-4 text-blue-600" />
-                            <div className="text-lg font-bold text-blue-600">{service.totalUsage}</div>
+                            <Package className="w-4 h-4 text-info" />
+                            <div className="text-lg font-bold text-info">{service.totalUsage}</div>
                         </div>
                         <div className="text-xs text-muted-foreground">Utilisations</div>
                     </div>
-                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <div className="text-center p-3 bg-success/[0.06] rounded-lg">
                         <div className="flex items-center justify-center gap-1 mb-1">
-                            <Euro className="w-4 h-4 text-green-600" />
-                            <div className="text-lg font-bold text-green-600">
+                            <Euro className="w-4 h-4 text-success" />
+                            <div className="text-lg font-bold text-success">
                                 {service.totalRevenue.toLocaleString('fr-FR')} €
                             </div>
                         </div>
@@ -169,7 +169,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
                 {/* Informations additionnelles */}
                 <div className="text-xs text-muted-foreground">
-                    Créé le {service.createdAt.toLocaleDateString('fr-FR')}
+                    Créé le {new Date(service.createdAt).toLocaleDateString('fr-FR')}
                 </div>
             </CardContent>
 

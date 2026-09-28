@@ -230,7 +230,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
         updateForm.reset({
             id: entry.id,
             number: entry.number,
-            date: entry.date.toISOString().split('T')[0],
+            date: new Date(entry.date).toISOString().split('T')[0],
             description: entry.description,
             status: entry.isPosted ? 'posted' : 'draft',
             lines: entry.lines.map(line => ({
@@ -258,11 +258,11 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
     const getStatusColor = (status: JournalEntryWithLines["isPosted"]) => {
         switch (status) {
             case true:
-                return "bg-green-100 text-green-800"
+                return "bg-success/10 text-success"
             case false:
-                return "bg-yellow-100 text-yellow-800"
+                return "bg-warning/10 text-warning"
             default:
-                return "bg-gray-100 text-gray-800"
+                return "bg-muted text-foreground"
         }
     }
 
@@ -503,7 +503,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => removeLine(index)}
-                                                        className="text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                                        className="text-destructive opacity-0 group-hover:opacity-100 transition"
                                                         tabIndex={-1}
                                                         aria-label="Supprimer la ligne"
                                                     >
@@ -524,7 +524,7 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                                     </div>
                                     {/* Erreurs de validation globales */}
                                     {createForm.formState.errors.lines && (
-                                        <div className="text-red-600 text-sm font-medium mt-2">
+                                        <div className="text-destructive text-sm font-medium mt-2">
                                             {createForm.formState.errors.lines.message as string}
                                         </div>
                                     )}
@@ -557,12 +557,12 @@ export function JournalEntriesClient({ entries, accounts }: JournalEntriesClient
                         ) : (
                             filteredEntries.map((entry) => (
                                 <div key={entry.id} className="border rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center space-x-4">
-                                            <IconFileText className="h-5 w-5 text-muted-foreground" />
+                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex min-w-0 items-center space-x-4">
+                                            <IconFileText className="h-5 w-5 shrink-0 text-muted-foreground" />
                                             <div>
                                                 <div className="flex items-center space-x-2">
-                                                    <span className="font-medium">{entry.number}</span>
+                                                    <span className="font-mono text-[13px] font-medium">{entry.number}</span>
                                                     <Badge variant="secondary" className={getStatusColor(entry.isPosted)}>
                                                         {getStatusLabel(entry.isPosted)}
                                                     </Badge>

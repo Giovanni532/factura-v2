@@ -149,7 +149,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
         defaultValues: {
             name: "",
             description: "",
-            color: "#3b82f6",
+            color: "#0E5A43",
             isActive: true,
         }
     })
@@ -180,7 +180,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
             id: "",
             name: "",
             description: "",
-            color: "#3b82f6",
+            color: "#0E5A43",
             isActive: true,
         }
     })
@@ -361,7 +361,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
             id: category.id,
             name: category.name,
             description: category.description || "",
-            color: category.color || "#3b82f6",
+            color: category.color || "#0E5A43",
             isActive: category.isActive,
         })
         setEditCategoryDialogOpen(true)
@@ -422,23 +422,24 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
     }
 
     return (
-        <div className="p-8">
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-6">
+            <div className="flex flex-col gap-5 border-b pb-6 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Paiements & Fournisseurs</h1>
-                    <p className="text-muted-foreground">
-                        Gérez vos encaissements et décaissements, vos fournisseurs et catégories de dépenses.
+                    <p className="ledger-label mb-2">Comptabilité</p>
+                    <h1 className="text-3xl font-semibold tracking-[-0.03em]">Paiements & fournisseurs</h1>
+                    <p className="mt-1 text-muted-foreground">
+                        Vos encaissements et décaissements, fournisseurs et catégories de dépenses.
                     </p>
                 </div>
 
-                <div className="flex gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-wrap gap-2">
+                    <div className="relative w-full sm:w-auto">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Rechercher un paiement ..."
+                            placeholder="Rechercher un paiement…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 w-64"
+                            className="w-full pl-9 sm:w-64"
                         />
                     </div>
                     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -1098,9 +1099,9 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                             <div className="bg-muted p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
                                     {paymentToDelete.type === 'incoming' ? (
-                                        <ArrowDownCircle className="h-4 w-4 text-green-600" />
+                                        <ArrowDownCircle className="h-4 w-4 text-success" />
                                     ) : (
-                                        <ArrowUpCircle className="h-4 w-4 text-red-600" />
+                                        <ArrowUpCircle className="h-4 w-4 text-destructive" />
                                     )}
                                     <span className="font-medium">{paymentToDelete.description}</span>
                                     <Badge variant={paymentToDelete.type === 'incoming' ? 'default' : 'destructive'}>
@@ -1361,7 +1362,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                                                 />
                                                 <Input
                                                     {...field}
-                                                    placeholder="#3b82f6"
+                                                    placeholder="#0E5A43"
                                                     className="flex-1"
                                                 />
                                             </div>
@@ -1606,7 +1607,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
                                                 />
                                                 <Input
                                                     {...field}
-                                                    placeholder="#3b82f6"
+                                                    placeholder="#0E5A43"
                                                     className="flex-1"
                                                 />
                                             </div>
@@ -1644,7 +1645,7 @@ export function PaymentsClient({ initialPayments, invoices, suppliers, expenseCa
 
                             <div className="bg-muted p-4 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <IconBuilding className="h-4 w-4 text-blue-600" />
+                                    <IconBuilding className="h-4 w-4 text-info" />
                                     <span className="font-medium">{supplierToDelete.name}</span>
                                     <Badge variant={supplierToDelete.isActive ? "default" : "secondary"}>
                                         {supplierToDelete.isActive ? "Actif" : "Inactif"}

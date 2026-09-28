@@ -6,7 +6,6 @@ import {
     IconUsers,
     IconTemplate,
     IconReceipt,
-    IconInnerShadowTop,
     Icon,
     IconFileInvoice,
     IconCalculator,
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/sidebar"
 import { paths } from "@/paths"
 import Link from "next/link"
+import { Logo } from "@/components/logo"
 
 interface NavItem {
     title: string
@@ -140,11 +140,10 @@ export function DashboardSidebar({ currentUser, recentDocuments = [], ...props }
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             asChild
-                            className="data-[slot=sidebar-menu-button]:!p-1.5"
+                            className="h-10 data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-transparent"
                         >
-                            <Link href={paths.dashboard}>
-                                <IconInnerShadowTop className="!size-5" />
-                                <span className="text-base font-semibold">Factura</span>
+                            <Link href={paths.dashboard} aria-label="Factura — tableau de bord">
+                                <Logo markClassName="size-7" />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Check, Crown, CreditCard, Users, Building2, FileText, AlertCircle, ExternalLink, Calendar } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/ledger"
 
 interface BillingSettingsClientProps {
     plans: BillingPlan[];
@@ -147,27 +148,22 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
     return (
         <div className="space-y-6">
             {/* En-tête de la page */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Facturation et abonnements</h1>
-                <p className="text-muted-foreground">
-                    Gérez votre abonnement et choisissez le plan qui convient à votre entreprise
-                </p>
-            </div>
+            <PageHeader eyebrow="Réglages" title="Abonnement" description="Votre plan actuel et les options pour faire grandir votre entreprise" />
 
             {/* Alertes de statut */}
             {paymentSuccess && (
-                <Alert className="border-green-200 bg-green-50">
-                    <Check className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
+                <Alert className="border-success/25 bg-success/[0.06]">
+                    <Check className="h-4 w-4 text-success" />
+                    <AlertDescription className="text-success">
                         <strong>Paiement réussi !</strong> Votre abonnement a été mis à jour avec succès.
                     </AlertDescription>
                 </Alert>
             )}
 
             {paymentCanceled && (
-                <Alert className="border-yellow-200 bg-yellow-50">
-                    <AlertCircle className="h-4 w-4 text-yellow-600" />
-                    <AlertDescription className="text-yellow-800">
+                <Alert className="border-warning/25 bg-warning/[0.06]">
+                    <AlertCircle className="h-4 w-4 text-warning" />
+                    <AlertDescription className="text-warning">
                         <strong>Paiement annulé.</strong> Votre abonnement n&apos;a pas été modifié.
                     </AlertDescription>
                 </Alert>
@@ -212,9 +208,9 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                         )}
 
                         {getCancelAtPeriodEnd() && (
-                            <Alert className="border-yellow-200 bg-yellow-50">
-                                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                                <AlertDescription className="text-yellow-800">
+                            <Alert className="border-warning/25 bg-warning/[0.06]">
+                                <AlertCircle className="h-4 w-4 text-warning" />
+                                <AlertDescription className="text-warning">
                                     Votre abonnement sera annulé à la fin de la période de facturation actuelle.
                                 </AlertDescription>
                             </Alert>
@@ -278,7 +274,7 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                                     <h4 className="font-medium text-sm">Fonctionnalités incluses :</h4>
                                     {plan.features.map((feature, index) => (
                                         <div key={index} className="flex items-center gap-2 text-sm">
-                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></div>
+                                            <div className="w-1.5 h-1.5 bg-success rounded-full flex-shrink-0"></div>
                                             <span>{feature}</span>
                                         </div>
                                     ))}
@@ -345,20 +341,20 @@ export function BillingSettingsClient({ plans, currentSubscription, userRole }: 
                     </DialogHeader>
 
                     <div className="space-y-4">
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="bg-warning/[0.06] border border-warning/25 rounded-lg p-4">
                             <div className="flex items-start gap-3">
-                                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                                <AlertCircle className="h-5 w-5 text-warning mt-0.5" />
                                 <div className="space-y-2">
-                                    <h4 className="font-medium text-yellow-800">Important</h4>
-                                    <p className="text-sm text-yellow-700">
+                                    <h4 className="font-medium text-warning">Important</h4>
+                                    <p className="text-sm text-warning">
                                         Votre abonnement actuel restera actif jusqu&apos;à la fin de votre période de facturation.
                                     </p>
                                     {getCurrentPeriodEnd() && (
-                                        <p className="text-sm text-yellow-700">
+                                        <p className="text-sm text-warning">
                                             <strong>Date d&apos;expiration :</strong> {formatDate(getCurrentPeriodEnd()!)}
                                         </p>
                                     )}
-                                    <p className="text-sm text-yellow-700">
+                                    <p className="text-sm text-warning">
                                         Après cette date, vous passerez automatiquement au plan gratuit.
                                     </p>
                                 </div>

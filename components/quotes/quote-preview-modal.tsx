@@ -87,12 +87,12 @@ export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalP
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'accepted': return 'bg-green-100 text-green-800';
-            case 'sent': return 'bg-blue-100 text-blue-800';
-            case 'rejected': return 'bg-red-100 text-red-800';
-            case 'expired': return 'bg-orange-100 text-orange-800';
-            case 'draft': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'accepted': return 'bg-success/10 text-success';
+            case 'sent': return 'bg-info/10 text-info';
+            case 'rejected': return 'bg-destructive/10 text-destructive';
+            case 'expired': return 'bg-warning/10 text-warning';
+            case 'draft': return 'bg-muted text-foreground';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -147,11 +147,11 @@ export function QuotePreviewModal({ quote, isOpen, onClose }: QuotePreviewModalP
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium">Date d&apos;émission</Label>
-                                    <p className="text-sm">{quote.issueDate.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-sm">{new Date(quote.issueDate).toLocaleDateString('fr-FR')}</p>
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium">Valide jusqu&apos;au</Label>
-                                    <p className="text-sm">{quote.validUntil.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-sm">{new Date(quote.validUntil).toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>
                         </div>

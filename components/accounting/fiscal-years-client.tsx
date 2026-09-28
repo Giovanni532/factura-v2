@@ -106,8 +106,8 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
         updateForm.reset({
             id: fiscalYear.id,
             name: fiscalYear.name,
-            startDate: fiscalYear.startDate.toISOString().split('T')[0],
-            endDate: fiscalYear.endDate.toISOString().split('T')[0],
+            startDate: new Date(fiscalYear.startDate).toISOString().split('T')[0],
+            endDate: new Date(fiscalYear.endDate).toISOString().split('T')[0],
             status: fiscalYear.isClosed ? 'closed' : 'open',
             isCurrent: false,
         })
@@ -116,11 +116,11 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
     const getStatusColor = (status: FiscalYearWithStats["isClosed"]) => {
         switch (status) {
             case true:
-                return "bg-red-100 text-red-800"
+                return "bg-destructive/10 text-destructive"
             case false:
-                return "bg-green-100 text-green-800"
+                return "bg-success/10 text-success"
             default:
-                return "bg-gray-100 text-gray-800"
+                return "bg-muted text-foreground"
         }
     }
 
@@ -297,7 +297,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                 {fiscalYears.map((year) => {
                     const StatusIcon = getStatusIcon(year.isClosed)
                     return (
-                        <Card key={year.id} className={`hover:shadow-md transition-shadow ${year.isClosed ? 'ring-2 ring-red-500' : ''}`}>
+                        <Card key={year.id} className={`hover:shadow-md transition-shadow ${year.isClosed ? 'ring-2 ring-destructive' : ''}`}>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
@@ -329,7 +329,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-muted-foreground">Chiffre d&apos;affaires:</span>
-                                            <span className="font-medium text-green-600">
+                                            <span className="font-medium text-success">
                                                 {year.totalRevenue.toLocaleString('fr-FR', {
                                                     style: 'currency',
                                                     currency: 'EUR'
@@ -338,7 +338,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-muted-foreground">Dépenses:</span>
-                                            <span className="font-medium text-red-600">
+                                            <span className="font-medium text-destructive">
                                                 {year.totalExpenses.toLocaleString('fr-FR', {
                                                     style: 'currency',
                                                     currency: 'EUR'
@@ -347,7 +347,7 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                                         </div>
                                         <div className="flex justify-between text-sm border-t pt-2">
                                             <span className="font-medium">Résultat net:</span>
-                                            <span className={`font-bold ${year.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`font-bold ${year.netIncome >= 0 ? 'text-success' : 'text-destructive'}`}>
                                                 {year.netIncome.toLocaleString('fr-FR', {
                                                     style: 'currency',
                                                     currency: 'EUR'
@@ -396,13 +396,13 @@ export function FiscalYearsClient({ fiscalYears: initialFiscalYears }: FiscalYea
                 <CardContent>
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-2xl font-bold text-success">
                                 {fiscalYears.filter((y: FiscalYearWithStats) => !y.isClosed).length}
                             </div>
                             <div className="text-sm text-muted-foreground">Exercices ouverts</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-red-600">
+                            <div className="text-2xl font-bold text-destructive">
                                 {fiscalYears.filter((y: FiscalYearWithStats) => y.isClosed).length}
                             </div>
                             <div className="text-sm text-muted-foreground">Exercices clôturés</div>

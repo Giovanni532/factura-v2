@@ -13,6 +13,8 @@ import { CreateServiceButton } from "@/components/services/create-service-button
 import { CreateCategoryButton } from "@/components/services/create-category-button";
 import { ServicesContext } from "../../hooks/services-context";
 import { Briefcase, Tag, TrendingUp, Package, Euro, Search, Filter, X } from "lucide-react";
+import { LedgerStats } from "@/components/ledger";
+import { formatCurrency } from "@/lib/utils";
 
 interface ServicesPageClientProps {
     initialServices: ServiceWithStats[];
@@ -142,60 +144,18 @@ export function ServicesPageClient({
         }}>
             <div className="space-y-6">
                 {/* Statistiques */}
-                <div className="grid gap-4 md:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Prestations</CardTitle>
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{totalServices}</div>
-                            <p className="text-xs text-muted-foreground">
-                                {activeServices} actives
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Catégories</CardTitle>
-                            <Tag className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{categories.length}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Catégories créées
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Utilisations</CardTitle>
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{totalUsage}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Total des utilisations
-                            </p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Chiffre d&apos;Affaires</CardTitle>
-                            <Euro className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('fr-FR')} €</div>
-                            <p className="text-xs text-muted-foreground">
-                                CA généré
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <LedgerStats
+                    items={[
+                        { label: "Prestations", value: totalServices, detail: `${activeServices} actives`, icon: Briefcase },
+                        { label: "Catégories", value: categories.length, detail: "Pour organiser le catalogue", icon: Tag },
+                        { label: "Utilisations", value: totalUsage, detail: "Lignes de factures et devis", icon: Package },
+                        { label: "Chiffre d'affaires", value: formatCurrency(totalRevenue, "EUR"), detail: "Généré par ces prestations", icon: Euro },
+                    ]}
+                />
 
                 {/* Onglets */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                         <TabsList>
                             <TabsTrigger value="services" className="flex items-center gap-2">
                                 <Briefcase className="w-4 h-4" />
@@ -207,7 +167,7 @@ export function ServicesPageClient({
                             </TabsTrigger>
                         </TabsList>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             {activeTab === "services" ? (
                                 <CreateServiceButton />
                             ) : (

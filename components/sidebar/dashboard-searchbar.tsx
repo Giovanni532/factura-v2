@@ -128,13 +128,13 @@ export default function SearchBar() {
     const getResultIcon = (type: string) => {
         switch (type) {
             case 'invoice':
-                return <FileTextIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                return <FileTextIcon className="h-4 w-4 text-info " />
             case 'quote':
-                return <FileIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                return <FileIcon className="h-4 w-4 text-success " />
             case 'client':
-                return <UserIcon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                return <UserIcon className="h-4 w-4 text-foreground " />
             case 'service':
-                return <Settings className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                return <Settings className="h-4 w-4 text-warning " />
             default:
                 return <SearchIcon className="h-4 w-4 text-muted-foreground" />
         }
@@ -171,7 +171,7 @@ export default function SearchBar() {
                         <Card className="overflow-hidden shadow-lg">
                             <CardContent className="p-0">
                                 {error ? (
-                                    <p className="p-3 text-sm text-red-500">Erreur: {error}</p>
+                                    <p className="p-3 text-sm text-destructive">Erreur: {error}</p>
                                 ) : isLoading ? (
                                     <div className="flex items-center justify-center p-6 flex-col gap-2">
                                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

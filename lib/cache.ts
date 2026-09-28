@@ -59,7 +59,7 @@ export const getDashboardStatsCached = unstable_cache(
                 totalRevenue: sql<number>`sum(${invoice.total})`,
                 paidInvoices: sql<number>`count(case when ${invoice.status} = 'paid' then 1 end)`,
                 pendingInvoices: sql<number>`count(case when ${invoice.status} = 'sent' then 1 end)`,
-                overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < date('now') then 1 end)`,
+                overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < cast(strftime('%s', 'now') as integer) then 1 end)`,
                 monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} then 1 end)`,
                 monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
                 lastMonthRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfLastMonth} and ${invoice.createdAt} <= ${endOfLastMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
@@ -70,7 +70,7 @@ export const getDashboardStatsCached = unstable_cache(
                 totalQuotes: sql<number>`count(*)`,
                 acceptedQuotes: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
                 pendingQuotes: sql<number>`count(case when ${quote.status} = 'sent' then 1 end)`,
-                expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < date('now') then 1 end)`,
+                expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < cast(strftime('%s', 'now') as integer) then 1 end)`,
                 monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfMonth} and ${quote.createdAt} <= ${endOfMonth} then 1 end)`,
                 lastMonthQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfLastMonth} and ${quote.createdAt} <= ${endOfLastMonth} then 1 end)`,
             }).from(quote).where(eq(quote.companyId, companyId)),
@@ -128,7 +128,7 @@ export const getDashboardChartsCached = unstable_cache(
     async (companyId: string) => {
         const [monthlyInvoices, monthlyQuotes, monthlyBenefits] = await Promise.all([
             db.select({
-                month: sql<string>`strftime('%Y-%m', ${invoice.createdAt})`,
+                month: sql<string>`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`,
                 count: sql<number>`count(*)`,
                 revenue: sql<number>`sum(case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
             })
@@ -137,11 +137,11 @@ export const getDashboardChartsCached = unstable_cache(
                     eq(invoice.companyId, companyId),
                     gte(invoice.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
                 ))
-                .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
-                .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt})`),
+                .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`)
+                .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`),
 
             db.select({
-                month: sql<string>`strftime('%Y-%m', ${quote.createdAt})`,
+                month: sql<string>`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`,
                 count: sql<number>`count(*)`,
                 accepted: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
             })
@@ -150,11 +150,11 @@ export const getDashboardChartsCached = unstable_cache(
                     eq(quote.companyId, companyId),
                     gte(quote.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
                 ))
-                .groupBy(sql`strftime('%Y-%m', ${quote.createdAt})`)
-                .orderBy(sql`strftime('%Y-%m', ${quote.createdAt})`),
+                .groupBy(sql`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`)
+                .orderBy(sql`strftime('%Y-%m', ${quote.createdAt}, 'unixepoch')`),
 
             db.select({
-                month: sql<string>`strftime('%Y-%m', ${invoice.createdAt})`,
+                month: sql<string>`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`,
                 benefice: sql<number>`sum(case when ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
             })
                 .from(invoice)
@@ -162,8 +162,8 @@ export const getDashboardChartsCached = unstable_cache(
                     eq(invoice.companyId, companyId),
                     gte(invoice.createdAt, new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1))
                 ))
-                .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
-                .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt})`)
+                .groupBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`)
+                .orderBy(sql`strftime('%Y-%m', ${invoice.createdAt}, 'unixepoch')`)
         ]);
 
         return {

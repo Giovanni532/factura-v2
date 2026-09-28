@@ -87,12 +87,12 @@ export function InvoicePreviewModal({ invoice, isOpen, onClose }: InvoicePreview
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'paid': return 'bg-green-100 text-green-800';
-            case 'sent': return 'bg-blue-100 text-blue-800';
-            case 'overdue': return 'bg-red-100 text-red-800';
-            case 'draft': return 'bg-gray-100 text-gray-800';
-            case 'cancelled': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'paid': return 'bg-success/10 text-success';
+            case 'sent': return 'bg-info/10 text-info';
+            case 'overdue': return 'bg-destructive/10 text-destructive';
+            case 'draft': return 'bg-muted text-foreground';
+            case 'cancelled': return 'bg-destructive/10 text-destructive';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -147,11 +147,11 @@ export function InvoicePreviewModal({ invoice, isOpen, onClose }: InvoicePreview
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium">Date d&apos;émission</Label>
-                                    <p className="text-sm">{invoice.issueDate.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-sm">{new Date(invoice.issueDate).toLocaleDateString('fr-FR')}</p>
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium">Date d&apos;échéance</Label>
-                                    <p className="text-sm">{invoice.dueDate.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-sm">{new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>
                         </div>

@@ -2,6 +2,7 @@ import { AccountingOverview } from "@/components/accounting/accounting-overview"
 import { AccountingStatsCards } from "@/components/accounting/accounting-stats-cards"
 import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getAccountingStatsCached, getRevenueHistoryCached, getRecentAccountingActivitiesCached } from "@/lib/cache"
+import { PageHeader } from "@/components/ledger"
 
 export default async function AccountingPage() {
     const session = await getSession()
@@ -35,12 +36,7 @@ export default async function AccountingPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Comptabilité</h1>
-                <p className="text-muted-foreground">
-                    Gérez votre comptabilité, vos écritures et vos rapports financiers.
-                </p>
-            </div>
+            <PageHeader title="Comptabilité" description="Vue d'ensemble de vos comptes, écritures et rapports financiers" />
 
             <AccountingStatsCards stats={stats} />
 

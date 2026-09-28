@@ -320,7 +320,7 @@ export function ClientsDataGrid({
             header: "Téléphone",
             accessorKey: "phone",
             cell: ({ row }) => (
-                <div>{row.original.phone || "—"}</div>
+                <div className="whitespace-nowrap font-mono text-[13px] text-muted-foreground">{row.original.phone || "—"}</div>
             ),
             size: 150,
         },
@@ -331,12 +331,8 @@ export function ClientsDataGrid({
             cell: ({ row }) => {
                 const isActive = row.original.totalInvoices > 0 || row.original.totalQuotes > 0
                 return (
-                    <Badge
-                        variant={isActive ? "default" : "destructive"}
-                        className={cn(
-                            !isActive && "bg-muted-foreground/60 text-primary-foreground"
-                        )}
-                    >
+                    <Badge variant={isActive ? "success" : "muted"} className="gap-1.5">
+                        <span aria-hidden="true" className={cn("size-1.5 rounded-full", isActive ? "bg-success" : "bg-muted-foreground/50")} />
                         {isActive ? "Actif" : "Inactif"}
                     </Badge>
                 )
@@ -348,7 +344,7 @@ export function ClientsDataGrid({
             header: "Factures",
             accessorKey: "totalInvoices",
             cell: ({ row }) => (
-                <div className="text-center">
+                <div className="text-center font-mono text-[13px]">
                     {row.original.totalInvoices}
                 </div>
             ),
@@ -359,7 +355,7 @@ export function ClientsDataGrid({
             header: "Devis",
             accessorKey: "totalQuotes",
             cell: ({ row }) => (
-                <div className="text-center">
+                <div className="text-center font-mono text-[13px]">
                     {row.original.totalQuotes}
                 </div>
             ),
@@ -375,7 +371,7 @@ export function ClientsDataGrid({
                     style: "currency",
                     currency: "EUR",
                 }).format(amount)
-                return <div className="font-medium">{formatted}</div>
+                return <div className="text-right font-mono text-[13px] font-medium tabular-nums">{formatted}</div>
             },
             size: 150,
         },
@@ -428,7 +424,7 @@ export function ClientsDataGrid({
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                className="text-red-600"
+                                className="text-destructive"
                                 onClick={() => {
                                     // TODO: Implémenter la suppression
                                     if (confirm(`Êtes-vous sûr de vouloir supprimer ${client.name} ?`)) {
@@ -491,7 +487,7 @@ export function ClientsDataGrid({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1">
                         <Button
                             variant={filter === "all" ? "default" : "outline"}

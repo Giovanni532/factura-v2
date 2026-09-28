@@ -2,6 +2,7 @@ import { JournalEntriesClient } from "@/components/accounting/journal-entries-cl
 import { getSession } from "@/lib/get-session"
 import { getUserWithCompanyCached, getJournalEntriesCached, getChartOfAccountsCached } from "@/lib/cache"
 import { JournalEntriesProvider } from "@/hooks/use-journal-entries"
+import { PageHeader } from "@/components/ledger"
 
 export default async function JournalEntriesPage() {
     const session = await getSession()
@@ -39,12 +40,7 @@ export default async function JournalEntriesPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Écritures Comptables</h1>
-                <p className="text-muted-foreground">
-                    Gérez vos écritures comptables et vos journaux.
-                </p>
-            </div>
+            <PageHeader eyebrow="Comptabilité" title="Écritures comptables" description="Le journal de toutes vos écritures, au débit et au crédit" />
 
             <JournalEntriesProvider entries={entries} accounts={accounts}>
                 <JournalEntriesClient entries={entries} accounts={accounts} />
