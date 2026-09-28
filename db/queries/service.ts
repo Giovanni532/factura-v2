@@ -1,5 +1,5 @@
 import { db } from "@/lib/drizzle";
-import { service, serviceCategory, invoiceItem, quoteItem } from "@/db/schema";
+import { service, serviceCategory, invoice, invoiceItem, quote, quoteItem } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
 // Récupérer tous les services d'une entreprise avec leurs statistiques
@@ -32,7 +32,11 @@ export async function getServicesWithStats(companyId: string) {
                 lastUsed: sql<Date>`max(${invoiceItem.createdAt})`,
             })
                 .from(invoiceItem)
-                .where(eq(invoiceItem.description, serviceData.name));
+                .innerJoin(invoice, eq(invoiceItem.invoiceId, invoice.id))
+                .where(and(
+                    eq(invoice.companyId, companyId),
+                    eq(invoiceItem.description, serviceData.name)
+                ));
 
             // Compter l'utilisation dans les devis
             const quoteUsage = await db.select({
@@ -41,7 +45,11 @@ export async function getServicesWithStats(companyId: string) {
                 lastUsed: sql<Date>`max(${quoteItem.createdAt})`,
             })
                 .from(quoteItem)
-                .where(eq(quoteItem.description, serviceData.name));
+                .innerJoin(quote, eq(quoteItem.quoteId, quote.id))
+                .where(and(
+                    eq(quote.companyId, companyId),
+                    eq(quoteItem.description, serviceData.name)
+                ));
 
             const totalUsage = (invoiceUsage[0]?.totalUsage || 0) + (quoteUsage[0]?.totalUsage || 0);
             const totalRevenue = (invoiceUsage[0]?.totalRevenue || 0) + (quoteUsage[0]?.totalRevenue || 0);
@@ -88,7 +96,11 @@ export async function getServiceById(serviceId: string, companyId: string) {
         lastUsed: sql<Date>`max(${invoiceItem.createdAt})`,
     })
         .from(invoiceItem)
-        .where(eq(invoiceItem.description, serviceInfo.name));
+        .innerJoin(invoice, eq(invoiceItem.invoiceId, invoice.id))
+        .where(and(
+            eq(invoice.companyId, companyId),
+            eq(invoiceItem.description, serviceInfo.name)
+        ));
 
     const quoteUsage = await db.select({
         totalUsage: sql<number>`sum(${quoteItem.quantity})`,
@@ -96,7 +108,11 @@ export async function getServiceById(serviceId: string, companyId: string) {
         lastUsed: sql<Date>`max(${quoteItem.createdAt})`,
     })
         .from(quoteItem)
-        .where(eq(quoteItem.description, serviceInfo.name));
+        .innerJoin(quote, eq(quoteItem.quoteId, quote.id))
+        .where(and(
+            eq(quote.companyId, companyId),
+            eq(quoteItem.description, serviceInfo.name)
+        ));
 
     const totalUsage = (invoiceUsage[0]?.totalUsage || 0) + (quoteUsage[0]?.totalUsage || 0);
     const totalRevenue = (invoiceUsage[0]?.totalRevenue || 0) + (quoteUsage[0]?.totalRevenue || 0);

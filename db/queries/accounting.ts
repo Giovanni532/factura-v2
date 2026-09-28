@@ -90,7 +90,7 @@ export async function getChartOfAccounts(companyId: string): Promise<AccountWith
     // Calculer les soldes pour chaque compte
     const accountsWithBalance = await Promise.all(
         accounts.map(async (account) => {
-            const balance = await calculateAccountBalance(account.id)
+            const balance = await calculateAccountBalance(account.id, companyId)
             return {
                 ...account,
                 balance,
@@ -122,12 +122,17 @@ export async function getChartOfAccounts(companyId: string): Promise<AccountWith
     return rootAccounts
 }
 
-async function calculateAccountBalance(accountId: string): Promise<number> {
+async function calculateAccountBalance(accountId: string, companyId: string): Promise<number> {
     // D'abord récupérer le type de compte
     const account = await db
         .select({ type: chartOfAccounts.type })
         .from(chartOfAccounts)
-        .where(eq(chartOfAccounts.id, accountId))
+        .where(
+            and(
+                eq(chartOfAccounts.id, accountId),
+                eq(chartOfAccounts.companyId, companyId)
+            )
+        )
         .limit(1)
 
     if (!account[0]) return 0
@@ -143,6 +148,7 @@ async function calculateAccountBalance(accountId: string): Promise<number> {
         .where(
             and(
                 eq(journalEntryLine.accountId, accountId),
+                eq(journalEntry.companyId, companyId),
                 eq(journalEntry.isPosted, true)
             )
         )
@@ -376,7 +382,7 @@ export async function getFiscalYears(companyId: string): Promise<FiscalYearWithS
     // Calculer les statistiques pour chaque exercice
     const fiscalYearsWithStats = await Promise.all(
         fiscalYears.map(async (year) => {
-            const stats = await calculateFiscalYearStats(year.id)
+            const stats = await calculateFiscalYearStats(year.id, companyId)
             return {
                 ...year,
                 ...stats
@@ -387,7 +393,7 @@ export async function getFiscalYears(companyId: string): Promise<FiscalYearWithS
     return fiscalYearsWithStats
 }
 
-async function calculateFiscalYearStats(fiscalYearId: string) {
+async function calculateFiscalYearStats(fiscalYearId: string, companyId: string) {
     // Récupérer les dates de l'exercice
     const year = await db
         .select({
@@ -395,7 +401,12 @@ async function calculateFiscalYearStats(fiscalYearId: string) {
             endDate: fiscalYear.endDate,
         })
         .from(fiscalYear)
-        .where(eq(fiscalYear.id, fiscalYearId))
+        .where(
+            and(
+                eq(fiscalYear.id, fiscalYearId),
+                eq(fiscalYear.companyId, companyId)
+            )
+        )
         .limit(1)
 
     if (!year[0]) return { totalRevenue: 0, totalExpenses: 0, netIncome: 0 }
@@ -410,6 +421,8 @@ async function calculateFiscalYearStats(fiscalYearId: string) {
         .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
         .where(
             and(
+                eq(journalEntry.companyId, companyId),
+                eq(chartOfAccounts.companyId, companyId),
                 eq(chartOfAccounts.type, 'revenue'),
                 eq(journalEntry.isPosted, true),
                 gte(journalEntry.date, year[0].startDate),
@@ -427,6 +440,8 @@ async function calculateFiscalYearStats(fiscalYearId: string) {
         .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
         .where(
             and(
+                eq(journalEntry.companyId, companyId),
+                eq(chartOfAccounts.companyId, companyId),
                 eq(chartOfAccounts.type, 'expense'),
                 eq(journalEntry.isPosted, true),
                 gte(journalEntry.date, year[0].startDate),
@@ -460,6 +475,8 @@ export async function getAccountingStats(companyId: string) {
         .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
         .where(
             and(
+                eq(journalEntry.companyId, companyId),
+                eq(chartOfAccounts.companyId, companyId),
                 eq(chartOfAccounts.type, 'revenue'),
                 eq(journalEntry.isPosted, true),
                 gte(journalEntry.date, startOfMonth),
@@ -477,6 +494,8 @@ export async function getAccountingStats(companyId: string) {
         .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
         .where(
             and(
+                eq(journalEntry.companyId, companyId),
+                eq(chartOfAccounts.companyId, companyId),
                 eq(chartOfAccounts.type, 'revenue'),
                 eq(journalEntry.isPosted, true),
                 gte(journalEntry.date, previousMonth),
@@ -494,6 +513,8 @@ export async function getAccountingStats(companyId: string) {
         .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
         .where(
             and(
+                eq(journalEntry.companyId, companyId),
+                eq(chartOfAccounts.companyId, companyId),
                 eq(chartOfAccounts.type, 'expense'),
                 eq(journalEntry.isPosted, true),
                 gte(journalEntry.date, startOfMonth),
@@ -572,6 +593,8 @@ export async function getRevenueHistory(companyId: string, months: number = 12) 
             .innerJoin(chartOfAccounts, eq(journalEntryLine.accountId, chartOfAccounts.id))
             .where(
                 and(
+                    eq(journalEntry.companyId, companyId),
+                    eq(chartOfAccounts.companyId, companyId),
                     eq(chartOfAccounts.type, 'revenue'),
                     eq(journalEntry.isPosted, true),
                     gte(journalEntry.date, startOfMonth),

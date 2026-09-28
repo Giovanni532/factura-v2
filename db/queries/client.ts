@@ -33,7 +33,10 @@ export async function getClientsWithStats(companyId: string) {
                 lastInvoiceDate: sql<Date>`max(${invoice.createdAt})`,
             })
                 .from(invoice)
-                .where(eq(invoice.clientId, clientData.id));
+                .where(and(
+                    eq(invoice.companyId, companyId),
+                    eq(invoice.clientId, clientData.id)
+                ));
 
             // Statistiques des devis
             const quoteStats = await db.select({
@@ -41,7 +44,10 @@ export async function getClientsWithStats(companyId: string) {
                 lastQuoteDate: sql<Date>`max(${quote.createdAt})`,
             })
                 .from(quote)
-                .where(eq(quote.clientId, clientData.id));
+                .where(and(
+                    eq(quote.companyId, companyId),
+                    eq(quote.clientId, clientData.id)
+                ));
 
             return {
                 ...clientData,
@@ -80,7 +86,10 @@ export async function getClientById(clientId: string, companyId: string) {
         lastInvoiceDate: sql<Date>`max(${invoice.createdAt})`,
     })
         .from(invoice)
-        .where(eq(invoice.clientId, clientId));
+        .where(and(
+            eq(invoice.companyId, companyId),
+            eq(invoice.clientId, clientId)
+        ));
 
     // Statistiques des devis
     const quoteStats = await db.select({
@@ -88,7 +97,10 @@ export async function getClientById(clientId: string, companyId: string) {
         lastQuoteDate: sql<Date>`max(${quote.createdAt})`,
     })
         .from(quote)
-        .where(eq(quote.clientId, clientId));
+        .where(and(
+            eq(quote.companyId, companyId),
+            eq(quote.clientId, clientId)
+        ));
 
     return {
         ...clientInfo,
