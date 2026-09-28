@@ -79,15 +79,10 @@ interface InvitationClientProps {
     token: string;
     email: string;
     userName: string;
-    invitationData: {
-        name: string;
-        email: string;
-        role: "user" | "owner" | "admin";
-        companyId: string | null;
-    };
+    companyName: string | null;
 }
 
-export function InvitationClient({ token, email, userName, invitationData }: InvitationClientProps) {
+export function InvitationClient({ token, email, userName, companyName }: InvitationClientProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -116,8 +111,21 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
         setError(null);
 
         try {
-            // Utiliser Better Auth signUp pour créer le compte
-            const { data: signUpData, error: signUpError } = await authClient.signUp.email({
+            // 1. Libère l'adresse réservée par l'invitation (fiche « en attente »)
+            const accept = await fetch("/api/invitation/accept", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token }),
+            });
+            if (!accept.ok) {
+                const body = await accept.json().catch(() => null);
+                setError(body?.error || "Invitation invalide ou expirée");
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. Crée le compte avec Better-Auth, puis 3. le rattache à l'entreprise
+            const { error: signUpError } = await authClient.signUp.email({
                 email,
                 password: password,
                 name: userName,
@@ -134,9 +142,7 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
                             headers: {
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({
-                                invitationData,
-                            }),
+                            body: JSON.stringify({ token }),
                         });
 
                         if (!response.ok) {
@@ -193,6 +199,7 @@ export function InvitationClient({ token, email, userName, invitationData }: Inv
         <Card>
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl">Rejoindre l&apos;équipe</CardTitle>
+                {companyName && <p className="text-sm font-medium text-foreground">{companyName}</p>}
                 <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center justify-center gap-2">
                         <User className="h-4 w-4" />

@@ -217,20 +217,24 @@ export const switchToFreePlanAction = useMutation(
             const userData = await db
                 .select({
                     role: user.role,
+                    companyId: user.companyId,
                 })
                 .from(user)
                 .where(eq(user.id, userId))
                 .limit(1);
 
-            if (!userData.length || userData[0].role !== 'owner') {
+            if (!userData.length || userData[0].role !== 'owner' || !userData[0].companyId) {
                 throw new Error("Seul le propriétaire peut gérer l'abonnement");
             }
+            // L'entreprise est toujours celle du propriétaire connecté : l'id envoyé
+            // par le navigateur est ignoré (il permettait d'annuler l'abonnement d'un autre)
+            const companyId = userData[0].companyId;
 
             // Récupérer l'abonnement actuel
             const currentSubscription = await db
                 .select()
                 .from(subscription)
-                .where(eq(subscription.companyId, input.companyId))
+                .where(eq(subscription.companyId, companyId))
                 .limit(1);
 
             if (!currentSubscription.length || !currentSubscription[0].stripeSubscriptionId) {
@@ -264,7 +268,7 @@ export const switchToFreePlanAction = useMutation(
                     currentPeriodEnd,
                     updatedAt: new Date(),
                 })
-                .where(eq(subscription.companyId, input.companyId));
+                .where(eq(subscription.companyId, companyId));
 
             return {
                 success: true,
@@ -299,18 +303,30 @@ export const createBillingPortalAction = useMutation(
             const userData = await db
                 .select({
                     role: user.role,
+                    companyId: user.companyId,
                 })
                 .from(user)
                 .where(eq(user.id, userId))
                 .limit(1);
 
-            if (!userData.length || userData[0].role !== 'owner') {
+            if (!userData.length || userData[0].role !== 'owner' || !userData[0].companyId) {
                 throw new Error("Seul le propriétaire peut gérer l'abonnement");
+            }
+
+            // Le client Stripe est lu en base pour l'entreprise du propriétaire,
+            // jamais pris dans la requête
+            const [ownSubscription] = await db
+                .select({ stripeCustomerId: subscription.stripeCustomerId })
+                .from(subscription)
+                .where(eq(subscription.companyId, userData[0].companyId))
+                .limit(1);
+            if (!ownSubscription?.stripeCustomerId) {
+                throw new Error("Aucun client de facturation associé à votre entreprise");
             }
 
             // Créer la session du portail de facturation
             const portalSession = await stripe.billingPortal.sessions.create({
-                customer: input.customerId,
+                customer: ownSubscription.stripeCustomerId,
                 return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing`,
             });
 

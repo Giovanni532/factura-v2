@@ -1,8 +1,9 @@
-import puppeteer from "puppeteer";
 import { db } from "@/lib/drizzle";
 import { company, client, template } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { predefinedTemplates } from "@/lib/templates";
+import { usableTemplate } from "@/lib/ownership";
+import { renderPdf } from "@/lib/pdf-render";
 
 export interface TemplateData {
     company: {
@@ -203,26 +204,8 @@ export async function generatePDF(
     html = html.replace(/\{\{#each items\}\}[\s\S]*?\{\{\/each\}\}/g, itemsHtml);
 
     // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-            top: '20mm',
-            right: '20mm',
-            bottom: '20mm',
-            left: '20mm'
-        }
-    });
-
-    await browser.close();
+    const pdf = await renderPdf(html);
 
     const filename = `${documentType}-${templateData.document.number}.pdf`;
 
@@ -238,7 +221,7 @@ export async function getTemplateForDocument(
 
     if (templateId) {
         // Template personnalisé
-        const customTemplate = await db.select().from(template).where(eq(template.id, templateId)).limit(1);
+        const customTemplate = await db.select().from(template).where(and(eq(template.id, templateId), usableTemplate(companyId))).limit(1);
         if (customTemplate.length) {
             selectedTemplate = customTemplate[0];
         }

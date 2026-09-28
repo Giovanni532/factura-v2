@@ -4,16 +4,17 @@ import { useMutation } from "@/lib/safe-action";
 import { createInvoiceSchema, updateInvoiceSchema, deleteInvoiceSchema, updateInvoiceStatusSchema, remindInvoiceSchema } from "@/validation/invoice-schema";
 import { db } from "@/lib/drizzle";
 import { invoice, invoiceItem, user, company, client, template } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getNextInvoiceNumber, getInvoiceById } from "@/db/queries/invoice";
 import { predefinedTemplates } from "@/lib/templates";
 import { z } from "zod";
-import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 import { canAddInvoice, canUserPerformAction } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
 import { sendInvoiceEmail } from "@/lib/email";
+import { assertClientOwned, assertTemplateUsable, usableTemplate } from "@/lib/ownership";
+import { renderPdf } from "@/lib/pdf-render";
 
 // Action pour créer une nouvelle facture
 export const createInvoiceAction = useMutation(
@@ -31,6 +32,10 @@ export const createInvoiceAction = useMutation(
         if (!canAdd) {
             throw new ActionError(reason || "Limite de factures atteinte");
         }
+
+        // Client et modèle doivent appartenir à l'entreprise
+        await assertClientOwned(input.clientId, userData[0].companyId);
+        await assertTemplateUsable(input.templateId, userData[0].companyId);
 
         // Générer le numéro de facture si non fourni
         const invoiceNumber = input.invoiceNumber || await getNextInvoiceNumber(userData[0].companyId);
@@ -105,7 +110,7 @@ export const downloadInvoiceAction = useMutation(
         let selectedTemplate;
         if (invoiceData.templateId) {
             // Template personnalisé
-            const customTemplate = await db.select().from(template).where(eq(template.id, invoiceData.templateId)).limit(1);
+            const customTemplate = await db.select().from(template).where(and(eq(template.id, invoiceData.templateId), usableTemplate(userData[0].companyId))).limit(1);
             if (customTemplate.length) {
                 selectedTemplate = customTemplate[0];
             }
@@ -311,35 +316,16 @@ export const downloadInvoiceAction = useMutation(
         html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
 
         // Générer le PDF avec Puppeteer
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
 
         try {
-            const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
-
-            const pdf = await page.pdf({
-                format: 'A4',
-                printBackground: true,
-                margin: {
-                    top: '20mm',
-                    right: '20mm',
-                    bottom: '20mm',
-                    left: '20mm'
-                }
-            });
-
-            await browser.close();
+            const pdf = await renderPdf(html);
 
             return {
                 success: true,
                 pdf: Buffer.from(pdf).toString('base64'),
                 filename: `facture-${invoiceData.invoiceNumber}.pdf`
             };
-        } catch (error) {
-            await browser.close();
+        } catch {
             throw new Error("Erreur lors de la génération du PDF");
         }
     }
@@ -368,6 +354,8 @@ export const updateInvoiceAction = useMutation(
         if (!existingInvoice.length || existingInvoice[0].companyId !== userData[0].companyId) {
             throw new Error("Facture non trouvée ou accès non autorisé");
         }
+        await assertClientOwned(input.clientId, userData[0].companyId);
+        await assertTemplateUsable(input.templateId, userData[0].companyId);
 
         // Mettre à jour la facture
         const [updatedInvoice] = await db.update(invoice)
@@ -528,7 +516,7 @@ export const sendInvoiceAction = useMutation(
         // Récupérer le template
         let selectedTemplate;
         if (invoiceData.templateId) {
-            const customTemplate = await db.select().from(template).where(eq(template.id, invoiceData.templateId)).limit(1);
+            const customTemplate = await db.select().from(template).where(and(eq(template.id, invoiceData.templateId), usableTemplate(userData[0].companyId))).limit(1);
             if (customTemplate.length) {
                 selectedTemplate = customTemplate[0];
             }
@@ -694,26 +682,8 @@ export const sendInvoiceAction = useMutation(
         html = html.replace(/\{\{CSS\}\}/g, selectedTemplate.css || '');
 
         // Générer le PDF avec Puppeteer
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
 
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-
-        const pdf = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '20mm',
-                right: '20mm',
-                bottom: '20mm',
-                left: '20mm'
-            }
-        });
-
-        await browser.close();
+        const pdf = await renderPdf(html);
 
         // Convertir en base64
         const pdfBase64 = Buffer.from(pdf).toString('base64');
@@ -783,7 +753,7 @@ export const getInvoicePreviewAction = useMutation(
         let selectedTemplate;
         if (invoiceData.templateId) {
             // Template personnalisé
-            const customTemplate = await db.select().from(template).where(eq(template.id, invoiceData.templateId)).limit(1);
+            const customTemplate = await db.select().from(template).where(and(eq(template.id, invoiceData.templateId), usableTemplate(userData[0].companyId))).limit(1);
             if (customTemplate.length) {
                 selectedTemplate = customTemplate[0];
             }

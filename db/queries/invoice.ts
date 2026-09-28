@@ -60,7 +60,7 @@ export async function getInvoicesByCompany(companyId: string, filters?: {
             },
         })
         .from(invoice)
-        .leftJoin(client, eq(invoice.clientId, client.id))
+        .leftJoin(client, and(eq(invoice.clientId, client.id), eq(client.companyId, invoice.companyId)))
         .leftJoin(template, eq(invoice.templateId, template.id))
         .where(and(...whereConditions))
         .orderBy(desc(invoice.createdAt));
@@ -130,7 +130,7 @@ export async function getInvoiceById(invoiceId: string, companyId: string): Prom
             },
         })
         .from(invoice)
-        .leftJoin(client, eq(invoice.clientId, client.id))
+        .leftJoin(client, and(eq(invoice.clientId, client.id), eq(client.companyId, invoice.companyId)))
         .leftJoin(template, eq(invoice.templateId, template.id))
         .where(and(eq(invoice.id, invoiceId), eq(invoice.companyId, companyId)))
         .limit(1);
@@ -265,7 +265,7 @@ export async function getRecentDocuments(companyId: string) {
             createdAt: invoice.createdAt,
         })
         .from(invoice)
-        .leftJoin(client, eq(invoice.clientId, client.id))
+        .leftJoin(client, and(eq(invoice.clientId, client.id), eq(client.companyId, invoice.companyId)))
         .where(eq(invoice.companyId, companyId))
         .orderBy(desc(invoice.createdAt))
         .limit(5);

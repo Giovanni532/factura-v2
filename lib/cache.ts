@@ -3,6 +3,9 @@ import { db } from './drizzle';
 import { user, company, invoice, quote, client, service } from '@/db/schema';
 import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
 
+// Les colonnes timestamp sont en secondes : une Date interpolée dans sql`` part en millisecondes
+const toUnix = (d: Date) => Math.floor(d.getTime() / 1000);
+
 // Cache pour les données utilisateur avec entreprise
 export const getUserWithCompanyCached = unstable_cache(
     async (userId: string) => {
@@ -49,9 +52,9 @@ export const getDashboardStatsCached = unstable_cache(
     async (companyId: string) => {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1); // exclusive
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1); // exclusive
 
         const [invoiceStats, quoteStats, clientStats, serviceStats] = await Promise.all([
             db.select({
@@ -60,10 +63,10 @@ export const getDashboardStatsCached = unstable_cache(
                 paidInvoices: sql<number>`count(case when ${invoice.status} = 'paid' then 1 end)`,
                 pendingInvoices: sql<number>`count(case when ${invoice.status} = 'sent' then 1 end)`,
                 overdueInvoices: sql<number>`count(case when ${invoice.status} = 'sent' and ${invoice.dueDate} < cast(strftime('%s', 'now') as integer) then 1 end)`,
-                monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} then 1 end)`,
-                monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfMonth} and ${invoice.createdAt} <= ${endOfMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
-                lastMonthRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${startOfLastMonth} and ${invoice.createdAt} <= ${endOfLastMonth} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
-                lastMonthInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${startOfLastMonth} and ${invoice.createdAt} <= ${endOfLastMonth} then 1 end)`,
+                monthlyInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${toUnix(startOfMonth)} and ${invoice.createdAt} < ${toUnix(endOfMonth)} then 1 end)`,
+                monthlyRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${toUnix(startOfMonth)} and ${invoice.createdAt} < ${toUnix(endOfMonth)} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+                lastMonthRevenue: sql<number>`sum(case when ${invoice.createdAt} >= ${toUnix(startOfLastMonth)} and ${invoice.createdAt} < ${toUnix(endOfLastMonth)} and ${invoice.status} = 'paid' then ${invoice.total} else 0 end)`,
+                lastMonthInvoices: sql<number>`count(case when ${invoice.createdAt} >= ${toUnix(startOfLastMonth)} and ${invoice.createdAt} < ${toUnix(endOfLastMonth)} then 1 end)`,
             }).from(invoice).where(eq(invoice.companyId, companyId)),
 
             db.select({
@@ -71,13 +74,13 @@ export const getDashboardStatsCached = unstable_cache(
                 acceptedQuotes: sql<number>`count(case when ${quote.status} = 'accepted' then 1 end)`,
                 pendingQuotes: sql<number>`count(case when ${quote.status} = 'sent' then 1 end)`,
                 expiredQuotes: sql<number>`count(case when ${quote.status} = 'sent' and ${quote.validUntil} < cast(strftime('%s', 'now') as integer) then 1 end)`,
-                monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfMonth} and ${quote.createdAt} <= ${endOfMonth} then 1 end)`,
-                lastMonthQuotes: sql<number>`count(case when ${quote.createdAt} >= ${startOfLastMonth} and ${quote.createdAt} <= ${endOfLastMonth} then 1 end)`,
+                monthlyQuotes: sql<number>`count(case when ${quote.createdAt} >= ${toUnix(startOfMonth)} and ${quote.createdAt} < ${toUnix(endOfMonth)} then 1 end)`,
+                lastMonthQuotes: sql<number>`count(case when ${quote.createdAt} >= ${toUnix(startOfLastMonth)} and ${quote.createdAt} < ${toUnix(endOfLastMonth)} then 1 end)`,
             }).from(quote).where(eq(quote.companyId, companyId)),
 
             db.select({
                 totalClients: sql<number>`count(*)`,
-                activeClients: sql<number>`count(case when ${client.createdAt} >= date('now', '-30 days') then 1 end)`,
+                activeClients: sql<number>`count(case when ${client.createdAt} >= cast(strftime('%s', 'now', '-30 days') as integer) then 1 end)`,
             }).from(client).where(eq(client.companyId, companyId)),
 
             db.select({
@@ -614,18 +617,4 @@ export const getCompanySubscriptionWithStripeCached = unstable_cache(
         tags: ['billing', 'subscription']
     }
 );
-
-// Fonction pour invalider le cache
-export const revalidateCache = {
-    user: () => fetch('/api/revalidate?tag=user'),
-    company: () => fetch('/api/revalidate?tag=company'),
-    dashboard: () => fetch('/api/revalidate?tag=dashboard'),
-    stats: () => fetch('/api/revalidate?tag=stats'),
-    charts: () => fetch('/api/revalidate?tag=charts'),
-    deadlines: () => fetch('/api/revalidate?tag=deadlines'),
-    subscription: () => fetch('/api/revalidate?tag=subscription'),
-    accounting: () => fetch('/api/revalidate?tag=accounting'),
-    billing: () => fetch('/api/revalidate?tag=billing'),
-    team: () => fetch('/api/revalidate?tag=team'),
-    members: () => fetch('/api/revalidate?tag=members'),
-}; 
+ 

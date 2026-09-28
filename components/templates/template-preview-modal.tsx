@@ -126,12 +126,22 @@ export function TemplatePreviewModal({ template, isOpen, onClose }: TemplatePrev
         }
     }, [isOpen, template]);
 
+    // Un modèle est du HTML libre écrit par un membre : il s'affiche dans une
+    // iframe sandbox (sans allow-scripts). Écrit directement dans le nouvel
+    // onglet, il s'exécutait avec l'origine de l'app et la session de celui
+    // qui l'ouvrait.
     const openInNewTab = () => {
-        const newWindow = window.open();
-        if (newWindow) {
-            newWindow.document.write(previewHtml);
-            newWindow.document.close();
-        }
+        const newWindow = window.open("", "_blank");
+        if (!newWindow) return;
+        newWindow.opener = null;
+        const doc = newWindow.document;
+        doc.title = template?.name ?? "Aperçu";
+        doc.body.style.margin = "0";
+        const frame = doc.createElement("iframe");
+        frame.setAttribute("sandbox", "");
+        frame.style.cssText = "border:0;width:100vw;height:100vh;display:block";
+        frame.srcdoc = previewHtml;
+        doc.body.appendChild(frame);
     };
 
     return (

@@ -41,7 +41,9 @@ export const updateCompanySchema = z.object({
 });
 
 export const updateCompanyLogoSchema = z.object({
-    logo: z.string().min(1, "Le logo est requis"),
+    // Image embarquée uniquement (le logo finit dans le HTML des PDF) : pas d'URL externe
+    logo: z.string().min(1, "Le logo est requis").max(7_000_000, "Logo trop lourd (5 Mo max)")
+        .regex(/^data:image\/(png|jpe?g|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/, "Format d'image non pris en charge"),
 });
 
 export const inviteUserSchema = z.object({

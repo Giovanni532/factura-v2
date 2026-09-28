@@ -315,18 +315,21 @@ export const deleteJournalEntryAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise")
         }
 
-        // Supprimer les lignes d'écriture
-        await db.delete(journalEntryLine)
-            .where(eq(journalEntryLine.journalEntryId, input.id))
+        // L'écriture doit appartenir à l'entreprise AVANT de toucher à ses lignes
+        // (sinon un id d'une autre entreprise suffisait à effacer ses lignes)
+        const [owned] = await db.select({ id: journalEntry.id }).from(journalEntry)
+            .where(and(eq(journalEntry.id, input.id), eq(journalEntry.companyId, currentUser.companyId)))
+            .limit(1)
+        if (!owned) {
+            throw new Error("Écriture introuvable")
+        }
 
-        // Supprimer l'écriture
-        await db.delete(journalEntry)
-            .where(
-                and(
-                    eq(journalEntry.id, input.id),
-                    eq(journalEntry.companyId, currentUser.companyId)
-                )
-            )
+        const companyId = currentUser.companyId
+        await db.transaction(async (tx) => {
+            await tx.delete(journalEntryLine).where(eq(journalEntryLine.journalEntryId, owned.id))
+            await tx.delete(journalEntry)
+                .where(and(eq(journalEntry.id, owned.id), eq(journalEntry.companyId, companyId)))
+        })
 
         return { success: true }
     }

@@ -10,6 +10,7 @@ import { paths } from "@/paths";
 import { ActionError } from "@/lib/safe-action";
 import { sendInvitationEmail } from "@/lib/email";
 import { z } from "zod";
+import { createInvitationToken } from "@/lib/invitation";
 
 export const createCompanyAction = useMutation(
     createCompanySchema,
@@ -68,6 +69,10 @@ export const updateCompanyLogoAction = useMutation(
 
             if (!existingUser[0]?.companyId) {
                 throw new Error("Aucune compagnie associée à votre compte");
+            }
+            // Le logo figure sur tous les documents envoyés : réservé au propriétaire et aux admins
+            if (existingUser[0].role !== "owner" && existingUser[0].role !== "admin") {
+                throw new Error("Seul le propriétaire ou un administrateur peut changer le logo");
             }
 
             // Mettre à jour le logo de la compagnie
@@ -217,8 +222,16 @@ export const inviteUserAction = useMutation(
                 updatedAt: new Date(),
             }).returning();
 
-            // Générer un lien d'invitation (dans un vrai cas, ce serait un token sécurisé)
-            const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/invitation?token=${newUser[0].id}&email=${encodeURIComponent(input.email)}`;
+            // Lien d'invitation : jeton aléatoire à usage unique (7 jours), jamais l'id de l'utilisateur
+            const token = await createInvitationToken({
+                placeholderUserId: newUser[0].id,
+                email: input.email,
+                name: input.name,
+                companyId: existingUser[0].companyId,
+                role: input.role,
+                invitedBy: userId,
+            });
+            const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/invitation?token=${token}`;
 
             // Envoyer l'email d'invitation
             const emailResult = await sendInvitationEmail({
@@ -241,7 +254,7 @@ export const inviteUserAction = useMutation(
 
             return {
                 success: true,
-                user: newUser[0],
+                user: { id: newUser[0].id, name: newUser[0].name, email: newUser[0].email, role: newUser[0].role },
                 message: `Utilisateur ${input.name} invité avec succès${emailResult.success ? '' : ' (email non envoyé)'}`
             };
         } catch (error) {

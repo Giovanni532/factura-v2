@@ -4,17 +4,18 @@ import { useMutation } from "@/lib/safe-action";
 import { createQuoteSchema, updateQuoteSchema, deleteQuoteSchema, updateQuoteStatusSchema, sendQuoteSchema, remindQuoteSchema } from "@/validation/quote-schema";
 import { db } from "@/lib/drizzle";
 import { quote, quoteItem, user, company, client, template } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getNextQuoteNumber, getQuoteById } from "@/db/queries/quote";
 import { predefinedTemplates } from "@/lib/templates";
 import { z } from "zod";
-import puppeteer from "puppeteer";
 import { revalidatePath } from "next/cache";
 import { paths } from "@/paths";
 import { canAddQuote, canUserPerformAction } from "@/db/queries/subscription";
 import { ActionError } from "@/lib/safe-action";
 import { sendQuoteEmail } from "@/lib/email";
 import { generatePDF, getTemplateForDocument } from "@/lib/pdf-generator";
+import { assertClientOwned, assertTemplateUsable, usableTemplate } from "@/lib/ownership";
+import { renderPdf } from "@/lib/pdf-render";
 
 // Action pour créer un nouveau devis
 export const createQuoteAction = useMutation(
@@ -32,6 +33,10 @@ export const createQuoteAction = useMutation(
         if (!canAdd) {
             throw new ActionError(reason || "Limite de documents atteinte");
         }
+
+        // Client et modèle doivent appartenir à l'entreprise
+        await assertClientOwned(input.clientId, userData[0].companyId);
+        await assertTemplateUsable(input.templateId, userData[0].companyId);
 
         // Générer le numéro de devis si non fourni
         const quoteNumber = input.quoteNumber || await getNextQuoteNumber(userData[0].companyId);
@@ -95,6 +100,15 @@ export const updateQuoteAction = useMutation(
             throw new ActionError(reason || "Action non autorisée");
         }
 
+        // Le devis doit appartenir à l'entreprise, comme le client et le modèle
+        const [ownedQuote] = await db.select({ id: quote.id }).from(quote)
+            .where(and(eq(quote.id, input.id), eq(quote.companyId, userData[0].companyId))).limit(1);
+        if (!ownedQuote) {
+            throw new Error("Devis non trouvé ou accès non autorisé");
+        }
+        await assertClientOwned(input.clientId, userData[0].companyId);
+        await assertTemplateUsable(input.templateId, userData[0].companyId);
+
         // Préparer les données de mise à jour
         const updateData: any = {
             updatedAt: new Date(),
@@ -114,7 +128,7 @@ export const updateQuoteAction = useMutation(
         // Mettre à jour le devis
         const [updatedQuote] = await db.update(quote)
             .set(updateData)
-            .where(eq(quote.id, input.id))
+            .where(and(eq(quote.id, input.id), eq(quote.companyId, userData[0].companyId)))
             .returning();
 
         // Mettre à jour les articles si fournis
@@ -258,7 +272,7 @@ export const downloadQuoteAction = useMutation(
         let selectedTemplate;
         if (quoteData.templateId) {
             // Template personnalisé
-            const customTemplate = await db.select().from(template).where(eq(template.id, quoteData.templateId)).limit(1);
+            const customTemplate = await db.select().from(template).where(and(eq(template.id, quoteData.templateId), usableTemplate(userData[0].companyId))).limit(1);
             if (customTemplate.length) {
                 selectedTemplate = customTemplate[0];
             }
@@ -473,26 +487,8 @@ export const downloadQuoteAction = useMutation(
         html = html.replace(/\{\{#each items\}\}[\s\S]*?\{\{\/each\}\}/g, itemsHtml);
 
         // Générer le PDF avec Puppeteer
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
 
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-
-        const pdf = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '20mm',
-                right: '20mm',
-                bottom: '20mm',
-                left: '20mm'
-            }
-        });
-
-        await browser.close();
+        const pdf = await renderPdf(html);
 
         // Convertir en base64
         const base64 = Buffer.from(pdf).toString('base64');
@@ -658,7 +654,7 @@ export const getQuotePreviewAction = useMutation(
         let selectedTemplate;
         if (quoteData.templateId) {
             // Template personnalisé
-            const customTemplate = await db.select().from(template).where(eq(template.id, quoteData.templateId)).limit(1);
+            const customTemplate = await db.select().from(template).where(and(eq(template.id, quoteData.templateId), usableTemplate(userData[0].companyId))).limit(1);
             if (customTemplate.length) {
                 selectedTemplate = customTemplate[0];
             }

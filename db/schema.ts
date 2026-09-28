@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { index, sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 // Définition de la table company d'abord
 export const company = sqliteTable("company", {
@@ -28,7 +28,7 @@ export const user = sqliteTable("user", {
     role: text('role', { enum: ['owner', 'admin', 'user'] }).$defaultFn(() => 'user').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull()
-});
+}, (t) => [index("user_company_idx").on(t.companyId)]);
 
 export const session = sqliteTable("session", {
     id: text('id').primaryKey(),
@@ -39,7 +39,7 @@ export const session = sqliteTable("session", {
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' })
-});
+}, (t) => [index("session_user_idx").on(t.userId)]);
 
 export const account = sqliteTable("account", {
     id: text('id').primaryKey(),
@@ -55,7 +55,7 @@ export const account = sqliteTable("account", {
     password: text('password'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
-});
+}, (t) => [index("account_user_idx").on(t.userId)]);
 
 export const verification = sqliteTable("verification", {
     id: text('id').primaryKey(),
@@ -64,7 +64,7 @@ export const verification = sqliteTable("verification", {
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date())
-});
+}, (t) => [index("verification_identifier_idx").on(t.identifier)]);
 
 // Tables pour l'application de facturation
 
@@ -82,7 +82,7 @@ export const client = sqliteTable("client", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("client_company_idx").on(t.companyId)]);
 
 // Table des fournisseurs
 export const supplier = sqliteTable("supplier", {
@@ -101,7 +101,7 @@ export const supplier = sqliteTable("supplier", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("supplier_company_idx").on(t.companyId)]);
 
 // Table des catégories de dépenses
 export const expenseCategory = sqliteTable("expense_category", {
@@ -128,7 +128,7 @@ export const template = sqliteTable("template", {
     companyId: text('company_id').references(() => company.id, { onDelete: 'cascade' }), // Null pour les templates prédéfinis
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("template_company_idx").on(t.companyId)]);
 
 export const userFavoriteTemplate = sqliteTable("user_favorite_template", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -160,7 +160,7 @@ export const invoice = sqliteTable("invoice", {
     templateId: text('template_id').references(() => template.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("invoice_company_created_idx").on(t.companyId, t.createdAt), index("invoice_client_idx").on(t.clientId)]);
 
 export const invoiceItem = sqliteTable("invoice_item", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -170,7 +170,7 @@ export const invoiceItem = sqliteTable("invoice_item", {
     total: real('total').notNull(),
     invoiceId: text('invoice_id').notNull().references(() => invoice.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("invoice_item_invoice_idx").on(t.invoiceId)]);
 
 export const billingPlan = sqliteTable("billing_plan", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -200,7 +200,7 @@ export const subscription = sqliteTable("subscription", {
     billingPlanId: text('billing_plan_id').notNull().references(() => billingPlan.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("subscription_company_idx").on(t.companyId)]);
 
 // Tables pour les devis
 export const quote = sqliteTable("quote", {
@@ -221,7 +221,7 @@ export const quote = sqliteTable("quote", {
     convertedToInvoiceId: text('converted_to_invoice_id').references(() => invoice.id), // Si converti en facture
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("quote_company_created_idx").on(t.companyId, t.createdAt), index("quote_client_idx").on(t.clientId)]);
 
 export const quoteItem = sqliteTable("quote_item", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -231,7 +231,7 @@ export const quoteItem = sqliteTable("quote_item", {
     total: real('total').notNull(),
     quoteId: text('quote_id').notNull().references(() => quote.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("quote_item_quote_idx").on(t.quoteId)]);
 
 // Tables pour la comptabilité
 export const chartOfAccounts = sqliteTable("chart_of_accounts", {
@@ -244,7 +244,7 @@ export const chartOfAccounts = sqliteTable("chart_of_accounts", {
     isActive: integer('is_active', { mode: 'boolean' }).$defaultFn(() => true).notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("chart_company_code_idx").on(t.companyId, t.code)]);
 
 export const journalEntry = sqliteTable("journal_entry", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -259,7 +259,7 @@ export const journalEntry = sqliteTable("journal_entry", {
     isPosted: integer('is_posted', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("journal_entry_company_date_idx").on(t.companyId, t.date)]);
 
 export const journalEntryLine = sqliteTable("journal_entry_line", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -269,7 +269,7 @@ export const journalEntryLine = sqliteTable("journal_entry_line", {
     credit: real('credit').$defaultFn(() => 0).notNull(),
     description: text('description'),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("journal_line_entry_idx").on(t.journalEntryId), index("journal_line_account_idx").on(t.accountId)]);
 
 export const payment = sqliteTable("payment", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -289,7 +289,7 @@ export const payment = sqliteTable("payment", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("payment_company_date_idx").on(t.companyId, t.paymentDate), index("payment_invoice_idx").on(t.invoiceId)]);
 
 export const fiscalYear = sqliteTable("fiscal_year", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -300,7 +300,7 @@ export const fiscalYear = sqliteTable("fiscal_year", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("fiscal_year_company_idx").on(t.companyId)]);
 
 // Tables pour les prestations/services
 export const service = sqliteTable("service", {
@@ -316,7 +316,7 @@ export const service = sqliteTable("service", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("service_company_idx").on(t.companyId)]);
 
 export const serviceCategory = sqliteTable("service_category", {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -326,7 +326,7 @@ export const serviceCategory = sqliteTable("service_category", {
     companyId: text('company_id').notNull().references(() => company.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
-});
+}, (t) => [index("service_category_company_idx").on(t.companyId)]);
 
 // Export du schéma complet pour Better Auth et Drizzle
 export const schema = {

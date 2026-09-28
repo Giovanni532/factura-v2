@@ -1,4 +1,3 @@
-"use server"
 
 import React from 'react';
 import { getSession } from '@/lib/get-session';

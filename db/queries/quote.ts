@@ -60,7 +60,7 @@ export async function getQuotesByCompany(companyId: string, filters?: {
             },
         })
         .from(quote)
-        .leftJoin(client, eq(quote.clientId, client.id))
+        .leftJoin(client, and(eq(quote.clientId, client.id), eq(client.companyId, quote.companyId)))
         .leftJoin(template, eq(quote.templateId, template.id))
         .where(and(...whereConditions))
         .orderBy(desc(quote.createdAt));
@@ -133,7 +133,7 @@ export async function getQuoteById(quoteId: string, companyId: string): Promise<
             },
         })
         .from(quote)
-        .leftJoin(client, eq(quote.clientId, client.id))
+        .leftJoin(client, and(eq(quote.clientId, client.id), eq(client.companyId, quote.companyId)))
         .leftJoin(template, eq(quote.templateId, template.id))
         .where(and(eq(quote.id, quoteId), eq(quote.companyId, companyId)))
         .limit(1);

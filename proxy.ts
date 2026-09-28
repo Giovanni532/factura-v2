@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paths } from '@/paths';
+import { auth } from '@/lib/auth';
 
 // Routes d'API qui ne nécessitent pas d'authentification
 const publicApiRoutes = ['/api/auth', '/api/invitation'];
@@ -56,14 +57,9 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
-        // Vérifier la session via l'API Better Auth
-        const sessionResponse = await fetch(new URL('/api/auth/get-session', request.url), {
-            headers: {
-                cookie: request.headers.get('cookie') || '',
-            },
-        });
-
-        const session = sessionResponse.ok ? await sessionResponse.json() : null;
+        // Session lue directement (le proxy tourne sur Node en Next 16), sans
+        // requête HTTP vers /api/auth/get-session à chaque navigation.
+        const session = await auth.api.getSession({ headers: request.headers });
         const isAuthenticated = !!session?.user;
         const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
@@ -101,6 +97,7 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        // Les routes /api vérifient elles-mêmes la session ; les fichiers statiques n'ont pas besoin du proxy
+        '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
     ],
 }; 
