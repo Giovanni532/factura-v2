@@ -1,7 +1,7 @@
 "use server";
 import { useMutation } from "@/lib/safe-action";
 import { z } from "zod";
-import { stripe } from "@/lib/stripe";
+import { stripe, subscriptionPeriod } from "@/lib/stripe";
 import { db } from "@/lib/drizzle";
 import { user, company, subscription, billingPlan } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -251,13 +251,9 @@ export const switchToFreePlanAction = useMutation(
 
             // Convertir les timestamps Stripe en dates JavaScript
             const stripeData = fullStripeSubscription as any;
-            const currentPeriodStart = stripeData.current_period_start
-                ? new Date(stripeData.current_period_start * 1000)
-                : new Date();
-
-            const currentPeriodEnd = stripeData.current_period_end
-                ? new Date(stripeData.current_period_end * 1000)
-                : new Date();
+            const period = subscriptionPeriod(stripeData);
+            const currentPeriodStart = period?.start ?? new Date();
+            const currentPeriodEnd = period?.end ?? new Date();
 
             // Mettre à jour la base de données avec les dates correctes
             await db

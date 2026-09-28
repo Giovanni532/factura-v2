@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, subscriptionPeriod } from "@/lib/stripe";
 import { db } from "@/lib/drizzle";
 import { subscription, company, billingPlan } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -227,13 +227,9 @@ async function createOrUpdateSubscription(
 
     // Récupérer les périodes depuis l'abonnement Stripe
     const stripeData = stripeSubscription as any;
-    const currentPeriodStart = stripeData.current_period_start
-        ? new Date(stripeData.current_period_start * 1000)
-        : new Date();
-
-    const currentPeriodEnd = stripeData.current_period_end
-        ? new Date(stripeData.current_period_end * 1000)
-        : new Date();
+    const period = subscriptionPeriod(stripeData);
+    const currentPeriodStart = period?.start ?? new Date();
+    const currentPeriodEnd = period?.end ?? new Date();
 
     const subscriptionData = {
         status,
@@ -300,13 +296,9 @@ async function updateSubscriptionFromStripe(stripeSubscription: Stripe.Subscript
 
         // Récupérer les périodes depuis l'abonnement Stripe
         const stripeData = stripeSubscription as any;
-        const currentPeriodStart = stripeData.current_period_start
-            ? new Date(stripeData.current_period_start * 1000)
-            : new Date();
-
-        const currentPeriodEnd = stripeData.current_period_end
-            ? new Date(stripeData.current_period_end * 1000)
-            : new Date();
+        const period = subscriptionPeriod(stripeData);
+        const currentPeriodStart = period?.start ?? new Date();
+        const currentPeriodEnd = period?.end ?? new Date();
 
         // Mettre à jour l'abonnement
         await db

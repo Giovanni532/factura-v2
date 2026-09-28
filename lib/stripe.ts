@@ -55,3 +55,15 @@ export interface StripeSubscription {
         }>;
     };
 } 
+/**
+ * Depuis l'API 2025-06-30.basil, current_period_start/end ne sont plus sur
+ * l'abonnement mais sur ses articles. Sans ce repli, la période tombait sur
+ * « maintenant » et tout abonnement payant paraissait déjà expiré.
+ */
+export function subscriptionPeriod(sub: unknown): { start: Date; end: Date } | null {
+    const s = sub as { current_period_start?: number; current_period_end?: number; items?: { data?: { current_period_start?: number; current_period_end?: number }[] } };
+    const item = s.items?.data?.[0];
+    const start = s.current_period_start ?? item?.current_period_start;
+    const end = s.current_period_end ?? item?.current_period_end;
+    return start && end ? { start: new Date(start * 1000), end: new Date(end * 1000) } : null;
+}
