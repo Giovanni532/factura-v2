@@ -28,6 +28,7 @@ import {
 } from "@/validation/accounting-schema"
 import { getUserWithCompany } from "@/db/queries/company"
 import { ActionError } from "@/lib/safe-action"
+import { assertAccountsOwned } from "@/lib/ownership"
 
 // Schémas pour les actions de suppression
 const deleteSchema = z.object({
@@ -218,6 +219,8 @@ export const createJournalEntryAction = useMutation(
             throw new Error("Utilisateur non associé à une entreprise")
         }
 
+        await assertAccountsOwned(input.lines.map(line => line.accountId), currentUser.companyId)
+
         // Créer l'écriture
         const newEntry = await db.insert(journalEntry).values({
             number: input.number,
@@ -257,6 +260,11 @@ export const updateJournalEntryAction = useMutation(
 
         if (!currentUser?.companyId) {
             throw new Error("Utilisateur non associé à une entreprise")
+        }
+
+        // Avant toute écriture, pour ne pas modifier l'en-tête si une ligne est refusée
+        if (input.lines) {
+            await assertAccountsOwned(input.lines.map(line => line.accountId), currentUser.companyId)
         }
 
         const updateData: any = {}

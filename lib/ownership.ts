@@ -1,5 +1,5 @@
-import { and, eq, isNull, or } from "drizzle-orm";
-import { client, template } from "@/db/schema";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { chartOfAccounts, client, template } from "@/db/schema";
 import { db } from "@/lib/drizzle";
 import { ActionError } from "@/lib/safe-action";
 import { predefinedTemplates } from "@/lib/templates";
@@ -27,4 +27,12 @@ export async function assertTemplateUsable(templateId: string | null | undefined
     }
     // Modèles prédéfinis livrés dans le code (pas forcément en base)
     if (!predefinedTemplates.some((t) => (t as { id?: string }).id === templateId)) throw new ActionError("Modèle introuvable");
+}
+
+/** Chaque compte d'une écriture doit être au plan comptable de l'entreprise (sinon on déplace les soldes d'une autre) */
+export async function assertAccountsOwned(accountIds: string[], companyId: string) {
+    const ids = [...new Set(accountIds)];
+    if (!ids.length) return;
+    const rows = await db.select({ id: chartOfAccounts.id }).from(chartOfAccounts).where(and(inArray(chartOfAccounts.id, ids), eq(chartOfAccounts.companyId, companyId)));
+    if (rows.length !== ids.length) throw new ActionError("Compte introuvable");
 }
